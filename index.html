@@ -8,12 +8,47 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	</header>
 	<body id="main-container">
+    <script src="Scripts/gl-matrix.js"></script>
+    <script src="Scripts/twgl-full.js"></script>
+    <script type="vertex" id="vs">
+        #version 300 es
+        
+        layout (location=0) in vec4 position;
+        layout (location=1) in vec3 color;
+
+        uniform mat4 u_mvp;
+        
+        out vec3 vColor;
+
+        void main() {
+            vColor = color;
+            gl_Position = u_mvp * position;
+        }
+    </script>
+    <script type="fragment" id="fs">
+        #version 300 es
+        precision highp float;
+        
+        in vec3 vColor;
+        out vec4 fragColor;
+
+        void main() {
+            fragColor = vec4(vColor, 1.0);
+        }
+    </script>
+    <canvas id="webgl-canvas"></canvas>
+    <script type="application/javascript" src="Scripts/main.js">
+    </script>
 	</body>
 </html>
 
-<script
-  src="https://code.jquery.com/jquery-3.2.1.min.js"
-  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-  crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.min.js"></script>
-<script src="./Scripts/main.js"></script>
+<!-- Based on code from: https://tsherif.github.io/webgl2examples/triangle.html -->
+
+<!--<script-->
+  <!--src="https://code.jquery.com/jquery-3.2.1.min.js"-->
+  <!--integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="-->
+  <!--crossorigin="anonymous"></script>-->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.min.js"></script>-->
+<!--<script src="./Scripts/main.js"></script>-->
+
+

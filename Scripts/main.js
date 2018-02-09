@@ -1,3 +1,5 @@
+/*jshint esversion: 6 */
+
 console.log("Hello, World!");
 
 //Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
@@ -19,7 +21,7 @@ var canvas = document.getElementById("webgl-canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-var gl = canvas.getContext("webgl2");
+const gl = canvas.getContext("webgl2");
 if (!gl) {
     console.error("WebGL 2 not available");
     document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
@@ -31,8 +33,8 @@ gl.clearColor(0, 0, 0, 1);
 // SET UP PROGRAM
 /////////////////////
 
-var vsSource = document.getElementById("vs").text.trim();
-var fsSource = document.getElementById("fs").text.trim();
+const vsSource = document.getElementById("vs").text.trim();
+const fsSource = document.getElementById("fs").text.trim();
 
 var vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(vertexShader, vsSource);
@@ -62,7 +64,7 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 gl.useProgram(program);
 
 //Boilerplate for uniform
-var mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
+const mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 
 /////////////////////
 // SET UP GEOMETRY
@@ -71,7 +73,7 @@ var mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 var triangleArray = gl.createVertexArray();
 gl.bindVertexArray(triangleArray);
 
-var positions = new Float32Array([
+const positions = new Float32Array([
     -0.5, -0.5, -1.0,
     0.5, -0.5, -1.0,
     0.0, 0.5, -1.0
@@ -83,7 +85,7 @@ gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(0);
 
-var colors = new Float32Array([
+const colors = new Float32Array([
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0

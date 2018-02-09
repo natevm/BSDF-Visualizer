@@ -1,7 +1,5 @@
 /*jshint esversion: 6 */
 
-console.log("Hello, World!");
-
 //Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 var MDN = {};
 MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
@@ -110,13 +108,39 @@ P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
 MV = mat4.create();
 MVP = mat4.create();
 
-mat4.multiply(MV,V,M); //MV = V * M
-mat4.multiply(MVP,P,MV); //MVP = P * MV
+/*
+ *var then = 0;
+ *var rot = 0;
+ *var rot_angle = 0; //radians
+ */
 
-gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
+function updateMVP(now){
 
-////////////////
-// DRAW
-////////////////
-gl.clear(gl.COLOR_BUFFER_BIT);
-gl.drawArrays(gl.TRIANGLES, 0, 3);
+/*
+ *  now *= 0.001; //convert to seconds
+ *  var deltaTime = now - then;
+ *  then = now;
+ *
+ *  var rotationSpeed = 1.2;
+ *  rot_angle += rotationSpeed * deltaTime;
+ */
+
+  mat4.multiply(MV,V,M); //MV = V * M
+  mat4.multiply(MVP,P,MV); //MVP = P * MV
+  gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
+}
+
+/////////////////////
+// DRAW 
+/////////////////////
+function render(time){
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  updateMVP(time);
+
+  //Notes on animation from:
+  //https://webgl2fundamentals.org/webgl/lessons/webgl-animation.html
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);

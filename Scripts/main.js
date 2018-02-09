@@ -1,4 +1,4 @@
-console.log("Hello, World!")
+console.log("Hello, World!");
 
 //Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 var MDN = {};
@@ -13,7 +13,7 @@ MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
     0,               0,    (near + far) * rangeInv,  -1,
     0,               0,  near * far * rangeInv * 2,   0
   ];
-}
+};
 
 var canvas = document.getElementById("webgl-canvas");
 canvas.width = window.innerWidth;
@@ -22,7 +22,7 @@ canvas.height = window.innerHeight;
 var gl = canvas.getContext("webgl2");
 if (!gl) {
     console.error("WebGL 2 not available");
-    document.body.innerHTML = "This example requires WebGL 2 which is unavailable on this system."
+    document.body.innerHTML = "This example requires WebGL 2 which is unavailable on this system.";
 }
 
 gl.clearColor(0, 0, 0, 1);

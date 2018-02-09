@@ -34,42 +34,35 @@ gl.clearColor(0, 0, 0, 1);
 var vsSource = document.getElementById("vs").text.trim();
 var fsSource = document.getElementById("fs").text.trim();
 
-/*
- *var vertexShader = gl.createShader(gl.VERTEX_SHADER);
- *gl.shaderSource(vertexShader, vsSource);
- *gl.compileShader(vertexShader);
- *
- *if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
- *    console.error(gl.getShaderInfoLog(vertexShader));
- *}
- *
- *var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
- *gl.shaderSource(fragmentShader, fsSource);
- *gl.compileShader(fragmentShader);
- *
- *if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
- *    console.error(gl.getShaderInfoLog(fragmentShader));
- *}
- *
- *var program = gl.createProgram();
- *gl.attachShader(program, vertexShader);
- *gl.attachShader(program, fragmentShader);
- *gl.linkProgram(program);
- *
- *if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
- *    console.error(gl.getProgramInfoLog(program));
- *}
- *
- *gl.useProgram(program);
- */
+var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vertexShader, vsSource);
+gl.compileShader(vertexShader);
 
-var programInfo = twgl.createProgramInfo(gl, [vsSource, fsSource]);
-gl.useProgram(programInfo.program);
+if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(vertexShader));
+}
 
-//TODO: Are we supposed to call the twgl wrapper for getUniformLocation here?
+var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+gl.shaderSource(fragmentShader, fsSource);
+gl.compileShader(fragmentShader);
+
+if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(fragmentShader));
+}
+
+var program = gl.createProgram();
+gl.attachShader(program, vertexShader);
+gl.attachShader(program, fragmentShader);
+gl.linkProgram(program);
+
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+}
+
+gl.useProgram(program);
+
 //Boilerplate for uniform
-//var mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
-
+var mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 
 /////////////////////
 // SET UP GEOMETRY
@@ -118,9 +111,7 @@ MVP = mat4.create();
 mat4.multiply(MV,V,M); //MV = V * M
 mat4.multiply(MVP,P,MV); //MVP = P * MV
 
-//gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
-
-twgl.setUniforms(programInfo, { u_mvp: MVP });
+gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
 
 ////////////////
 // DRAW

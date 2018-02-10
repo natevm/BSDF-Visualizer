@@ -77,6 +77,24 @@ const positions = new Float32Array([
     0.0, 0.5, 0.0
 ]);
 
+/*
+ *var numPhiDivisions = 10;
+ *var numThetaDivisions = 40;
+ *var numDivisions = numPhiDivisions*numThetaDivisions; 
+ *
+ *const positions = new Float32Array(numDivisions);
+ *
+ *var dTheta = 360 / numThetaDivisions;
+ *var dPhi = 360 / numPhiDivisions;
+ *
+ *for(i = 0; i < numThetaDivisions; i++){
+ *  for(j = 0; j < numPhiDivisions; j++){
+ *    var phi = j*dPhi;
+ *    var theta = i*dTheta; 
+ *  }
+ *}
+ */
+
 var positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
@@ -95,19 +113,19 @@ gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(1);
 
 //Set up model, view
-M = mat4.create();
-V = mat4.create();
+var M = mat4.create();
+var V = mat4.create();
 mat4.translate(V,V,[0, 0, -2]);
 
 //Perspective projection
-fov = Math.PI * 0.5;
-aspectRatio = 1; //TODO: get the actual width and height
-nearClip = 1;
-farClip  = 50;
-P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+var fov = Math.PI * 0.5;
+var aspectRatio = 1; //TODO: get the actual width and height
+var nearClip = 1;
+var farClip  = 50;
+var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
 
-MV = mat4.create();
-MVP = mat4.create();
+var MV = mat4.create();
+var MVP = mat4.create();
 
 var then = 0;
 var rot = 0;
@@ -137,7 +155,8 @@ function updateMVP(now){
 /////////////////////
 function render(time){
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  //gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.drawArrays(gl.POINTS, 0, 3);
   updateMVP(time);
 
   //Notes on animation from:

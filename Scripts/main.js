@@ -71,40 +71,77 @@ const mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 var triangleArray = gl.createVertexArray();
 gl.bindVertexArray(triangleArray);
 
-const positions = new Float32Array([
-    -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.0, 0.5, 0.0
-]);
+/*
+ *const positions = new Float32Array([
+ *    -0.5, -0.5, 0.0,
+ *    0.5, -0.5, 0.0,
+ *    0.0, 0.5, 0.0
+ *]);
+ */
 
 /*
- *var numPhiDivisions = 10;
- *var numThetaDivisions = 40;
- *var numDivisions = numPhiDivisions*numThetaDivisions; 
- *
- *const positions = new Float32Array(numDivisions);
- *
- *var dTheta = 360 / numThetaDivisions;
- *var dPhi = 360 / numPhiDivisions;
- *
- *for(i = 0; i < numThetaDivisions; i++){
- *  for(j = 0; j < numPhiDivisions; j++){
- *    var phi = j*dPhi;
- *    var theta = i*dTheta; 
- *  }
- *}
+ *const colors = new Float32Array([
+ *    1.0, 0.0, 0.0,
+ *    0.0, 1.0, 0.0,
+ *    0.0, 0.0, 1.0
+ *]);
  */
+
+var numPhiDivisions = 10;
+var numThetaDivisions = 40;
+var numVerts = numPhiDivisions*numThetaDivisions; 
+
+//var numVerts = 1;
+
+//const posArrayBuf = new ArrayBuffer(3*numVerts);
+//const colorArrayBuf = new ArrayBuffer(3*numVerts);
+var positions = new Float32Array(3*numVerts);
+var colors = new Float32Array(3*numVerts);
+
+var dTheta = 360 / numThetaDivisions;
+var dPhi = 360 / numPhiDivisions;
+
+//positions[0] = 0;
+//positions[1] = 0;
+//positions[2] = 0;
+
+//colors[0] = 1;
+//colors[1] = 0;
+//colors[2] = 0;
+
+var vtx_cnt = 0; //vertex count
+for(i = 0; i < numThetaDivisions; i++){
+  for(j = 0; j < numPhiDivisions; j++){
+    //degrees 
+    var phi_deg = j*dPhi; 
+    var theta_deg = i*dTheta; 
+
+    //radians
+    var phi = (Math.PI / 180) * phi_deg;
+    var theta = (Math.PI / 180) * theta_deg;
+
+    var x = Math.sin(theta)*Math.cos(phi);
+    var y = Math.sin(theta)*Math.sin(phi);
+    var z = Math.cos(theta);
+
+    positions[3*vtx_cnt] = x;
+    positions[3*vtx_cnt + 1] = y;
+    positions[3*vtx_cnt + 2] = z;
+
+    colors[3*vtx_cnt] = 1;
+    colors[3*vtx_cnt + 1] = 1;
+    colors[3*vtx_cnt + 2] = 1;
+    //positions.set([x, y, z], 3*vtx_cnt);
+    //colors.set([Math.abs(x), Math.abs(y), Math.abs(z)], 3*vtx_cnt);
+    vtx_cnt++;
+  }
+}
 
 var positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(0); 
-const colors = new Float32Array([
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0
-]);
 
 var colorBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
@@ -115,7 +152,7 @@ gl.enableVertexAttribArray(1);
 //Set up model, view
 var M = mat4.create();
 var V = mat4.create();
-mat4.translate(V,V,[0, 0, -2]);
+mat4.translate(V,V,[0, 0, -3]);
 
 //Perspective projection
 var fov = Math.PI * 0.5;
@@ -156,7 +193,7 @@ function updateMVP(now){
 function render(time){
   gl.clear(gl.COLOR_BUFFER_BIT);
   //gl.drawArrays(gl.TRIANGLES, 0, 3);
-  gl.drawArrays(gl.POINTS, 0, 3);
+  gl.drawArrays(gl.POINTS, 0, numVerts);
   updateMVP(time);
 
   //Notes on animation from:

@@ -98,7 +98,7 @@ var numVerts = numPhiDivisions*numThetaDivisions;
 var positions = new Float32Array(3*numVerts);
 var colors = new Float32Array(3*numVerts);
 
-var dTheta = 360 / numThetaDivisions;
+var dTheta = 180 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
 
 //positions[0] = 0;

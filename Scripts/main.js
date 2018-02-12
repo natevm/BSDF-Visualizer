@@ -87,8 +87,8 @@ gl.bindVertexArray(triangleArray);
  *]);
  */
 
-var numPhiDivisions = 10;
-var numThetaDivisions = 40;
+var numPhiDivisions = 20;
+var numThetaDivisions = 10;
 var numVerts = numPhiDivisions*numThetaDivisions; 
 
 //var numVerts = 1;
@@ -98,7 +98,7 @@ var numVerts = numPhiDivisions*numThetaDivisions;
 var positions = new Float32Array(3*numVerts);
 var colors = new Float32Array(3*numVerts);
 
-var dTheta = 180 / numThetaDivisions;
+var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
 
 //positions[0] = 0;
@@ -156,7 +156,10 @@ mat4.translate(V,V,[0, 0, -3]);
 
 //Perspective projection
 var fov = Math.PI * 0.5;
-var aspectRatio = 1; //TODO: get the actual width and height
+var canvas = document.getElementById('webgl-canvas');
+var width = canvas.width;
+var height = canvas.height;
+var aspectRatio = width/height; //TODO: get the actual width and height
 var nearClip = 1;
 var farClip  = 50;
 var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);

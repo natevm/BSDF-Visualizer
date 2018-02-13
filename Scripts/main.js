@@ -87,9 +87,19 @@ var indices = [];
 var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
 
-// unit_L_dir points at the light
-var unit_L_dir = vec3.fromValues(1/Math.sqrt(2),0,1/Math.sqrt(2));
-var unit_normal_dir = vec3.fromValues(0,0,1);
+// L_hat points towards the light
+// N_hat is the normal direction
+// R_hat is L_hat reflected about the normal
+// *_hat refers to a normalized vector
+
+var L_hat = vec3.fromValues(1/Math.sqrt(2),0,1/Math.sqrt(2));
+var N_hat = vec3.fromValues(0,0,1);
+var L_plus_R = vec3.create();
+vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
+var R_hat = vec3.create(); 
+vec3.sub(R_hat, L_plus_R, L_hat);
+
+const spec_power = 20; // specular power
 
 var diffuse = function(light_dir, normal_dir){
   return vec3.dot(light_dir, normal_dir);
@@ -110,10 +120,16 @@ for(i = 0; i <= numThetaDivisions; i++){
     var y = Math.sin(theta)*Math.sin(phi);
     var z = Math.cos(theta);
 
-    var k_d = diffuse(unit_L_dir,unit_normal_dir); //diffuse coefficient
-    positions[3*vtx_idx] = k_d*x;
-    positions[3*vtx_idx + 1] = k_d*y;
-    positions[3*vtx_idx + 2] = k_d*z;
+    var V_hat = vec3.fromValues(x, y, z); //view (outgoing) direction 
+
+    var k_s = Math.pow(vec3.dot(R_hat, V_hat), spec_power);
+    var k_d = diffuse(L_hat,N_hat); //diffuse coefficient
+
+    var shade = 0.7*k_d + 0.3*k_s; 
+
+    positions[3*vtx_idx] = shade*x;
+    positions[3*vtx_idx + 1] = shade*y;
+    positions[3*vtx_idx + 2] = shade*z;
 
     //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
     var h = phi_deg; 

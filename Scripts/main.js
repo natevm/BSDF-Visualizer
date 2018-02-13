@@ -203,10 +203,10 @@ var cam_y = 0.9; // altitude of camera
 
 // BRDF is in tangent space. Tangent space is Z-up.
 // Also, we need to move the camera so that it's not at the origin 
-var V = [-1,      0,     0, 0,
-          0,      0,     1, 0,
-          0,      1,     0, 0,
-          0, -cam_y,-cam_z, 1];
+var V = [1,      0,     0, 0,
+         0,      0,     1, 0,
+         0,      1,     0, 0,
+         0, -cam_y,-cam_z, 1];
 
 var test = mat4.create();
 mat4.translate(test,test,[0, 0, -2]); 

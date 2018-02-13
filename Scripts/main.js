@@ -235,6 +235,8 @@ var rot_angle = 0; // radians
 var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
+gl.enable(gl.DEPTH_TEST);
+
 function updateMVP(now){
 
   now *= 0.001; // convert to seconds

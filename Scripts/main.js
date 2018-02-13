@@ -99,7 +99,7 @@ vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
 var R_hat = vec3.create(); 
 vec3.sub(R_hat, L_plus_R, L_hat);
 
-const spec_power = 20; // specular power
+const spec_power = 100; // specular power
 
 var diffuse = function(light_dir, normal_dir){
   return vec3.dot(light_dir, normal_dir);
@@ -142,20 +142,42 @@ for(i = 0; i <= numThetaDivisions; i++){
     colors[3*vtx_idx + 1] = rgb[1];
     colors[3*vtx_idx + 2] = rgb[2];
 
-    //line between current and next vertex
-    indices.push(vtx_idx);
-    if(j < numPhiDivisions - 1)  
-      indices.push(vtx_idx + 1); 
-    else //circle back around to the first if we are at last vertex
-      indices.push(vtx_idx - j);
+    if(i < numThetaDivisions){ //don't do the bottommost concentric ring
+      var N = numPhiDivisions;
+      var k = vtx_idx;
+      var k_plus_N = vtx_idx + N;
+      var k_plus_1;
+      var k_plus_N_plus_1;
+      
+      if(j < numPhiDivisions - 1){
+        k_plus_1 = k + 1;
+        k_plus_N_plus_1 = k_plus_N + 1; 
+      } else { // circle back around to the first if we are the last on the ring
+        k_plus_1 = vtx_idx - j;
+        k_plus_N_plus_1 = k_plus_1 + N;
+      }
 
-    //Line between current vertex and vertex directly beneath it
-    //Don't do this for the bottommost concentric ring because there's
-    //nothing beneath it
-    if(i < numThetaDivisions){
-      indices.push(vtx_idx);
-      indices.push(vtx_idx + numPhiDivisions);
+      // two tris make a quad. CCW winding order
+      indices.push(k, k_plus_N, k_plus_N_plus_1);
+      indices.push(k, k_plus_N_plus_1, k_plus_1);
     }
+
+/*
+ *    // line between current and next vertex
+ *    indices.push(vtx_idx);
+ *    if(j < numPhiDivisions - 1)  
+ *      indices.push(vtx_idx + 1); 
+ *    else // circle back around to the first if we are at last vertex
+ *      indices.push(vtx_idx - j);
+ *
+ *    // Line between current vertex and vertex directly beneath it. 
+ *    // Don't do this for the bottommost concentric ring because there's
+ *    // nothing beneath it
+ *    if(i < numThetaDivisions){
+ *      indices.push(vtx_idx);
+ *      indices.push(vtx_idx + numPhiDivisions);
+ *    }
+ */
 
     vtx_idx++;
   }
@@ -261,7 +283,8 @@ function render(time){
   //gl.drawArrays(gl.POINTS, 0, numVerts);
   
   const offset = 0; //see https://stackoverflow.com/q/10221647
-  gl.drawElements(gl.LINES, indices.length, idxType, 0);
+  //gl.drawElements(gl.LINES, indices.length, idxType, 0);
+  gl.drawElements(gl.TRIANGLES, indices.length, idxType, 0);
   updateMVP(time);
 
   // Notes on animation from:

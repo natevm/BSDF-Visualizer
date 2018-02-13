@@ -71,8 +71,8 @@ const mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 var triangleArray = gl.createVertexArray();
 gl.bindVertexArray(triangleArray);
 
-var numPhiDivisions = 20;
-var numThetaDivisions = 10;
+var numPhiDivisions = 200;
+var numThetaDivisions = 100;
 var numVerts = numPhiDivisions*(numThetaDivisions+1); 
 
 //const posArrayBuf = new ArrayBuffer(3*numVerts);
@@ -86,6 +86,14 @@ var indices = [];
 
 var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
+
+// unit_L_dir points at the light
+var unit_L_dir = vec3.fromValues(1/Math.sqrt(2),0,1/Math.sqrt(2));
+var unit_normal_dir = vec3.fromValues(0,0,1);
+
+var diffuse = function(light_dir, normal_dir){
+  return vec3.dot(light_dir, normal_dir);
+};
 
 var vtx_idx = 0; // vertex index
 for(i = 0; i <= numThetaDivisions; i++){
@@ -102,9 +110,10 @@ for(i = 0; i <= numThetaDivisions; i++){
     var y = Math.sin(theta)*Math.sin(phi);
     var z = Math.cos(theta);
 
-    positions[3*vtx_idx] = x;
-    positions[3*vtx_idx + 1] = y;
-    positions[3*vtx_idx + 2] = z;
+    var k_d = diffuse(unit_L_dir,unit_normal_dir); //diffuse coefficient
+    positions[3*vtx_idx] = k_d*x;
+    positions[3*vtx_idx + 1] = k_d*y;
+    positions[3*vtx_idx + 2] = k_d*z;
 
     //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
     var h = phi_deg; 
@@ -150,8 +159,8 @@ gl.enableVertexAttribArray(1);
 
 const indexBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-const idxType = gl.UNSIGNED_SHORT; // This is why we use Uint16Array on the next line
-gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+const idxType = gl.UNSIGNED_INT; // This is why we use Uint16Array on the next line
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
 
 // Set up model, view
 var M = mat4.create();

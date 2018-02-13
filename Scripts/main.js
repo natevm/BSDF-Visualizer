@@ -82,8 +82,7 @@ var colors = new Float32Array(3*numVerts);
 
 // Two lines per vertex, except for the last row, which only draws
 // one line per vertex.
-//var indices = new Uint16Array(4*numVerts - 2*numPhiDivisions); 
-//var indices = [];
+var indices = [];
 
 var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
@@ -99,8 +98,6 @@ for(i = 0; i <= numThetaDivisions; i++){
     var phi = (Math.PI / 180) * phi_deg;
     var theta = (Math.PI / 180) * theta_deg;
 
-    console.log(phi_deg + " " + theta_deg);
-
     var x = Math.sin(theta)*Math.cos(phi);
     var y = Math.sin(theta)*Math.sin(phi);
     var z = Math.cos(theta);
@@ -114,40 +111,46 @@ for(i = 0; i <= numThetaDivisions; i++){
     colors[3*vtx_idx + 2] = 1;
 
     //line between current and next vertex
-    //circle back around to the first if we are at last vertex
-    //indices.push(vtx_idx);
-    //indices.push(vtx_idx + (1 % numPhiDivisions));
+    indices.push(vtx_idx);
+    if(j < numPhiDivisions - 1)  
+      indices.push(vtx_idx + 1); 
+    else //circle back around to the first if we are at last vertex
+      indices.push(vtx_idx - j);
 
-    //line between current vertex and vertex directly beneath it
+    //Line between current vertex and vertex directly beneath it
     //Don't do this for the bottommost concentric ring because there's
     //nothing beneath it
-    //if(i < (numThetaDivisions - 1)){
-      //indices.push(vtx_idx);
-      //indices.push(vtx_idx + N);
-    //}
+    if(i < numThetaDivisions){
+      indices.push(vtx_idx);
+      indices.push(vtx_idx + numPhiDivisions);
+    }
 
     vtx_idx++;
   }
 }
 
-var positionBuffer = gl.createBuffer();
+const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(0); 
 
-var colorBuffer = gl.createBuffer();
+const colorBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
 gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(1);
+
+const indexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+const idxType = gl.UNSIGNED_SHORT; // This is why we use Uint16Array on the next line
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
 // Set up model, view
 var M = mat4.create();
 // var V = mat4.create();
 var cam_z = 2; // z-position of camera in camera space
 var cam_y = 0.9; // altitude of camera
-
 
 /*
  * gl-matrix stores matrices in column-major order
@@ -221,8 +224,10 @@ function updateMVP(now){
 /////////////////////
 function render(time){
   gl.clear(gl.COLOR_BUFFER_BIT);
-  //gl.drawArrays(gl.TRIANGLES, 0, 3);
-  gl.drawArrays(gl.POINTS, 0, numVerts);
+  //gl.drawArrays(gl.POINTS, 0, numVerts);
+  
+  const offset = 0; //see https://stackoverflow.com/q/10221647
+  gl.drawElements(gl.LINES, indices.length, idxType, 0);
   updateMVP(time);
 
   // Notes on animation from:

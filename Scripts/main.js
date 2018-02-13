@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 
-//Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
+// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 var MDN = {};
 MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
 
@@ -149,17 +149,50 @@ gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
 gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(1);
 
-//Set up model, view
+// Set up model, view
 var M = mat4.create();
-var V = mat4.create();
-mat4.translate(V,V,[0, 0, -3]);
+// var V = mat4.create();
+var cam_z = 2; // z-position of camera in camera space
+var cam_y = 1; // altitude of camera
 
-//Perspective projection
+
+/*
+ * gl-matrix stores matrices in column-major order
+ * Therefore, the following matrix:
+ *
+ * [1, 0, 0, 0,
+ * 0, 1, 0, 0,
+ * 0, 0, 1, 0,
+ * x, y, z, 0]
+ *
+ * Is equivalent to this in the OpenGL docs:
+ *
+ * 1 0 0 x
+ * 0 1 0 y
+ * 0 0 1 z
+ * 0 0 0 0
+ */
+
+// BRDF is in tangent space. Tangent space is Z-up.
+// Also, we need to move the camera so that it's not at the origin 
+var V = [-1,      0,     0, 0,
+          0,      0,     1, 0,
+          0,      1,     0, 0,
+          0, -cam_y,-cam_z, 1];
+
+var test = mat4.create();
+mat4.translate(test,test,[0, 0, -2]); 
+
+//var V = mat4.create();
+
+//mat4.translate(V,V,[0, 0, -2]); 
+
+// Perspective projection
 var fov = Math.PI * 0.5;
 var canvas = document.getElementById('webgl-canvas');
 var width = canvas.width;
 var height = canvas.height;
-var aspectRatio = width/height; //TODO: get the actual width and height
+var aspectRatio = width/height; // TODO: get the actual width and height
 var nearClip = 1;
 var farClip  = 50;
 var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
@@ -170,13 +203,13 @@ var MVP = mat4.create();
 var then = 0;
 var rot = 0;
 
-var rot_angle = 0; //radians
+var rot_angle = 0; // radians
 var rot_axis = vec3.create();
-vec3.set(rot_axis, 0, 1, 0);
+vec3.set(rot_axis, 0, 0, 1);
 
 function updateMVP(now){
 
-  now *= 0.001; //convert to seconds
+  now *= 0.001; // convert to seconds
   var deltaTime = now - then;
   then = now;
 
@@ -199,8 +232,8 @@ function render(time){
   gl.drawArrays(gl.POINTS, 0, numVerts);
   updateMVP(time);
 
-  //Notes on animation from:
-  //https://webgl2fundamentals.org/webgl/lessons/webgl-animation.html
+  // Notes on animation from:
+  // https://webgl2fundamentals.org/webgl/lessons/webgl-animation.html
   requestAnimationFrame(render);
 }
 

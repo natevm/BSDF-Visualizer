@@ -106,9 +106,16 @@ for(i = 0; i <= numThetaDivisions; i++){
     positions[3*vtx_idx + 1] = y;
     positions[3*vtx_idx + 2] = z;
 
-    colors[3*vtx_idx] = 1;
-    colors[3*vtx_idx + 1] = 1;
-    colors[3*vtx_idx + 2] = 1;
+    //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
+    var h = phi_deg; 
+    var s = (theta_deg / 90)*100;
+    var v = 100;
+    
+    var rgb = hsvToRgb(h, s, v);
+
+    colors[3*vtx_idx] = rgb[0];
+    colors[3*vtx_idx + 1] = rgb[1];
+    colors[3*vtx_idx + 2] = rgb[2];
 
     //line between current and next vertex
     indices.push(vtx_idx);

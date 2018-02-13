@@ -71,69 +71,62 @@ const mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
 var triangleArray = gl.createVertexArray();
 gl.bindVertexArray(triangleArray);
 
-/*
- *const positions = new Float32Array([
- *    -0.5, -0.5, 0.0,
- *    0.5, -0.5, 0.0,
- *    0.0, 0.5, 0.0
- *]);
- */
-
-/*
- *const colors = new Float32Array([
- *    1.0, 0.0, 0.0,
- *    0.0, 1.0, 0.0,
- *    0.0, 0.0, 1.0
- *]);
- */
-
 var numPhiDivisions = 20;
 var numThetaDivisions = 10;
-var numVerts = numPhiDivisions*numThetaDivisions; 
-
-//var numVerts = 1;
+var numVerts = numPhiDivisions*(numThetaDivisions+1); 
 
 //const posArrayBuf = new ArrayBuffer(3*numVerts);
 //const colorArrayBuf = new ArrayBuffer(3*numVerts);
 var positions = new Float32Array(3*numVerts);
 var colors = new Float32Array(3*numVerts);
 
+// Two lines per vertex, except for the last row, which only draws
+// one line per vertex.
+//var indices = new Uint16Array(4*numVerts - 2*numPhiDivisions); 
+//var indices = [];
+
 var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
 
-//positions[0] = 0;
-//positions[1] = 0;
-//positions[2] = 0;
-
-//colors[0] = 1;
-//colors[1] = 0;
-//colors[2] = 0;
-
-var vtx_cnt = 0; //vertex count
-for(i = 0; i < numThetaDivisions; i++){
+var vtx_idx = 0; // vertex index
+for(i = 0; i <= numThetaDivisions; i++){
   for(j = 0; j < numPhiDivisions; j++){
-    //degrees 
+    // degrees 
     var phi_deg = j*dPhi; 
     var theta_deg = i*dTheta; 
 
-    //radians
+    // radians
     var phi = (Math.PI / 180) * phi_deg;
     var theta = (Math.PI / 180) * theta_deg;
+
+    console.log(phi_deg + " " + theta_deg);
 
     var x = Math.sin(theta)*Math.cos(phi);
     var y = Math.sin(theta)*Math.sin(phi);
     var z = Math.cos(theta);
 
-    positions[3*vtx_cnt] = x;
-    positions[3*vtx_cnt + 1] = y;
-    positions[3*vtx_cnt + 2] = z;
+    positions[3*vtx_idx] = x;
+    positions[3*vtx_idx + 1] = y;
+    positions[3*vtx_idx + 2] = z;
 
-    colors[3*vtx_cnt] = 1;
-    colors[3*vtx_cnt + 1] = 1;
-    colors[3*vtx_cnt + 2] = 1;
-    //positions.set([x, y, z], 3*vtx_cnt);
-    //colors.set([Math.abs(x), Math.abs(y), Math.abs(z)], 3*vtx_cnt);
-    vtx_cnt++;
+    colors[3*vtx_idx] = 1;
+    colors[3*vtx_idx + 1] = 1;
+    colors[3*vtx_idx + 2] = 1;
+
+    //line between current and next vertex
+    //circle back around to the first if we are at last vertex
+    //indices.push(vtx_idx);
+    //indices.push(vtx_idx + (1 % numPhiDivisions));
+
+    //line between current vertex and vertex directly beneath it
+    //Don't do this for the bottommost concentric ring because there's
+    //nothing beneath it
+    //if(i < (numThetaDivisions - 1)){
+      //indices.push(vtx_idx);
+      //indices.push(vtx_idx + N);
+    //}
+
+    vtx_idx++;
   }
 }
 
@@ -153,7 +146,7 @@ gl.enableVertexAttribArray(1);
 var M = mat4.create();
 // var V = mat4.create();
 var cam_z = 2; // z-position of camera in camera space
-var cam_y = 1; // altitude of camera
+var cam_y = 0.9; // altitude of camera
 
 
 /*

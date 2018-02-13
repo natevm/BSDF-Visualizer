@@ -80,9 +80,6 @@ var numVerts = numPhiDivisions*(numThetaDivisions+1);
 var positions = new Float32Array(3*numVerts);
 var colors = new Float32Array(3*numVerts);
 
-// Two lines per vertex, except for the last row, which only draws
-// one line per vertex.
-var indices = [];
 
 var dTheta = 90 / numThetaDivisions;
 var dPhi = 360 / numPhiDivisions;
@@ -105,13 +102,10 @@ var diffuse = function(light_dir, normal_dir){
   return vec3.dot(light_dir, normal_dir);
 };
 
-var vtx_idx = 0; // vertex index
-for(i = 0; i <= numThetaDivisions; i++){
-  for(j = 0; j < numPhiDivisions; j++){
-    // degrees 
-    var phi_deg = j*dPhi; 
-    var theta_deg = i*dTheta; 
+var indices = [];
+var normals = [];
 
+var polar_to_cartesian = function(theta_deg,phi_deg){
     // radians
     var phi = (Math.PI / 180) * phi_deg;
     var theta = (Math.PI / 180) * theta_deg;
@@ -119,6 +113,20 @@ for(i = 0; i <= numThetaDivisions; i++){
     var x = Math.sin(theta)*Math.cos(phi);
     var y = Math.sin(theta)*Math.sin(phi);
     var z = Math.cos(theta);
+    return [x, y, z];
+};
+
+var vtx_idx = 0; // vertex index
+for(i = 0; i <= numThetaDivisions; i++){
+  for(j = 0; j < numPhiDivisions; j++){
+    // degrees 
+    var phi_deg = j*dPhi; 
+    var theta_deg = i*dTheta; 
+
+    var p = polar_to_cartesian(theta_deg,phi_deg); // current point
+    var x = p[0];
+    var y = p[1];
+    var z = p[2];
 
     var V_hat = vec3.fromValues(x, y, z); //view (outgoing) direction 
 
@@ -142,7 +150,9 @@ for(i = 0; i <= numThetaDivisions; i++){
     colors[3*vtx_idx + 1] = rgb[1];
     colors[3*vtx_idx + 2] = rgb[2];
 
-    if(i < numThetaDivisions){ //don't do the bottommost concentric ring
+    // Set triangle indices
+    // TODO: Take a picture of my updated diagram.
+    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
       var N = numPhiDivisions;
       var k = vtx_idx;
       var k_plus_N = vtx_idx + N;
@@ -158,9 +168,16 @@ for(i = 0; i <= numThetaDivisions; i++){
       }
 
       // two tris make a quad. CCW winding order
-      indices.push(k, k_plus_N, k_plus_N_plus_1);
-      indices.push(k, k_plus_N_plus_1, k_plus_1);
+      indices.push(k, k_plus_1, k_plus_N);
+      indices.push(k_plus_N, k_plus_1, k_plus_N_plus_1);
     }
+
+    //Set face normals
+    /*
+     *if(i < numThetaDivisions){ // don't do the bottommost concentric ring
+     *  p_k_plus_1 = polar_to_cartesian( );
+     *}
+     */
 
 /*
  *    // line between current and next vertex

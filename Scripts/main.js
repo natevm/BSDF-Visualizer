@@ -31,8 +31,8 @@ gl.clearColor(0, 0, 0, 1);
 // SET UP PROGRAM
 /////////////////////
 
-const vsSource = document.getElementById("vs").text.trim();
-const fsSource = document.getElementById("fs").text.trim();
+const vsSource = document.getElementById("phong.vert").text.trim();
+const fsSource = document.getElementById("phong.frag").text.trim();
 
 var vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(vertexShader, vsSource);
@@ -171,29 +171,6 @@ for(i = 0; i <= numThetaDivisions; i++){
       indices.push(k_plus_N, k_plus_1, k_plus_N_plus_1);
     }
 
-    // Set face normals
-    // TODO: Smooth normals, not just face normals
-    // We may want to smooth the normals in the shader, not here.
-    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
-      /*
-       * Recall from earlier: 
-       * 
-       * phi_deg = j*dPhi; 
-       * theta_deg = i*dTheta; 
-       * p = polar_to_cartesian(theta_deg,phi_deg); 
-       */
-
-      p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*dPhi);
-      p_k_plus_N = polar_to_cartesian((i+1)*dTheta, phi_deg);
-
-      // v1 = p_k_plus_1 - p
-      var v1 = vec3.create(); vec3.sub(v1, p_k_plus_1, p); 
-      // v2 = p_k_plus_N - p 
-      var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-      var normal = vec3.create(); vec3.cross(normal,v1,v2);
-
-      normals.push(normal,normal,normal);
-    }
 
 /*
  *    // line between current and next vertex
@@ -211,6 +188,28 @@ for(i = 0; i <= numThetaDivisions; i++){
  *      indices.push(vtx_idx + numPhiDivisions);
  *    }
  */
+    // Set face normals, one normal per vertex (just like position, color)
+    
+    // TODO: Smooth normals, not just face normals
+    // We may want to smooth the normals in the shader, not here.
+    /*
+     * Recall from earlier: 
+     * 
+     * phi_deg = j*dPhi; 
+     * theta_deg = i*dTheta; 
+     * p = polar_to_cartesian(theta_deg,phi_deg); 
+     */
+
+    p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*dPhi);
+    p_k_plus_N = polar_to_cartesian((i+1)*dTheta, phi_deg);
+
+    // v1 = p_k_plus_1 - p
+    var v1 = vec3.create(); vec3.sub(v1, p_k_plus_1, p); 
+    // v2 = p_k_plus_N - p 
+    var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
+    var normal = vec3.create(); vec3.cross(normal,v1,v2);
+
+    normals.push(normal[0], normal[1], normal[2]);
 
     vtx_idx++;
   }

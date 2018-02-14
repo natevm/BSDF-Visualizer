@@ -31,8 +31,8 @@ gl.clearColor(0, 0, 0, 1);
 // SET UP PROGRAM
 /////////////////////
 
-const vsSource = document.getElementById("vs").text.trim();
-const fsSource = document.getElementById("fs").text.trim();
+const vsSource = document.getElementById("phong.vert").text.trim();
+const fsSource = document.getElementById("phong.frag").text.trim();
 
 var vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(vertexShader, vsSource);
@@ -79,8 +79,6 @@ var numVerts = numPhiDivisions*(numThetaDivisions+1);
 
 //const posArrayBuf = new ArrayBuffer(3*numVerts);
 //const colorArrayBuf = new ArrayBuffer(3*numVerts);
-var positions = new Float32Array(3*numVerts);
-var colors = new Float32Array(3*numVerts);
 
 
 var dTheta = 90 / numThetaDivisions;
@@ -104,8 +102,6 @@ var diffuse = function(light_dir, normal_dir){
   return vec3.dot(light_dir, normal_dir);
 };
 
-var indices = [];
-var normals = [];
 
 var polar_to_cartesian = function(theta_deg,phi_deg){
     // radians
@@ -118,6 +114,11 @@ var polar_to_cartesian = function(theta_deg,phi_deg){
     return vec3.fromValues(x, y, z);
 };
 
+var positions = new Float32Array(4*numVerts);
+var colors = new Float32Array(4*numVerts);
+var indices = [];
+//var normals = [];
+
 var vtx_idx = 0; // vertex index
 for(i = 0; i <= numThetaDivisions; i++){
   for(j = 0; j < numPhiDivisions; j++){
@@ -126,17 +127,16 @@ for(i = 0; i <= numThetaDivisions; i++){
     var theta_deg = i*dTheta; 
 
     var p = polar_to_cartesian(theta_deg,phi_deg); // current point
-
     var V_hat = p; //view (outgoing) direction 
 
-    var k_s = Math.pow(vec3.dot(R_hat, V_hat), spec_power);
+    var k_s = Math.pow(vec3.dot(R_hat, V_hat), spec_power); //specular coeff.
     var k_d = diffuse(L_hat,N_hat); //diffuse coefficient
-
     var shade = 0.7*k_d + 0.3*k_s; 
 
-    positions[3*vtx_idx] = shade*p[0];
-    positions[3*vtx_idx + 1] = shade*p[1];
-    positions[3*vtx_idx + 2] = shade*p[2];
+    positions[4*vtx_idx] = shade*p[0];
+    positions[4*vtx_idx + 1] = shade*p[1];
+    positions[4*vtx_idx + 2] = shade*p[2];
+    positions[4*vtx_idx + 3] = 1; // homogeneous coords
 
     //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
     var h = phi_deg; 
@@ -145,9 +145,10 @@ for(i = 0; i <= numThetaDivisions; i++){
     
     var rgb = hsvToRgb(h, s, v);
 
-    colors[3*vtx_idx] = rgb[0];
-    colors[3*vtx_idx + 1] = rgb[1];
-    colors[3*vtx_idx + 2] = rgb[2];
+    colors[4*vtx_idx] = rgb[0];
+    colors[4*vtx_idx + 1] = rgb[1];
+    colors[4*vtx_idx + 2] = rgb[2];
+    colors[4*vtx_idx + 3] = 1; // alpha is 1
 
     // Set triangle indices
     // TODO: Take a picture of my updated diagram.
@@ -174,7 +175,7 @@ for(i = 0; i <= numThetaDivisions; i++){
     // Set face normals
     // TODO: Smooth normals, not just face normals
     // We may want to smooth the normals in the shader, not here.
-    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
+    //if(i < numThetaDivisions){ // don't do the bottommost concentric ring
       /*
        * Recall from earlier: 
        * 
@@ -183,17 +184,19 @@ for(i = 0; i <= numThetaDivisions; i++){
        * p = polar_to_cartesian(theta_deg,phi_deg); 
        */
 
-      p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*dPhi);
-      p_k_plus_N = polar_to_cartesian((i+1)*dTheta, phi_deg);
+      //p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*dPhi);
+      //p_k_plus_N = polar_to_cartesian((i+1)*dTheta, phi_deg);
 
-      // v1 = p_k_plus_1 - p
-      var v1 = vec3.create(); vec3.sub(v1, p_k_plus_1, p); 
-      // v2 = p_k_plus_N - p 
-      var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-      var normal = vec3.create(); vec3.cross(normal,v1,v2);
+      //// v1 = p_k_plus_1 - p
+      //var v1 = vec3.create(); vec3.sub(v1, p_k_plus_1, p); 
+      //// v2 = p_k_plus_N - p 
+      //var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
+      ////var normal = vec3.create(); vec3.cross(normal,v1,v2);
+      //////homogeneous coords 
+      ////var normal4 = vec4.create(normal[0],normal[1],normal[2],1);
 
-      normals.push(normal,normal,normal);
-    }
+      ////normals.push(normal4,normal4,normal4);
+    //}
 
 /*
  *    // line between current and next vertex
@@ -216,18 +219,26 @@ for(i = 0; i <= numThetaDivisions; i++){
   }
 }
 
+// TODO: One small optimization we could make, is to take advantage of the 
+// fact that attributes default to 0, 0, 0, 1. Therefore, we do not have to
+// assign the last value of position / normals / color assuming that we are
+// working in homogeneous coordinates, and that alpha is 1.
+
+// See https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html for
+// info on default attribute behavior.
+
 const posAttribLoc = 0;
 const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-gl.vertexAttribPointer(posAttribLoc, 3, gl.FLOAT, false, 0, 0);
+gl.vertexAttribPointer(posAttribLoc, 4, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(posAttribLoc); 
 
 const colorAttribLoc = 1;
 const colorBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-gl.vertexAttribPointer(colorAttribLoc, 3, gl.FLOAT, false, 0, 0);
+gl.vertexAttribPointer(colorAttribLoc, 4, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(colorAttribLoc);
 
 const indexBuffer = gl.createBuffer();
@@ -236,13 +247,14 @@ const idxType = gl.UNSIGNED_INT; // This is why we use Uint16Array on the next l
 // idxType is passed to our draw command later.
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
 
-const normalAttribLoc = 2;
-const normalBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-gl.vertexAttribPointer(normalAttribLoc, 3, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(normalAttribLoc); 
-
+/*
+ * const normalAttribLoc = 2;
+ * const normalBuffer = gl.createBuffer();
+ * gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+ * gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+ * gl.vertexAttribPointer(normalAttribLoc, 4, gl.FLOAT, false, 0, 0);
+ * gl.enableVertexAttribArray(normalAttribLoc); 
+ */
 
 /*
  * gl-matrix stores matrices in column-major order
@@ -318,7 +330,6 @@ function updateMVP(now){
    *mat4.multiply(MVP,P,MV); //MVP = P * MV
    *gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
    */
-
 }
 
 /////////////////////

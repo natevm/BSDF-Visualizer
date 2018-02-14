@@ -62,7 +62,9 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 gl.useProgram(program);
 
 //Boilerplate for uniform
-const mvpUniformLoc = gl.getUniformLocation(program, "u_mvp");
+const mUniformLoc = gl.getUniformLocation(program, "u_m"); // model matrix
+const vUniformLoc = gl.getUniformLocation(program, "u_v"); // view matrix
+const pUniformLoc = gl.getUniformLocation(program, "u_p"); // proj matrix
 
 /////////////////////
 // SET UP GEOMETRY
@@ -171,6 +173,7 @@ for(i = 0; i <= numThetaDivisions; i++){
 
     // Set face normals
     // TODO: Smooth normals, not just face normals
+    // We may want to smooth the normals in the shader, not here.
     if(i < numThetaDivisions){ // don't do the bottommost concentric ring
       /*
        * Recall from earlier: 
@@ -213,28 +216,33 @@ for(i = 0; i <= numThetaDivisions; i++){
   }
 }
 
+const posAttribLoc = 0;
 const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(0); 
+gl.vertexAttribPointer(posAttribLoc, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(posAttribLoc); 
 
+const colorAttribLoc = 1;
 const colorBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(1);
+gl.vertexAttribPointer(colorAttribLoc, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(colorAttribLoc);
 
 const indexBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 const idxType = gl.UNSIGNED_INT; // This is why we use Uint16Array on the next line
+// idxType is passed to our draw command later.
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
 
-// Set up model, view
-var M = mat4.create();
-// var V = mat4.create();
-var cam_z = 2; // z-position of camera in camera space
-var cam_y = 0.9; // altitude of camera
+const normalAttribLoc = 2;
+const normalBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+gl.vertexAttribPointer(normalAttribLoc, 3, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(normalAttribLoc); 
+
 
 /*
  * gl-matrix stores matrices in column-major order
@@ -253,6 +261,9 @@ var cam_y = 0.9; // altitude of camera
  * 0 0 0 0
  */
 
+var cam_z = 2; // z-position of camera in camera space
+var cam_y = 0.9; // altitude of camera
+
 // BRDF is in tangent space. Tangent space is Z-up.
 // Also, we need to move the camera so that it's not at the origin 
 var V = [1,      0,     0, 0,
@@ -260,12 +271,7 @@ var V = [1,      0,     0, 0,
          0,      1,     0, 0,
          0, -cam_y,-cam_z, 1];
 
-var test = mat4.create();
-mat4.translate(test,test,[0, 0, -2]); 
-
-//var V = mat4.create();
-
-//mat4.translate(V,V,[0, 0, -2]); 
+gl.uniformMatrix4fv(vUniformLoc, false, V);
 
 // Perspective projection
 var fov = Math.PI * 0.5;
@@ -277,8 +283,12 @@ var nearClip = 1;
 var farClip  = 50;
 var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
 
-var MV = mat4.create();
-var MVP = mat4.create();
+gl.uniformMatrix4fv(pUniformLoc, false, P);
+
+/*
+ *var MV = mat4.create();
+ *var MVP = mat4.create();
+ */
 
 var then = 0;
 var rot = 0;
@@ -288,6 +298,8 @@ var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
 gl.enable(gl.DEPTH_TEST);
+
+var M = mat4.create();
 
 function updateMVP(now){
 
@@ -299,10 +311,14 @@ function updateMVP(now){
   rot_angle += rotationSpeed * deltaTime;
 
   mat4.fromRotation(M, rot_angle, rot_axis);
+  gl.uniformMatrix4fv(mUniformLoc, false, M);
 
-  mat4.multiply(MV,V,M); //MV = V * M
-  mat4.multiply(MVP,P,MV); //MVP = P * MV
-  gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
+  /*
+   *mat4.multiply(MV,V,M); //MV = V * M
+   *mat4.multiply(MVP,P,MV); //MVP = P * MV
+   *gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
+   */
+
 }
 
 /////////////////////
@@ -322,4 +338,4 @@ function render(time){
   requestAnimationFrame(render);
 }
 
-requestAnimationFrame(render);
+requestAnimationFrame(render); //TODO: Should we move this line somewhere else?

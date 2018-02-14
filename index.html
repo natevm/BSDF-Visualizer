@@ -10,22 +10,60 @@
 	<body id="main-container">
     <script src="Scripts/hsvToRgb.js"></script>
     <script src="Scripts/gl-matrix.js"></script>
-    <!-- Nate Marshak: Not using twgl for now, I don't like it. -->
-    <!--<script src="Scripts/twgl-full.js"></script>-->
+
+<!--
+   -    <script type="vertex" id="phong.vert">
+   -        #version 300 es
+   -        
+   -        layout (location=0) in vec4 model_position;
+   -        layout (location=1) in vec3 color;
+   -        layout (location=2) in vec4 model_normal;
+   -
+   -        //uniform mat4 u_mvp;
+   -        uniform mat4 u_m;
+   -        uniform mat4 u_v;
+   -        uniform mat4 u_p;
+   -        
+   -        out vec3 vColor;
+   -
+   -        void main() {
+   -            vColor = color;
+   -            gl_PointSize = 10.0;
+   -            //gl_Position = u_mvp * position;
+   -            gl_Position = u_p * u_v * u_m * position;
+   -        }
+   -    </script>
+   -    <script type="fragment" id="phong.frag">
+   -        #version 300 es
+   -        precision highp float;
+   -        
+   -        in vec3 vColor;
+   -        out vec4 fragColor;
+   -
+   -        void main() {
+   -            fragColor = vec4(vColor, 1.0);
+   -        }
+   -    </script>
+   -->
+
+    <!-- Old shader below, color only -->
     <script type="vertex" id="vs">
         #version 300 es
         
         layout (location=0) in vec4 position;
         layout (location=1) in vec3 color;
 
-        uniform mat4 u_mvp;
+        //uniform mat4 u_mvp;
+        uniform mat4 u_m;
+        uniform mat4 u_v;
+        uniform mat4 u_p;
         
         out vec3 vColor;
 
         void main() {
             vColor = color;
             gl_PointSize = 10.0;
-            gl_Position = u_mvp * position;
+            gl_Position = u_p * u_v * u_m * position;
         }
     </script>
     <script type="fragment" id="fs">
@@ -39,6 +77,7 @@
             fragColor = vec4(vColor, 1.0);
         }
     </script>
+
     <canvas id="webgl-canvas"></canvas>
     <script type="application/javascript" src="Scripts/main.js">
     </script>

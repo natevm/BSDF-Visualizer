@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<header>
-		<title>BSDF Visualizer - CS6635 </title>
+		<title>BSDF Visualizer - CS6635</title>
 		<link rel="stylesheet" href="./Styles/flexbox.css">
 		<link rel="stylesheet" href="./Styles/fonts.css">
 		<link rel="stylesheet" href="./Styles/colors.css">
@@ -29,8 +29,8 @@
         void main() {
             vColor = color;
             gl_Position = u_p * u_v * u_m * model_position;
-            //world_position = u_m * model_position;
-            world_normal = u_m * model_normal;
+            //world_normal = u_m * model_normal;
+            world_normal = model_normal; //DEBUG ONLY.
         }
     </script>
     <script type="fragment" id="phong.frag">

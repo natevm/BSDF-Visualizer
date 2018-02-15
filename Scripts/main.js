@@ -1,5 +1,14 @@
 /*jshint esversion: 6 */
 
+/*
+ * Demonstrates that our cross product is right handed.
+ *
+ * var foo = vec3.fromValues(1,0,0);
+ * var bar = vec3.fromValues(0,1,0);
+ * var cross_test = vec3.create(); vec3.cross(cross_test, foo, bar);
+ * console.log(cross_test);
+ */
+
 // Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 var MDN = {};
 MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
@@ -73,6 +82,8 @@ const pUniformLoc = gl.getUniformLocation(program, "u_p"); // proj matrix
 var triangleArray = gl.createVertexArray();
 gl.bindVertexArray(triangleArray);
 
+//var numPhiDivisions = 6;
+//var numThetaDivisions = 3;
 var numPhiDivisions = 200;
 var numThetaDivisions = 100;
 var numVerts = numPhiDivisions*(numThetaDivisions+1); 
@@ -82,23 +93,22 @@ var numVerts = numPhiDivisions*(numThetaDivisions+1);
 var positions = new Float32Array(3*numVerts);
 var colors = new Float32Array(3*numVerts);
 
-
-var dTheta = 90 / numThetaDivisions;
-var dPhi = 360 / numPhiDivisions;
+var delTheta = 90 / numThetaDivisions;
+var delPhi = 360 / numPhiDivisions;
 
 // L_hat points towards the light
 // N_hat is the normal direction
 // R_hat is L_hat reflected about the normal
 // *_hat refers to a normalized vector
 
-var L_hat = vec3.fromValues(1/Math.sqrt(2),0,1/Math.sqrt(2));
+var L_hat = vec3.fromValues(-1/Math.sqrt(2),0,1/Math.sqrt(2));
 var N_hat = vec3.fromValues(0,0,1);
 var L_plus_R = vec3.create();
 vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
 var R_hat = vec3.create(); 
 vec3.sub(R_hat, L_plus_R, L_hat);
 
-const spec_power = 100; // specular power
+const spec_power = 20; // specular power
 
 var diffuse = function(light_dir, normal_dir){
   return vec3.dot(light_dir, normal_dir);
@@ -122,8 +132,8 @@ var vtx_idx = 0; // vertex index
 for(i = 0; i <= numThetaDivisions; i++){
   for(j = 0; j < numPhiDivisions; j++){
     // degrees 
-    var phi_deg = j*dPhi; 
-    var theta_deg = i*dTheta; 
+    var phi_deg = j*delPhi; 
+    var theta_deg = i*delTheta; 
 
     var p = polar_to_cartesian(theta_deg,phi_deg); // current point
 
@@ -195,21 +205,27 @@ for(i = 0; i <= numThetaDivisions; i++){
     /*
      * Recall from earlier: 
      * 
-     * phi_deg = j*dPhi; 
-     * theta_deg = i*dTheta; 
+     * phi_deg = j*delPhi; 
+     * theta_deg = i*delTheta; 
      * p = polar_to_cartesian(theta_deg,phi_deg); 
      */
 
-    p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*dPhi);
-    p_k_plus_N = polar_to_cartesian((i+1)*dTheta, phi_deg);
+    p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
+    p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
+    p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
 
     // v1 = p_k_plus_1 - p
-    var v1 = vec3.create(); vec3.sub(v1, p_k_plus_1, p); 
+    var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
     // v2 = p_k_plus_N - p 
     var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-    var normal = vec3.create(); vec3.cross(normal,v1,v2);
+
+    // BECAUSE THE BRDF'S COORDINATE SYSTEM IN PBRT IS LEFT HANDED,
+    // DO THE CROSS PRODUCT WITH YOUR LEFT HAND
+    var normal = vec3.create(); vec3.cross(normal,v2,v1);
+    //v1_hat = vec3.create(); v1.normalize(v1_hat, v1);
 
     normals.push(normal[0], normal[1], normal[2]);
+    //normals.push(p[0], p[1], p[2]);
 
     vtx_idx++;
   }
@@ -241,7 +257,6 @@ gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 gl.vertexAttribPointer(normalAttribLoc, 3, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(normalAttribLoc); 
-
 
 /*
  * gl-matrix stores matrices in column-major order

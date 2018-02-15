@@ -28,9 +28,12 @@ function hsvToRgb(h, s, v) {
         // Achromatic (grey)
         r = g = b = v;
         return [
-            Math.round(r * 255), 
-            Math.round(g * 255), 
-            Math.round(b * 255)
+            //Math.round(r * 255), 
+            //Math.round(g * 255), 
+            //Math.round(b * 255)
+            r,
+            g,
+            b
         ];
     }
      

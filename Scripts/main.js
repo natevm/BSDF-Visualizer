@@ -165,65 +165,64 @@ var shade_vtx = function(L_hat,N_hat,vtx){
 };
 
 var num_verts = 0;
-for(i = 0; i <= numThetaDivisions; i++){
+for(i = 0; i < numThetaDivisions; i++){
   for(j = 0; j < numPhiDivisions; j++){
     // degrees 
     var phi_deg = j*delPhi; 
     var theta_deg = i*delTheta; 
 
     // TODO: Take a picture of my updated diagram.
-    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
-    //if( i === 0 && j === 0 ){ //debug only, draw one quad
 
-      //Four position attributes of our quad
-      var p = polar_to_cartesian(theta_deg,phi_deg); 
-      var p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
-      var p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
-      var p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
+    //Four position attributes of our quad
+    var p = polar_to_cartesian(theta_deg,phi_deg); 
+    var p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
+    var p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
+    var p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
 
-      //Right now these four points are on a perfect hemisphere... 
+    //Right now these four points are on a perfect hemisphere... 
 
-      //Scale by BRDF
-      p = shade_vtx(L_hat,N_hat,p);
-      p_k_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_1);
-      p_k_plus_N = shade_vtx(L_hat,N_hat,p_k_plus_N);
-      p_k_plus_N_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
+    //Scale by BRDF
+    p = shade_vtx(L_hat,N_hat,p);
+    p_k_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_1);
+    p_k_plus_N = shade_vtx(L_hat,N_hat,p_k_plus_N);
+    p_k_plus_N_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
 
-      //Four color attributes of our quad 
-      var c = polar_to_color(theta_deg,phi_deg); 
-      var c_k_plus_1 = polar_to_color(theta_deg, (j+1)*delPhi);
-      var c_k_plus_N = polar_to_color((i+1)*delTheta, phi_deg);
-      var c_k_plus_N_plus_1 = polar_to_color((i+1)*delTheta, (j+1)*delPhi);
+    //Four color attributes of our quad 
+    var c = polar_to_color(theta_deg,phi_deg); 
+    var c_k_plus_1 = polar_to_color(theta_deg, (j+1)*delPhi);
+    var c_k_plus_N = polar_to_color((i+1)*delTheta, phi_deg);
+    var c_k_plus_N_plus_1 = polar_to_color((i+1)*delTheta, (j+1)*delPhi);
 
-      //All verts share the same normal
-      var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
-      var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-      var n = vec3.create(); vec3.cross(n,v2,v1); //the normal
+    //All verts share the same normal
+    var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
+    var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
+    var n = vec3.create(); vec3.cross(n,v2,v1); //the normal
 
-      //Push these values to the buffers. 
-      //There are two tris per quad, so we need a total of six attributes.
-      //CCW winding order
+    vec3.normalize(n,n);
 
-      //p_k --> p_k_plus_1 --> p_k_plus_N_plus_1
-      positions.push(p[0],p[1],p[2]); 
-      positions.push(p_k_plus_1[0],p_k_plus_1[1],p_k_plus_1[2]); 
-      positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-      colors.push(c[0],c[1],c[2]); 
-      colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
-      colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-      normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+    //Push these values to the buffers. 
+    //There are two tris per quad, so we need a total of six attributes.
+    //CCW winding order
 
-      //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
-      positions.push(p[0],p[1],p[2]); 
-      positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-      positions.push(p_k_plus_N[0],p_k_plus_N[1],p_k_plus_N[2]); 
-      colors.push(c[0],c[1],c[2]); 
-      colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-      colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
-      normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
-      num_verts += 6;
+    //p_k --> p_k_plus_1 --> p_k_plus_N_plus_1
+    positions.push(p[0],p[1],p[2]); 
+    positions.push(p_k_plus_1[0],p_k_plus_1[1],p_k_plus_1[2]); 
+    positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
+    colors.push(c[0],c[1],c[2]); 
+    colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
+    colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
+    normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+
+    //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
+    positions.push(p[0],p[1],p[2]); 
+    positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
+    positions.push(p_k_plus_N[0],p_k_plus_N[1],p_k_plus_N[2]); 
+    colors.push(c[0],c[1],c[2]); 
+    colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
+    colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
+    normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+    num_verts += 6;
       //num_verts += 3;
-    }
 
     // Set triangle indices
 /*

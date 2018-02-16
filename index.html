@@ -12,8 +12,7 @@
     <script src="Scripts/gl-matrix.js"></script>
     <script src='Scripts/webgl-obj-loader.js'></script>
 
-    <script type="vertex" id="phong.vert">
-        #version 300 es
+    <script type="vertex" id="phong.vert">#version 300 es
         
         layout (location=0) in vec4 model_position;
         layout (location=1) in vec3 color;
@@ -34,8 +33,7 @@
             world_normal = model_normal; //DEBUG ONLY.
         }
     </script>
-    <script type="fragment" id="phong.frag">
-        #version 300 es
+    <script type="fragment" id="phong.frag">#version 300 es
 
         precision highp float;
         

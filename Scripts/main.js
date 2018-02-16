@@ -25,8 +25,8 @@ MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
 };
 
 var canvas = document.getElementById("webgl-canvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = 800;
+canvas.height = 600;
 
 const gl = canvas.getContext("webgl2");
 if (!gl) {

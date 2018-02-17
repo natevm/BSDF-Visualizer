@@ -1,3 +1,7 @@
+/*jshint esversion: 6 */
+
+"use strict"; 
+
 // Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 var MDN = {};
 MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {

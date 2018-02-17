@@ -28,10 +28,10 @@ const lobeFsSource = document.getElementById("phong.frag").text.trim();
 
 var lobeProgram = setup_program(lobeVsSource, lobeFsSource);
 
-//Boilerplate for uniform
 const lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); // model matrix
 const lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); // view matrix
 const lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); // proj matrix
+
 /////////////////////
 // SET UP GEOMETRY
 /////////////////////

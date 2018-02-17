@@ -2,29 +2,9 @@
 
 "use strict";
 
-/*
- * Demonstrates that our cross product is right handed.
- *
- * var foo = vec3.fromValues(1,0,0);
- * var bar = vec3.fromValues(0,1,0);
- * var cross_test = vec3.create(); vec3.cross(cross_test, foo, bar);
- * console.log(cross_test);
- */
-
-// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
-var MDN = {};
-MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
-
-  var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
-  var rangeInv = 1 / (near - far);
-
-  return [
-    f / aspectRatio, 0,                          0,   0,
-    0,               f,                          0,   0,
-    0,               0,    (near + far) * rangeInv,  -1,
-    0,               0,  near * far * rangeInv * 2,   0
-  ];
-};
+/////////////////////
+// SET UP CANVAS AND GL CONTEXT
+/////////////////////
 
 var canvas = document.getElementById("webgl-canvas");
 canvas.width = 800;
@@ -37,6 +17,7 @@ if (!gl) {
 }
 
 gl.clearColor(0, 0, 0, 1);
+gl.enable(gl.DEPTH_TEST);
 
 /////////////////////
 // SET UP PROGRAM
@@ -45,15 +26,12 @@ gl.clearColor(0, 0, 0, 1);
 const lobeVsSource = document.getElementById("phong.vert").text.trim();
 const lobeFsSource = document.getElementById("phong.frag").text.trim();
 
-var program = setup_program(lobeVsSource, lobeFsSource);
-
-gl.useProgram(program);
+var lobeProgram = setup_program(lobeVsSource, lobeFsSource);
 
 //Boilerplate for uniform
-const mUniformLoc = gl.getUniformLocation(program, "u_m"); // model matrix
-const vUniformLoc = gl.getUniformLocation(program, "u_v"); // view matrix
-const pUniformLoc = gl.getUniformLocation(program, "u_p"); // proj matrix
-
+const lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); // model matrix
+const lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); // view matrix
+const lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); // proj matrix
 /////////////////////
 // SET UP GEOMETRY
 /////////////////////
@@ -272,94 +250,33 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 gl.vertexAttribPointer(normalAttribLoc, norm_dim, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(normalAttribLoc); 
 
-/*
- * gl-matrix stores matrices in column-major order
- * Therefore, the following matrix:
- *
- * [1, 0, 0, 0,
- * 0, 1, 0, 0,
- * 0, 0, 1, 0,
- * x, y, z, 0]
- *
- * Is equivalent to this in the OpenGL docs:
- *
- * 1 0 0 x
- * 0 1 0 y
- * 0 0 1 z
- * 0 0 0 0
- */
+setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
 
-var cam_z = 2; // z-position of camera in camera space
-var cam_y = 0.9; // altitude of camera
-
-// BRDF is in tangent space. Tangent space is Z-up.
-// Also, we need to move the camera so that it's not at the origin 
-var V = [1,      0,     0, 0,
-         0,      0,     1, 0,
-         0,      1,     0, 0,
-         0, -cam_y,-cam_z, 1];
-
-gl.uniformMatrix4fv(vUniformLoc, false, V);
-
-// Perspective projection
-var fov = Math.PI * 0.5;
-var canvas = document.getElementById('webgl-canvas');
-var width = canvas.width;
-var height = canvas.height;
-var aspectRatio = width/height; // TODO: get the actual width and height
-var nearClip = 1;
-var farClip  = 50;
-var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
-
-gl.uniformMatrix4fv(pUniformLoc, false, P);
-
-/*
- *var MV = mat4.create();
- *var MVP = mat4.create();
- */
-
-var then = 0;
+var prev_time = 0; //time when the previous frame was drawn
 var rot = 0;
 
 var rot_angle = 0; // radians
 var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
-gl.enable(gl.DEPTH_TEST);
 
 var M = mat4.create();
-
-function updateMVP(now){
-
-  now *= 0.001; // convert to seconds
-  var deltaTime = now - then;
-  then = now;
-
-  var rotationSpeed = 1.2;
-  rot_angle += rotationSpeed * deltaTime;
-
-  mat4.fromRotation(M, rot_angle, rot_axis);
-  gl.uniformMatrix4fv(mUniformLoc, false, M);
-
-  /*
-   *mat4.multiply(MV,V,M); //MV = V * M
-   *mat4.multiply(MVP,P,MV); //MVP = P * MV
-   *gl.uniformMatrix4fv(mvpUniformLoc, false, MVP);
-   */
-
-}
 
 /////////////////////
 // DRAW 
 /////////////////////
 function render(time){
+  time *= 0.001; // convert to seconds
+  var deltaTime = time - prev_time;
+
   gl.clear(gl.COLOR_BUFFER_BIT);
   //gl.drawArrays(gl.POINTS, 0, numVerts);
   
   const offset = 0; //see https://stackoverflow.com/q/10221647
   gl.drawArrays(gl.TRIANGLES, 0, num_verts);
-  updateMVP(time);
+  updateMVP(deltaTime, lobeProgram, lobe_mUniformLoc);
 
+  prev_time = time;
   // Notes on animation from:
   // https://webgl2fundamentals.org/webgl/lessons/webgl-animation.html
   requestAnimationFrame(render);

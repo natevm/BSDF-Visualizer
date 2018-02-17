@@ -1,5 +1,7 @@
 /*jshint esversion: 6 */
 
+"use strict";
+
 /*
  * Demonstrates that our cross product is right handed.
  *
@@ -165,8 +167,8 @@ var shade_vtx = function(L_hat,N_hat,vtx){
 };
 
 var num_verts = 0;
-for(i = 0; i < numThetaDivisions; i++){
-  for(j = 0; j < numPhiDivisions; j++){
+for(var i = 0; i < numThetaDivisions; i++){
+  for(var j = 0; j < numPhiDivisions; j++){
     // degrees 
     var phi_deg = j*delPhi; 
     var theta_deg = i*delTheta; 

@@ -110,8 +110,10 @@ var get_reflected = function(L_hat,N_hat){
   return R_hat;
 };
 
+//incident angle is the angle between the incident light vector and the normal
 var compute_L_hat = function(in_angle){
-  return vec3.fromValues(-Math.cos(in_angle),0,Math.sin(in_angle));
+  return vec3.fromValues(-Math.cos(Math.PI/2 - in_angle),0,
+    Math.sin(Math.PI/2 - in_angle));
 };
 
 var compute_N_hat = function(){

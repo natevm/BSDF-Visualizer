@@ -42,7 +42,7 @@ const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 /////////////////////
 // SET UP GEOMETRY 
 /////////////////////
-var initial_in_angle_deg = 30;
+var initial_in_angle_deg = 45;
 var in_angle = (Math.PI/180)*initial_in_angle_deg;
 
 // L_hat points towards the light

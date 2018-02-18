@@ -12,7 +12,6 @@
     <script src="Scripts/gl-matrix.js"></script>
     <script src='Scripts/webgl-obj-loader.js'></script>
     <script src="Scripts/gl-wrangling-funcs.js"></script>
-
     <script type="vertex" id="phong.vert">#version 300 es
         
         layout (location=0) in vec4 model_position;
@@ -146,10 +145,14 @@
     </script>
 
     <canvas id="webgl-canvas"></canvas>
-    <script type="application/javascript" src="Scripts/main.js">
-	</script>
-	<canvas id="webgl-canvas2"></canvas>
-	<script type="application/javascript" src="Scripts/meshview.js">
-    </script>
-	</body>
+    <script type="application/javascript" src="Scripts/main.js"></script>
+    <canvas id="webgl-canvas2"></canvas>
+    <script type="application/javascript" src="Scripts/meshview.js"></script>
+    <br>
+    <div class="slidecontainer">
+    Incident Angle: 0
+    <input type="range" min="0" max="90" value="45" class="slider" id="inAngle_slider">
+    90
+    </div>
+  </body>
 </html>

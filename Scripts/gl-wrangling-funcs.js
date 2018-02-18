@@ -68,8 +68,8 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
    * 0 0 0 0
    */
 
-  var cam_z = 2; // z-position of camera in camera space
-  var cam_y = 0.9; // altitude of camera
+  var cam_z = 1.5; // z-position of camera in camera space
+  var cam_y = 0.5; // altitude of camera
 
   // BRDF is in tangent space. Tangent space is Z-up.
   // Also, we need to move the camera so that it's not at the origin 
@@ -87,7 +87,7 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
   var width = canvas.width;
   var height = canvas.height;
   var aspectRatio = width/height; // TODO: get the actual width and height
-  var nearClip = 1;
+  var nearClip = 0.5;
   var farClip  = 50;
   var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
 
@@ -95,29 +95,77 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
 };
 
 //prev_time is the time when previous frame was drawn
-function updateMVP(deltaTime,program,mUniformLoc){
-
-  var rotationSpeed = 1.2;
-  rot_angle += rotationSpeed * deltaTime;
-
-  mat4.fromRotation(M, rot_angle, rot_axis);
-
+function updateMVP(M,program,mUniformLoc){
   gl.useProgram(program);
   gl.uniformMatrix4fv(mUniformLoc, false, M);
 };
 
-var lobe_setupGeometry = function(in_angle_deg){
-  
-  var in_angle = (Math.PI/180)*in_angle_deg;
+//output is unit reflected vector
+var get_reflected = function(L_hat,N_hat){
+  var L_plus_R = vec3.create();
+  vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
+  var R_hat = vec3.create(); 
+  vec3.sub(R_hat, L_plus_R, L_hat);
+  vec3.normalize(R_hat,R_hat); //I don't think this is needed?
+  return R_hat;
+};
 
-  var triangleArray = gl.createVertexArray();
-  gl.bindVertexArray(triangleArray);
+var compute_L_hat = function(in_angle){
+  return vec3.fromValues(-Math.cos(in_angle),0,Math.sin(in_angle));
+};
+
+var compute_N_hat = function(){
+  return vec3.fromValues(0,0,1);
+};
+
+//ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
+var line_setupGeometry = function(lineVAO, L_hat, N_hat){
+  
+  gl.bindVertexArray(lineVAO);
+
+  var R_hat = get_reflected(L_hat, N_hat); 
+
+  //Dimensionality of positions, colors, normals
+  var pos_dim = 3;
+  var color_dim = 3;
+
+  var positions = [];
+  var colors = [];
+
+  //Incoming ray (cyan)
+  positions.push(L_hat[0], L_hat[1], L_hat[2]); colors.push(0,1,1);
+  positions.push(0, 0, 0); colors.push(0,1,1);
+
+  //Outgoing ray (magenta)
+  positions.push(0, 0, 0); colors.push(1,0,1);
+  positions.push(R_hat[0], R_hat[1], R_hat[2]); colors.push(1,0,1);
+
+  const posAttribLoc = 0;
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(posAttribLoc); 
+
+  const colorAttribLoc = 1;
+  const colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(colorAttribLoc);
+
+  var num_verts = positions.length/pos_dim; 
+  return num_verts;
+};
+
+//ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
+//NORMALS AT ATTRIBUTE 2 IN SHADER.
+var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
+  
+  gl.bindVertexArray(lobeVAO);
 
   var numPhiDivisions = 200;
   var numThetaDivisions = 100;
-
-  //var numPhiDivisions = 6;
-  //var numThetaDivisions = 3;
 
   //Dimensionality of positions, colors, normals
   var pos_dim = 3;
@@ -130,25 +178,8 @@ var lobe_setupGeometry = function(in_angle_deg){
   var delTheta = 90 / numThetaDivisions;
   var delPhi = 360 / numPhiDivisions;
 
-  // L_hat points towards the light
-  // N_hat is the normal direction
-  // *_hat refers to a normalized vector
-
-  //var L_hat = vec3.fromValues(-1/Math.sqrt(2),0,1/Math.sqrt(2));
-  var L_hat = vec3.fromValues(-Math.cos(in_angle),0,Math.sin(in_angle));
-  var N_hat = vec3.fromValues(0,0,1);
-
   var diffuse = function(light_dir, normal_dir){
     return Math.max(0,vec3.dot(light_dir, normal_dir));
-  };
-
-  //output is unit reflected vector
-  var get_reflected = function(L_hat,N_hat){
-    var L_plus_R = vec3.create();
-    vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-    var R_hat = vec3.create(); 
-    vec3.sub(R_hat, L_plus_R, L_hat);
-    return R_hat;
   };
 
   var phong = function(L_hat, V_hat, N_hat){

@@ -142,6 +142,14 @@ var line_setupGeometry = function(lineVAO, L_hat, N_hat){
   positions.push(0, 0, 0); colors.push(1,0,1);
   positions.push(R_hat[0], R_hat[1], R_hat[2]); colors.push(1,0,1);
 
+  //TODO: Draw x (red), y (green), z (blue) axes 
+  positions.push(0, 0, 0); colors.push(1, 0, 0);
+  positions.push(1, 0, 0); colors.push(1, 0, 0);
+  positions.push(0, 0, 0); colors.push(0, 1, 0);
+  positions.push(0, 1, 0); colors.push(0, 1, 0);
+  positions.push(0, 0, 0); colors.push(0, 0, 1);
+  positions.push(0, 0, 1); colors.push(0, 0, 1);
+
   const posAttribLoc = 0;
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

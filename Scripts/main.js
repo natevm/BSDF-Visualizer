@@ -90,6 +90,9 @@ var M = mat4.create();
 /////////////////////
 
 var output_incidentAngle = document.getElementById("output_incidentAngle");
+//This needs to be done once when the app starts
+output_incidentAngle.innerHTML = default_in_angle_deg;
+
 document.getElementById("slider_incidentAngle").oninput = function(event) {
   var in_angle_deg = event.target.value;
   output_incidentAngle.innerHTML = in_angle_deg;
@@ -99,8 +102,13 @@ document.getElementById("slider_incidentAngle").oninput = function(event) {
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 
-//This needs to be done once when the app starts
-output_incidentAngle.innerHTML = default_in_angle_deg;
+var output_camRot = document.getElementById("output_camRot");
+document.getElementById("slider_camRot").oninput = function(event) {
+  var rot_angle_deg = event.target.value;
+  rot_angle = Math.radians(rot_angle_deg);
+  mat4.fromRotation(M, rot_angle, rot_axis);
+};
+
 
 /////////////////////
 // DRAW 
@@ -112,10 +120,10 @@ function render(time){
   gl.clear(gl.COLOR_BUFFER_BIT);
   //gl.drawArrays(gl.POINTS, 0, numVerts);
   
-  //update M
-  var rotationSpeed = 1.2;
-  rot_angle += rotationSpeed * deltaTime;
-  mat4.fromRotation(M, rot_angle, rot_axis);
+  //auto-rotate M
+  //var rotationSpeed = 1.2;
+  //rot_angle += rotationSpeed * deltaTime;
+  //mat4.fromRotation(M, rot_angle, rot_axis);
 
   //Draw lobe
   gl.bindVertexArray(lobeVAO);

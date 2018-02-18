@@ -148,7 +148,9 @@
     <canvas id="webgl-canvas2"></canvas>
     <script type="application/javascript" src="Scripts/meshview.js"></script>
     <br>
-    Incident Angle: <output id="output_incidentAngle"></output> <input id="slider_incidentAngle" type="range" min="0" max="90" step="1" value="45"/>
+    Incident &theta;: <input id="slider_incidentAngle" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentAngle"></output>
+    <br>
+    Camera Rotation: <input id="slider_camRot" type="range" min="-180" max="180" step="1" value="0"/> 
 
     <!-- It looks like main.js has to be below the shaders and UI elements like 
       the slider. Otherwise document.getElementById() does not seem to work. -->

@@ -39,11 +39,23 @@ const line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
 const line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v"); 
 const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p"); 
 
+// Conversion code snippet from:
+// http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion/
+
+// Converts from degrees to radians.
+Math.radians = function(degrees) {
+  return degrees * Math.PI / 180;
+};
+
+// Converts from radians to degrees.
+Math.degrees = function(radians) {
+  return radians * 180 / Math.PI;
+};
+
 /////////////////////
 // SET UP GEOMETRY 
 /////////////////////
-var initial_in_angle_deg = 45;
-var in_angle = (Math.PI/180)*initial_in_angle_deg;
+var in_angle = Math.radians(45);
 
 // L_hat points towards the light
 // N_hat is the normal direction
@@ -71,6 +83,17 @@ var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
 var M = mat4.create();
+
+/////////////////////
+// SET UP UI CALLBACKS 
+/////////////////////
+document.getElementById("slider").onchange = function(event) {
+  //console.log(event.target.value);
+  in_angle = Math.radians(event.target.value); 
+  L_hat = compute_L_hat(in_angle);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+};
 
 /////////////////////
 // DRAW 

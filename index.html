@@ -145,14 +145,13 @@
     </script>
 
     <canvas id="webgl-canvas"></canvas>
-    <script type="application/javascript" src="Scripts/main.js"></script>
     <canvas id="webgl-canvas2"></canvas>
     <script type="application/javascript" src="Scripts/meshview.js"></script>
     <br>
-    <div class="slidecontainer">
-    Incident Angle: 0
-    <input type="range" min="0" max="90" value="45" class="slider" id="inAngle_slider">
-    90
-    </div>
+    <input id="slider" type="range" min="0" max="90" step="1" value="45"/>
+
+    <!-- It looks like main.js has to be below the shaders and UI elements like 
+      the slider. Otherwise document.getElementById() does not seem to work. -->
+    <script type="application/javascript" src="Scripts/main.js"></script>
   </body>
 </html>

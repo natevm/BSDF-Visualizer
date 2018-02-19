@@ -261,7 +261,7 @@ function webGLStart(meshes){
 window.onload = function (){
     let p = OBJ.downloadModels([
         {
-            obj: 'models/teapot.mesh',
+            obj: 'models/teapot.obj',
             mtl: true,
         }, 
     ]);

@@ -1,0 +1,22 @@
+:root {
+	--main-bg-color: #101010;
+	--transparent-color1: rgba(39, 40, 51, 0.965);
+	--transparent-color2: rgba(39, 40, 51, 1.0);
+	--transparent: rgba(0,0,0,0);
+	--transparent1: rgba(0,0,0,.1);
+	--transparent2: rgba(0,0,0,.2);
+	--offWhite: rgba(255, 255, 255, 0.75);
+	--pink: #e44c65;
+}
+
+body {
+	background-color: var(--main-bg-color);
+}
+
+#brdf-menu, #brdf-viewport, 
+#model-menu, #model-viewport 
+{
+	background-color: var(--transparent-color1);
+	box-shadow: 0 0 0.25em 0 rgba(0, 0, 0, 0.25);
+	margin: 1px;
+}

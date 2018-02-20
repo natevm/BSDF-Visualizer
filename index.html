@@ -8,7 +8,20 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	</header>
 	<body id="main-container">
-    <script src="Scripts/hsvToRgb.js"></script>
+
+    <div id="brdf-column">
+      <div id="brdf-menu">BRDF menu</div>
+      <canvas id="brdf-canvas">BRDF viewport</canvas>
+    </div>
+
+    <div id="model-column">
+      <div id="model-menu">Model menu</div>
+       <img id="model-viewport" src="http://via.placeholder.com/512x512">
+    </div>
+
+	</body>
+
+  <script src="Scripts/hsvToRgb.js"></script>
     <script src="Scripts/gl-matrix.js"></script>
 
     <script type="vertex" id="phong.vert">
@@ -92,9 +105,5 @@
    -        }
    -    </script>
    -->
-
-    <canvas id="webgl-canvas"></canvas>
-    <script type="application/javascript" src="Scripts/main.js">
-    </script>
-	</body>
+    <script type="application/javascript" src="Scripts/main.js"></script>
 </html>

@@ -24,9 +24,9 @@ MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
   ];
 };
 
-var canvas = document.getElementById("webgl-canvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+var canvas = document.getElementById("brdf-canvas");
+canvas.width = 512;
+canvas.height = 512;
 
 const gl = canvas.getContext("webgl2");
 if (!gl) {
@@ -324,7 +324,7 @@ gl.uniformMatrix4fv(vUniformLoc, false, V);
 
 // Perspective projection
 var fov = Math.PI * 0.5;
-var canvas = document.getElementById('webgl-canvas');
+var canvas = document.getElementById('brdf-canvas');
 var width = canvas.width;
 var height = canvas.height;
 var aspectRatio = width/height; // TODO: get the actual width and height

@@ -8,9 +8,10 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	</header>
 	<body id="main-container">
-    <script src="Scripts/hsvToRgb.js"></script>
     <script src="Scripts/gl-matrix.js"></script>
+    <script src="Scripts/math-utils.js"></script>
     <script src='Scripts/webgl-obj-loader.js'></script>
+    <script src="Scripts/hsvToRgb.js"></script>
     <script src="Scripts/gl-wrangling-funcs.js"></script>
     <script type="vertex" id="phong.vert">#version 300 es
         
@@ -148,7 +149,9 @@
     <canvas id="webgl-canvas2"></canvas>
     <script type="application/javascript" src="Scripts/meshview.js"></script>
     <br>
-    Incident &theta;: <input id="slider_incidentAngle" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentAngle"></output>
+    Incident &theta;: <input id="slider_incidentTheta" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentTheta"></output>
+    <br>
+    Incident &phi;: <input id="slider_incidentPhi" type="range" min="-180" max="180" step="1" value="0"/> <output id="output_incidentPhi"></output>
     <br>
     Camera Rotation: <input id="slider_camRot" type="range" min="-180" max="180" step="1" value="0"/> 
 

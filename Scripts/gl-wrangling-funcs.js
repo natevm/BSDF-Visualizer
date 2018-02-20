@@ -111,10 +111,26 @@ var get_reflected = function(L_hat,N_hat){
 };
 
 //incident angle is the angle between the incident light vector and the normal
-var compute_L_hat = function(in_angle){
-  return vec3.fromValues(-Math.cos(Math.PI/2 - in_angle),0,
-    Math.sin(Math.PI/2 - in_angle));
+
+var compute_L_hat = function(in_theta_deg, in_phi_deg){
+  var in_theta = Math.radians(in_theta_deg);
+  var in_phi = Math.radians(in_phi_deg); 
+
+  var rot_Y = mat3.rotY(-in_theta);
+  var rot_Z = mat3.rotZ(in_phi);
+
+  var rot = mat3.create(); mat3.multiply(rot, rot_Z, rot_Y);
+  var L_hat_unrotated = vec3.fromValues(0,0,1);
+  var L_hat = vec3.create(); vec3.transformMat3(L_hat, L_hat_unrotated, rot);
+  return L_hat;
 };
+
+/*
+ *var compute_L_hat = function(in_angle){
+ *  return vec3.fromValues(-Math.cos(Math.PI/2 - in_angle),0,
+ *    Math.sin(Math.PI/2 - in_angle));
+ *};
+ */
 
 var compute_N_hat = function(){
   return vec3.fromValues(0,0,1);
@@ -153,14 +169,14 @@ var line_setupGeometry = function(lineVAO, L_hat, N_hat){
   const posAttribLoc = 0;
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(posAttribLoc); 
 
   const colorAttribLoc = 1;
   const colorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(colorAttribLoc);
 
@@ -342,14 +358,14 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
   const posAttribLoc = 0;
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(posAttribLoc); 
 
   const colorAttribLoc = 1;
   const colorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(colorAttribLoc);
 
@@ -362,7 +378,7 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
   const normalAttribLoc = 2;
   const normalBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(normalAttribLoc, norm_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(normalAttribLoc); 
   return num_verts;

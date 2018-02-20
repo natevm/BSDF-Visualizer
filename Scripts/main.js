@@ -42,26 +42,20 @@ const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 // Conversion code snippet from:
 // http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion/
 
-// Converts from degrees to radians.
-Math.radians = function(degrees) {
-  return degrees * Math.PI / 180;
-};
-
-// Converts from radians to degrees.
-Math.degrees = function(radians) {
-  return radians * 180 / Math.PI;
-};
-
 /////////////////////
 // SET UP GEOMETRY 
 /////////////////////
-const default_in_angle_deg = 45; //Default value when we open the app.
-var in_angle = Math.radians(default_in_angle_deg);
+//const default_in_angle_deg = 45; //Default value when we open the app.
+//var in_angle = Math.radians(default_in_angle_deg);
 
 // L_hat points towards the light
 // N_hat is the normal direction
 // *_hat refers to a normalized vector
-var L_hat = compute_L_hat(in_angle);
+
+var in_theta_deg = 45;
+var in_phi_deg = 0;
+
+var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
 var N_hat = compute_N_hat();
 
 var lobeVAO = gl.createVertexArray();
@@ -89,15 +83,26 @@ var M = mat4.create();
 // SET UP UI CALLBACKS 
 /////////////////////
 
-var output_incidentAngle = document.getElementById("output_incidentAngle");
-//This needs to be done once when the app starts
-output_incidentAngle.innerHTML = default_in_angle_deg;
+var output_incidentTheta = document.getElementById("output_incidentTheta");
+var output_incidentPhi = document.getElementById("output_incidentPhi");
 
-document.getElementById("slider_incidentAngle").oninput = function(event) {
-  var in_angle_deg = event.target.value;
-  output_incidentAngle.innerHTML = in_angle_deg;
-  in_angle = Math.radians(in_angle_deg); 
-  L_hat = compute_L_hat(in_angle);
+//Set initial values
+//TODO: this is a hack, we should be querying the default value from the HTML tag
+output_incidentTheta.innerHTML = in_theta_deg; 
+output_incidentPhi.innerHTML = in_phi_deg; 
+
+document.getElementById("slider_incidentTheta").oninput = function(event) {
+  in_theta_deg = event.target.value;
+  output_incidentTheta.innerHTML = in_theta_deg;
+  L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+};
+
+document.getElementById("slider_incidentPhi").oninput = function(event) {
+  in_phi_deg = event.target.value;
+  output_incidentPhi.innerHTML = in_phi_deg;
+  L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
   num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
@@ -108,7 +113,6 @@ document.getElementById("slider_camRot").oninput = function(event) {
   rot_angle = Math.radians(rot_angle_deg);
   mat4.fromRotation(M, rot_angle, rot_axis);
 };
-
 
 /////////////////////
 // DRAW 

@@ -8,102 +8,173 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	</header>
 	<body id="main-container">
-
     <div id="brdf-column">
       <div id="brdf-menu">BRDF menu</div>
-      <canvas id="brdf-canvas">BRDF viewport</canvas>
+      <canvas id="brdf-canvas">BRDF canvas</canvas>
     </div>
 
     <div id="model-column">
       <div id="model-menu">Model menu</div>
-       <img id="model-viewport" src="http://via.placeholder.com/512x512">
+      <canvas id="model-canvas">Model canvas</canvas>
     </div>
-
+    <br>
+  <!-- Incident &theta;: <input id="slider_incidentTheta" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentTheta"></output>
+  <br>
+  Incident &phi;: <input id="slider_incidentPhi" type="range" min="-180" max="180" step="1" value="0"/> <output id="output_incidentPhi"></output>
+  <br>
+  Camera Rotation: <input id="slider_camRot" type="range" min="-180" max="180" step="1" value="0"/>  -->
 	</body>
 
+
+<script type="vertex" id="phong.vert">
+    #version 300 es
+    layout (location=0) in vec4 model_position;
+    layout (location=1) in vec3 color;
+    layout (location=2) in vec4 model_normal;
+
+    uniform mat4 u_m;
+    uniform mat4 u_v;
+    uniform mat4 u_p;
+    
+    out vec3 vColor;
+    //out vec4 world_position;
+    out vec4 world_normal;
+
+    void main() {
+        vColor = color;
+        gl_Position = u_p * u_v * u_m * model_position;
+        //world_normal = u_m * model_normal;
+        world_normal = model_normal; //DEBUG ONLY.
+    }
+  </script>
+  <script type="fragment" id="phong.frag">
+    #version 300 es
+    precision highp float;
+    
+    //uniform vec3 u_world_light_pos; 
+
+    //float k_a = 0.1;
+    //float k_d = 0.9;
+
+    in vec3 vColor;
+    //in vec4 world_position; 
+    in vec4 world_normal; 
+
+    out vec4 fragColor;
+
+    void main() {
+        vec3 norm = normalize(world_normal.xyz);
+        //vec3 to_light = normalize((u_world_light_pos.xyz - world_position.xyz)); 
+        //fragColor = k_a*vColor + k_d*dot(norm, to_light)*vColor;
+        //vec3 final_color = 0.01 * norm + 0.99 * vColor;
+        vec3 final_color = 0.99 * norm + 0.01 * vColor;  
+        fragColor = vec4(final_color, 1.0); 
+    }
+  </script>
+
+  <!-- TODO: Move shaders outside of index.html -->
+  <script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+    varying vec3 vTransformedNormal;
+    varying vec4 vPosition;
+
+    varying vec3 vDiffuse;
+    varying vec3 vSpecular;
+    varying float vSpecularExponent;
+
+    void main(void) {
+        vec3 V = -normalize(vPosition.xyz);
+        vec3 L = normalize(vec3(1.0, 1.0, 1.0));
+        vec3 H = normalize(L + V);
+        vec3 N = normalize(vTransformedNormal);
+
+        vec3 color = vDiffuse * dot(N, L) +
+          vSpecular * pow(dot(H, N), vSpecularExponent);
+        gl_FragColor = vec4(color, 1.0);
+    }
+  </script>
+  <script id="shader-vs" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec3 aVertexNormal;
+      attribute vec2 aTextureCoord;
+      attribute vec3 aDiffuse;
+      attribute vec3 aSpecular;
+      attribute float aSpecularExponent;
+
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat3 uNMatrix;
+
+      varying vec2 vTextureCoord;
+      varying vec3 vTransformedNormal;
+      varying vec4 vPosition;
+
+      varying vec3 vDiffuse;
+      varying vec3 vSpecular;
+      varying float vSpecularExponent;
+
+      void main(void) {
+          vDiffuse = aDiffuse;
+          vSpecular = aSpecular;
+          vSpecularExponent = aSpecularExponent;
+
+          vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+          gl_Position = uPMatrix * vPosition;
+          vTextureCoord = aTextureCoord;
+          vTransformedNormal = uNMatrix * aVertexNormal;
+      }
+  </script>
+
+  <!-- Old shader below, color only -->
+  <script type="vertex" id="color_only.vert">
+      #version 300 es
+      
+      layout (location=0) in vec4 position;
+      layout (location=1) in vec3 color;
+
+      //uniform mat4 u_mvp;
+      uniform mat4 u_m;
+      uniform mat4 u_v;
+      uniform mat4 u_p;
+      
+      out vec3 vColor;
+
+      void main() {
+          vColor = color;
+          gl_PointSize = 10.0;
+          gl_Position = u_p * u_v * u_m * position;
+      }
+  </script>
+  <script type="fragment" id="color_only.frag">
+      #version 300 es
+      precision highp float;
+      
+      in vec3 vColor;
+      out vec4 fragColor;
+
+      void main() {
+          fragColor = vec4(vColor, 1.0);
+      }
+  </script>
+
+  <script src="Scripts/gl-wrangling-funcs.js"></script>
+  <script src="Scripts/gl-matrix.js"></script>
+  <script src="Scripts/math-utils.js"></script>
   <script src="Scripts/hsvToRgb.js"></script>
-    <script src="Scripts/gl-matrix.js"></script>
+  <script type="application/javascript" src="Scripts/BRDFViewport.js"></script>
+  <script type="application/javascript" src="Scripts/main.js"></script>
 
-    <script type="vertex" id="phong.vert">
-        #version 300 es
-        
-        layout (location=0) in vec4 model_position;
-        layout (location=1) in vec3 color;
-        layout (location=2) in vec4 model_normal;
 
-        uniform mat4 u_m;
-        uniform mat4 u_v;
-        uniform mat4 u_p;
-        
-        out vec3 vColor;
-        //out vec4 world_position;
-        out vec4 world_normal;
 
-        void main() {
-            vColor = color;
-            gl_Position = u_p * u_v * u_m * model_position;
-            //world_normal = u_m * model_normal;
-            world_normal = model_normal; //DEBUG ONLY.
-        }
-    </script>
-    <script type="fragment" id="phong.frag">
-        #version 300 es
+  <!-- <script src="Scripts/gl-matrix.js"></script>
+  <script src="Scripts/math-utils.js"></script>
+  <script src='Scripts/webgl-obj-loader.js'></script>
+  <script src="Scripts/hsvToRgb.js"></script> -->
+  
+  
 
-        precision highp float;
-        
-        //uniform vec3 u_world_light_pos; 
+  <!-- <script type="application/javascript" src="Scripts/meshview.js"></script> -->
 
-        //float k_a = 0.1;
-        //float k_d = 0.9;
-
-        in vec3 vColor;
-        //in vec4 world_position; 
-        in vec4 world_normal; 
-
-        out vec4 fragColor;
-
-        void main() {
-            vec3 norm = normalize(world_normal.xyz);
-            //vec3 to_light = normalize((u_world_light_pos.xyz - world_position.xyz)); 
-            //fragColor = k_a*vColor + k_d*dot(norm, to_light)*vColor;
-            //vec3 final_color = 0.01 * norm + 0.99 * vColor;
-            vec3 final_color = 0.99 * norm + 0.01 * vColor;  
-            fragColor = vec4(final_color, 1.0); 
-        }
-    </script>
-
-    <!-- Old shader below, color only -->
-<!--
-   -    <script type="vertex" id="vs">
-   -        #version 300 es
-   -        
-   -        layout (location=0) in vec4 position;
-   -        layout (location=1) in vec3 color;
-   -
-   -        //uniform mat4 u_mvp;
-   -        uniform mat4 u_m;
-   -        uniform mat4 u_v;
-   -        uniform mat4 u_p;
-   -        
-   -        out vec3 vColor;
-   -
-   -        void main() {
-   -            vColor = color;
-   -            gl_PointSize = 10.0;
-   -            gl_Position = u_p * u_v * u_m * position;
-   -        }
-   -    </script>
-   -    <script type="fragment" id="fs">
-   -        #version 300 es
-   -        precision highp float;
-   -        
-   -        in vec3 vColor;
-   -        out vec4 fragColor;
-   -
-   -        void main() {
-   -            fragColor = vec4(vColor, 1.0);
-   -        }
-   -    </script>
-   -->
-    <script type="application/javascript" src="Scripts/main.js"></script>
 </html>

@@ -3,3 +3,4 @@
 
 #ctags
 tags 
+!models/*.obj

@@ -121,7 +121,7 @@ html, body {
 		justify-content: center;
 		align-items: center;
 	}
-	#model-viewport {
+	#model-canvas {
 		height: 38vw;
 		width: 38vw;
 		

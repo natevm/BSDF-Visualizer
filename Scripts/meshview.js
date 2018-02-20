@@ -1,9 +1,3 @@
-// WebGL context
-var gl2 = {};
-// the canvas2 element
-var canvas2 = null;
-// main shader program
-var shaderProgram = null;
 // main app object
 var app = {};
 app.meshes = {};
@@ -41,100 +35,11 @@ function initWebGL(canvas2){
 }
 
 function getShader(gl2, id){
-    var shaderScript = document.getElementById(id);
-    if (!shaderScript){
-        return null;
-    }
-
-    var str = "";
-    var k = shaderScript.firstChild;
-    while (k){
-        if (k.nodeType == 3){
-            str += k.textContent;
-        }
-        k = k.nextSibling;
-    }
-
-    var shader;
-    if (shaderScript.type == "x-shader/x-fragment"){
-        shader = gl2.createShader(gl2.FRAGMENT_SHADER);
-    } else if (shaderScript.type == "x-shader/x-vertex"){
-        shader = gl2.createShader(gl2.VERTEX_SHADER);
-    } else{
-        return null;
-    }
-
-    gl2.shaderSource(shader, str);
-    gl2.compileShader(shader);
-
-    if (!gl2.getShaderParameter(shader, gl2.COMPILE_STATUS)){
-        alert(gl2.getShaderInfoLog(shader));
-        return null;
-    }
-
-    return shader;
+    
 }
 
 function initShaders(){
-    var fragmentShader = getShader(gl2, "shader-fs");
-    var vertexShader = getShader(gl2, "shader-vs");
-
-    shaderProgram = gl2.createProgram();
-    gl2.attachShader(shaderProgram, vertexShader);
-    gl2.attachShader(shaderProgram, fragmentShader);
-    gl2.linkProgram(shaderProgram);
-
-    if (!gl2.getProgramParameter(shaderProgram, gl2.LINK_STATUS)){
-        alert("Could not initialise shaders");
-    }
-    gl2.useProgram(shaderProgram);
-
-    const attrs = {
-        'aVertexPosition': OBJ.Layout.POSITION.key,
-        'aVertexNormal': OBJ.Layout.NORMAL.key,
-        'aTextureCoord': OBJ.Layout.UV.key,
-        'aDiffuse': OBJ.Layout.DIFFUSE.key,
-        'aSpecular': OBJ.Layout.SPECULAR.key,
-        'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
-    };
-
-    shaderProgram.attrIndices = {};
-    for (const attrName in attrs) {
-        if (!attrs.hasOwnProperty(attrName)) {
-            continue;
-        }
-        shaderProgram.attrIndices[attrName] = gl2.getAttribLocation(shaderProgram, attrName);
-        if (shaderProgram.attrIndices[attrName] != -1) {
-            gl2.enableVertexAttribArray(shaderProgram.attrIndices[attrName]);
-        } else {
-            console.warn('Shader attribute "' + attrName + '" not found in shader. Is it undeclared or unused in the shader code?');
-        }
-    }
-
-    shaderProgram.pMatrixUniform = gl2.getUniformLocation(shaderProgram, "uPMatrix");
-    shaderProgram.mvMatrixUniform = gl2.getUniformLocation(shaderProgram, "uMVMatrix");
-    shaderProgram.nMatrixUniform = gl2.getUniformLocation(shaderProgram, "uNMatrix");
-
-    shaderProgram.applyAttributePointers = function(model) {
-        const layout = model.mesh.vertexBuffer.layout;
-        for (const attrName in attrs) {
-            if (!attrs.hasOwnProperty(attrName) || shaderProgram.attrIndices[attrName] == -1) {
-                continue;
-            }
-            const layoutKey = attrs[attrName];
-            if (shaderProgram.attrIndices[attrName] != -1) {
-                const attr = layout[layoutKey];
-                gl2.vertexAttribPointer(
-                    shaderProgram.attrIndices[attrName],
-                    attr.size,
-                    gl2[attr.type],
-                    attr.normalized,
-                    attr.stride,
-                    attr.offset);
-            }
-        }
-
-    };
+    
 }
 
 function drawObject(model){

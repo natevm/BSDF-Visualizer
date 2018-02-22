@@ -35,6 +35,9 @@ const lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); // model mat
 const lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); // view matrix
 const lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); // proj matrix
 
+const lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n"); // unit normal 
+const lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l"); // unit in-direction
+
 const lobe_delThetaUniformLoc = gl.getUniformLocation(lobeProgram, "u_delTheta"); 
 const lobe_delPhiUniformLoc = gl.getUniformLocation(lobeProgram, "u_delPhi"); 
 
@@ -58,8 +61,6 @@ const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 var in_theta_deg = 45;
 var in_phi_deg = 0;
 
-var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-var N_hat = compute_N_hat();
 
 var lobeVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1, 
@@ -67,7 +68,12 @@ var lobeVAO = gl.createVertexArray();
 
 var numPhiDivisions = 200;
 var numThetaDivisions = 100;
+var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+var N_hat = compute_N_hat();
 var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numPhiDivisions, numThetaDivisions);
+gl.useProgram(lobeProgram);
+gl.uniform3fv(lobe_nUniformLoc,N_hat);
+gl.uniform3fv(lobe_lUniformLoc,L_hat);
 gl.uniform1f(lobe_delPhiUniformLoc,calc_delPhi(numPhiDivisions));
 gl.uniform1f(lobe_delThetaUniformLoc,calc_delTheta(numThetaDivisions));
 
@@ -103,6 +109,9 @@ document.getElementById("slider_incidentTheta").oninput = function(event) {
   in_theta_deg = event.target.value;
   output_incidentTheta.innerHTML = in_theta_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+  gl.useProgram(lobeProgram);
+  gl.uniform3fv(lobe_lUniformLoc,L_hat);
+  //console.log(L_hat);
   num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
@@ -111,6 +120,7 @@ document.getElementById("slider_incidentPhi").oninput = function(event) {
   in_phi_deg = event.target.value;
   output_incidentPhi.innerHTML = in_phi_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+  //console.log(L_hat);
   num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };

@@ -23,7 +23,7 @@ gl.enable(gl.DEPTH_TEST);
 // SET UP PROGRAM
 /////////////////////
 
-const lobeVsSource = document.getElementById("phong.vert").text.trim();
+const lobeVsSource = document.getElementById("lobe.vert").text.trim();
 const lobeFsSource = document.getElementById("phong.frag").text.trim();
 const lineVsSource = document.getElementById("color_only.vert").text.trim();
 const lineFsSource = document.getElementById("color_only.frag").text.trim();

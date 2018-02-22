@@ -77,6 +77,11 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
            0,      0,     1, 0,
            0,      1,     0, 0,
            0, -cam_y,-cam_z, 1];
+  
+  //var V = [1,      0,     0, 0,
+           //0,      1,     0, 0,
+           //0,      0,     1, 0,
+           //0,      0,-cam_z, 1];
 
   gl.useProgram(program);
   gl.uniformMatrix4fv(vUniformLoc, false, V);
@@ -197,6 +202,7 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
   var pos_dim = 3;
   var color_dim = 3;
   var norm_dim = 3;
+  var polar_dim = 2;
 
   var positions = [];
   var colors = [];
@@ -222,6 +228,8 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
 
   //var indices = [];
   var normals = [];
+  var polar_coords = [];
+
 
   var polar_to_cartesian = function(theta_deg,phi_deg){
       // radians
@@ -271,10 +279,12 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
       //Right now these four points are on a perfect hemisphere... 
 
       //Scale by BRDF
-      p = shade_vtx(L_hat,N_hat,p);
-      p_k_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_1);
-      p_k_plus_N = shade_vtx(L_hat,N_hat,p_k_plus_N);
-      p_k_plus_N_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
+      /*
+       *p = shade_vtx(L_hat,N_hat,p);
+       *p_k_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_1);
+       *p_k_plus_N = shade_vtx(L_hat,N_hat,p_k_plus_N);
+       *p_k_plus_N_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
+       */
 
       //Four color attributes of our quad 
       var c = polar_to_color(theta_deg,phi_deg); 
@@ -301,6 +311,9 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
       colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
       colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
       normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+      polar_coords.push(theta_deg,phi_deg);
+      polar_coords.push(theta_deg, (j+1)*delPhi);
+      polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
 
       //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
       positions.push(p[0],p[1],p[2]); 
@@ -310,6 +323,9 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
       colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
       colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
       normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+      polar_coords.push(theta_deg,phi_deg);
+      polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
+      polar_coords.push((i+1)*delTheta, phi_deg);
       num_verts += 6;
         //num_verts += 3;
 
@@ -381,5 +397,13 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(normalAttribLoc, norm_dim, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(normalAttribLoc); 
+
+  const polar_coordAttribLoc = 3;
+  const polar_coordBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, polar_coordBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(polar_coords), gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(polar_coordAttribLoc); 
+
   return num_verts;
 };

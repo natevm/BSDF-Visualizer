@@ -1,0 +1,1 @@
+1) We should probably change gl.DYNAMIC_DRAW calls to gl.STATIC_DRAW calls when we are done doing the lobe on GPU.

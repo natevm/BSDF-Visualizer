@@ -61,7 +61,10 @@ var N_hat = compute_N_hat();
 var lobeVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1, 
 //normals at attribute 2 in lobe shader
-var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+
+var numPhiDivisions = 200;
+var numThetaDivisions = 100;
+var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numPhiDivisions, numThetaDivisions);
 
 var lineVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1 in line shader

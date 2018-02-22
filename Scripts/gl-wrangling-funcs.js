@@ -189,14 +189,22 @@ var line_setupGeometry = function(lineVAO, L_hat, N_hat){
   return num_verts;
 };
 
+var calc_delTheta = function(numThetaDivisions){
+  return 90 / numThetaDivisions;
+};
+
+var calc_delPhi = function(numPhiDivisions){
+  return 360 / numPhiDivisions;
+};
+
 //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
 //NORMALS AT ATTRIBUTE 2 IN SHADER.
-var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
+var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat, numPhiDivisions, numThetaDivisions){
   
   gl.bindVertexArray(lobeVAO);
 
-  var numPhiDivisions = 200;
-  var numThetaDivisions = 100;
+  //var numPhiDivisions = 200;
+  //var numThetaDivisions = 100;
 
   //Dimensionality of positions, colors, normals
   var pos_dim = 3;
@@ -207,8 +215,11 @@ var lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
   var positions = [];
   var colors = [];
 
-  var delTheta = 90 / numThetaDivisions;
-  var delPhi = 360 / numPhiDivisions;
+  //var delTheta = 90 / numThetaDivisions;
+  //var delPhi = 360 / numPhiDivisions;
+  
+  var delTheta = calc_delTheta(numThetaDivisions); 
+  var delPhi = calc_delPhi(numPhiDivisions);
 
   var diffuse = function(light_dir, normal_dir){
     return Math.max(0,vec3.dot(light_dir, normal_dir));

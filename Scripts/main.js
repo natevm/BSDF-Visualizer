@@ -35,6 +35,9 @@ const lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); // model mat
 const lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); // view matrix
 const lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); // proj matrix
 
+const lobe_delThetaUniformLoc = gl.getUniformLocation(lobeProgram, "u_delTheta"); 
+const lobe_delPhiUniformLoc = gl.getUniformLocation(lobeProgram, "u_delPhi"); 
+
 const line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m"); 
 const line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v"); 
 const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p"); 
@@ -65,6 +68,8 @@ var lobeVAO = gl.createVertexArray();
 var numPhiDivisions = 200;
 var numThetaDivisions = 100;
 var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numPhiDivisions, numThetaDivisions);
+gl.uniform1f(lobe_delPhiUniformLoc,calc_delPhi(numPhiDivisions));
+gl.uniform1f(lobe_delThetaUniformLoc,calc_delTheta(numThetaDivisions));
 
 var lineVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1 in line shader

@@ -98,7 +98,7 @@ document.getElementById("slider_incidentTheta").oninput = function(event) {
   in_theta_deg = event.target.value;
   output_incidentTheta.innerHTML = in_theta_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 
@@ -106,7 +106,7 @@ document.getElementById("slider_incidentPhi").oninput = function(event) {
   in_phi_deg = event.target.value;
   output_incidentPhi.innerHTML = in_phi_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 

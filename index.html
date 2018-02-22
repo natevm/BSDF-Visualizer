@@ -14,10 +14,6 @@
     <script src="Scripts/hsvToRgb.js"></script>
     <script src="Scripts/gl-wrangling-funcs.js"></script>
     <script type="vertex" id="lobe.vert">#version 300 es
-
-        #define EPSILON 0.0001
-        #define M_PI 3.1415926535897932384626433832795
-        
         layout (location=0) in vec4 model_position;
         layout (location=1) in vec3 color;
         layout (location=2) in vec4 model_normal;
@@ -31,26 +27,11 @@
         //out vec4 world_position;
         out vec4 world_normal;
 
-        //float epsilon = 0.00001;
-
         void main() {
             //Assumes our input model coordinates are on the unit sphere.
           
-            /*
-            float theta = acos(model_position.z);
-            float phi; 
-
-            if(sin(theta) < EPSILON){
-              phi = 0.0;                
-            } else {
-              phi = acos(model_position.x / sin(theta)); 
-            }
-            */
-
-            //vec3 polar_color = vec3(theta/(M_PI/2.0),phi/(2.0*M_PI),0);
             vec3 polar_color = vec3(polar_coords.x/90.0,polar_coords.y/360.0,0);
-            //vec3 polar_color = vec3(polar_coords.x/90.0,0,0);
-            //vec3 polar_color = vec3(0,polar_coords.y/360.0,0);
+
             vColor = 0.99*polar_color + 0.01*color; //DEBUG ONLY
             gl_Position = u_p * u_v * u_m * model_position;
 

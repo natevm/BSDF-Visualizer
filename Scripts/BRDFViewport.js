@@ -18,12 +18,16 @@ class BRDFViewport {
     this.lobe_mUniformLoc = null;
     this.lobe_vUniformLoc = null;
     this.lobe_pUniformLoc = null;
+    this.lobeVAO = null;
 
     this.lineProgram = null;
     this.line_mUniformLoc = null;
     this.line_vUniformLoc = null;
     this.line_pUniformLoc = null;
+    this.lineVAO = null; 
 
+    this.in_theta_deg = 45;
+    this.in_phi_deg = 0;
     this.numPhiDivisions = 200;
     this.numThetaDivisions = 100;
     this.delTheta = 90 / this.numThetaDivisions;
@@ -45,6 +49,9 @@ class BRDFViewport {
     this.setupWebGL2();
     this.createShaders();
     this.setupGeometry();
+
+    this.setupUI();
+    this.setupUICallbacks();
   }
 
   /////////////////////
@@ -96,20 +103,17 @@ class BRDFViewport {
     // N_hat is the normal direction
     // *_hat refers to a normalized vector
 
-    var in_theta_deg = 45;
-    var in_phi_deg = 0;
-
-    var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+    var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
     var N_hat = compute_N_hat();
 
-    var lobeVAO = this.gl.createVertexArray();
+    this.lobeVAO = this.gl.createVertexArray();
     //Assumes positions at attribute 0, colors at attribute 1, 
     //normals at attribute 2 in lobe shader
-    this.num_lobe_verts = this.lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+    this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
 
-    var lineVAO = this.gl.createVertexArray();
+    this.lineVAO = this.gl.createVertexArray();
     //Assumes positions at attribute 0, colors at attribute 1 in line shader
-    this.num_line_verts = this.line_setupGeometry(lineVAO, L_hat, N_hat);
+    this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
 
     this.setupMVP(this.lobeProgram, this.lobe_mUniformLoc, this.lobe_vUniformLoc, this.lobe_pUniformLoc);
     this.setupMVP(this.lineProgram, this.line_mUniformLoc, this.line_vUniformLoc, this.line_pUniformLoc);
@@ -413,36 +417,87 @@ class BRDFViewport {
   /////////////////////
   // SET UP UI CALLBACKS 
   /////////////////////
+  setupUI() {
+    this.menu = d3.select("#brdf-menu");
+    this.menu.html("");
+
+    /* Add incident theta slider */
+    var thetaInput = this.menu.append("input")
+      .attr("id", "slider_incidentTheta")
+      .attr("type", "range")
+      .attr("min", 0)
+      .attr("max", 90)
+      .attr("step", 1)
+      .attr("value", 0);
+    
+    this.menu.append("br");
+    
+    var thetaOutput = this.menu.append("output")
+       .attr("id", "output_incidentTheta")
+
+    this.menu.append("br");
+
+    /* Add incident phi slider */
+    var phiInput = this.menu.append("input")
+      .attr("id", "slider_incidentPhi")
+      .attr("type", "range")
+      .attr("min", -180)
+      .attr("max", 180)
+      .attr("step", 1)
+      .attr("value", 0);
+
+    this.menu.append("br");
+    
+    var phiOutput = this.menu.append("output")
+       .attr("id", "output_incidentPhi");
+
+    this.menu.append("br");
+
+    /* add camRot slider */
+     var camRotInput = this.menu.append("input")
+      .attr("id", "slider_camRot")
+      .attr("type", "range")
+      .attr("min", -180)
+      .attr("max", 180)
+      .attr("step", 1)
+      .attr("value", 0);
+  }
+
+  /////////////////////
+  // SET UP UI CALLBACKS 
+  /////////////////////
   setupUICallbacks() {
     var output_incidentTheta = document.getElementById("output_incidentTheta");
     var output_incidentPhi = document.getElementById("output_incidentPhi");
 
     //Set initial values
     //TODO: this is a hack, we should be querying the default value from the HTML tag
-    output_incidentTheta.innerHTML = in_theta_deg; 
-    output_incidentPhi.innerHTML = in_phi_deg; 
+    output_incidentTheta.innerHTML = this.in_theta_deg; 
+    output_incidentPhi.innerHTML = this.in_phi_deg; 
 
-    document.getElementById("slider_incidentTheta").oninput = function(event) {
-      in_theta_deg = event.target.value;
-      output_incidentTheta.innerHTML = in_theta_deg;
-      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-      num_lobe_verts = lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
-      num_line_verts = line_setupGeometry(this.lineVAO, L_hat, N_hat);
+    document.getElementById("slider_incidentTheta").oninput = (event) => {
+      this.in_theta_deg = event.target.value;
+      output_incidentTheta.innerHTML = this.in_theta_deg;
+      var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
+      var N_hat = compute_N_hat();
+      this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
+      this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
     };
 
-    document.getElementById("slider_incidentPhi").oninput = function(event) {
-      in_phi_deg = event.target.value;
-      output_incidentPhi.innerHTML = in_phi_deg;
-      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-      num_lobe_verts = lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
-      num_line_verts = line_setupGeometry(this.lineVAO, L_hat, N_hat);
+    document.getElementById("slider_incidentPhi").oninput = (event) => {
+      this.in_phi_deg = event.target.value;
+      output_incidentPhi.innerHTML = this.in_phi_deg;
+      var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
+      var N_hat = compute_N_hat();
+      this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
+      this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
     };
 
     var output_camRot = document.getElementById("output_camRot");
-    document.getElementById("slider_camRot").oninput = function(event) {
+    document.getElementById("slider_camRot").oninput = (event) => {
       var rot_angle_deg = event.target.value;
-      rot_angle = Math.radians(rot_angle_deg);
-      mat4.fromRotation(M, rot_angle, rot_axis);
+      this.rot_angle = Math.radians(rot_angle_deg);
+      mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
     };
   }
 
@@ -456,10 +511,10 @@ class BRDFViewport {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     //gl.drawArrays(gl.POINTS, 0, numVerts);
     
-    //auto-rotate M
-    var rotationSpeed = 1.2;
-    this.rot_angle += rotationSpeed * deltaTime;
-    mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
+    // //auto-rotate M
+    // var rotationSpeed = 1.2;
+    // this.rot_angle += rotationSpeed * deltaTime;
+    // mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
 
     //Draw lobe
     this.gl.bindVertexArray(this.lobeVAO);

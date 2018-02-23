@@ -114,7 +114,6 @@ document.getElementById("slider_incidentTheta").oninput = function(event) {
   gl.useProgram(lobeProgram);
   gl.uniform3fv(lobe_lUniformLoc,L_hat);
   //console.log(L_hat);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 
@@ -125,7 +124,6 @@ document.getElementById("slider_incidentPhi").oninput = function(event) {
   gl.useProgram(lobeProgram);
   gl.uniform3fv(lobe_lUniformLoc,L_hat);
   //console.log(L_hat);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 

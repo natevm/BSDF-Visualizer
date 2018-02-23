@@ -1,0 +1,2 @@
+1) We should probably change gl.DYNAMIC_DRAW calls to gl.STATIC_DRAW calls when we are done doing the lobe on GPU.
+2) There is some sort of... seam when we set the color using polar_to_color. It's definitely not a mach band... does it appear near phi=0?

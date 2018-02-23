@@ -23,7 +23,7 @@ gl.enable(gl.DEPTH_TEST);
 // SET UP PROGRAM
 /////////////////////
 
-const lobeVsSource = document.getElementById("phong.vert").text.trim();
+const lobeVsSource = document.getElementById("lobe.vert").text.trim();
 const lobeFsSource = document.getElementById("phong.frag").text.trim();
 const lineVsSource = document.getElementById("color_only.vert").text.trim();
 const lineFsSource = document.getElementById("color_only.frag").text.trim();
@@ -34,6 +34,12 @@ var lineProgram = setup_program(lineVsSource, lineFsSource);
 const lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); // model matrix
 const lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); // view matrix
 const lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); // proj matrix
+
+const lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n"); // unit normal 
+const lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l"); // unit in-direction
+
+const lobe_delThetaUniformLoc = gl.getUniformLocation(lobeProgram, "u_delTheta"); 
+const lobe_delPhiUniformLoc = gl.getUniformLocation(lobeProgram, "u_delPhi"); 
 
 const line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m"); 
 const line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v"); 
@@ -55,20 +61,30 @@ const line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 var in_theta_deg = 45;
 var in_phi_deg = 0;
 
-var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-var N_hat = compute_N_hat();
 
 var lobeVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1, 
 //normals at attribute 2 in lobe shader
-var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+
+var numPhiDivisions = 200;
+var numThetaDivisions = 100;
+var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+var N_hat = compute_N_hat();
+var num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numPhiDivisions, numThetaDivisions);
+gl.useProgram(lobeProgram);
+gl.uniform3fv(lobe_nUniformLoc,N_hat);
+gl.uniform3fv(lobe_lUniformLoc,L_hat);
+gl.uniform1f(lobe_delPhiUniformLoc,calc_delPhi(numPhiDivisions));
+gl.uniform1f(lobe_delThetaUniformLoc,calc_delTheta(numThetaDivisions));
 
 var lineVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1 in line shader
 var num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 
-setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+var V = get_initial_V(); 
+
+setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc, V);
+setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc, V);
 
 var prev_time = 0; //time when the previous frame was drawn
 var rot = 0;
@@ -77,7 +93,7 @@ var rot_angle = 0; // radians
 var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
-var M = mat4.create();
+//var M = mat4.create();
 
 /////////////////////
 // SET UP UI CALLBACKS 
@@ -95,7 +111,10 @@ document.getElementById("slider_incidentTheta").oninput = function(event) {
   in_theta_deg = event.target.value;
   output_incidentTheta.innerHTML = in_theta_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  gl.useProgram(lobeProgram);
+  gl.uniform3fv(lobe_lUniformLoc,L_hat);
+  //console.log(L_hat);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 
@@ -103,7 +122,10 @@ document.getElementById("slider_incidentPhi").oninput = function(event) {
   in_phi_deg = event.target.value;
   output_incidentPhi.innerHTML = in_phi_deg;
   L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+  gl.useProgram(lobeProgram);
+  gl.uniform3fv(lobe_lUniformLoc,L_hat);
+  //console.log(L_hat);
+  num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat, numThetaDivisions, numPhiDivisions);
   num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 };
 
@@ -111,7 +133,13 @@ var output_camRot = document.getElementById("output_camRot");
 document.getElementById("slider_camRot").oninput = function(event) {
   var rot_angle_deg = event.target.value;
   rot_angle = Math.radians(rot_angle_deg);
-  mat4.fromRotation(M, rot_angle, rot_axis);
+  //var rot;
+  //mat4.fromRotation(rot, rot_angle, rot_axis);
+  //mat4.fromRotation(M, rot_angle, rot_axis);
+  
+  var rot = mat4.create();   
+  mat4.fromRotation(rot, rot_angle, rot_axis);
+  mat4.multiply(V,get_initial_V(),rot);
 };
 
 /////////////////////
@@ -131,13 +159,13 @@ function render(time){
 
   //Draw lobe
   gl.bindVertexArray(lobeVAO);
-  updateMVP(M, lobeProgram, lobe_mUniformLoc);
+  updateMVP(V, lobeProgram, lobe_vUniformLoc);
   var first = 0; //see https://stackoverflow.com/q/10221647
   gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
 
   //Draw line
   gl.bindVertexArray(lineVAO);
-  updateMVP(M, lineProgram, line_mUniformLoc);
+  updateMVP(V, lineProgram, line_vUniformLoc);
   first = 0; 
   gl.drawArrays(gl.LINES, first, num_line_verts);
 

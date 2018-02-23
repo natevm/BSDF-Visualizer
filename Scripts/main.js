@@ -81,8 +81,10 @@ var lineVAO = gl.createVertexArray();
 //Assumes positions at attribute 0, colors at attribute 1 in line shader
 var num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 
-setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+var V = get_initial_V(); 
+
+setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc, V);
+setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc, V);
 
 var prev_time = 0; //time when the previous frame was drawn
 var rot = 0;
@@ -91,7 +93,7 @@ var rot_angle = 0; // radians
 var rot_axis = vec3.create();
 vec3.set(rot_axis, 0, 0, 1);
 
-var M = mat4.create();
+//var M = mat4.create();
 
 /////////////////////
 // SET UP UI CALLBACKS 
@@ -131,7 +133,13 @@ var output_camRot = document.getElementById("output_camRot");
 document.getElementById("slider_camRot").oninput = function(event) {
   var rot_angle_deg = event.target.value;
   rot_angle = Math.radians(rot_angle_deg);
-  mat4.fromRotation(M, rot_angle, rot_axis);
+  //var rot;
+  //mat4.fromRotation(rot, rot_angle, rot_axis);
+  //mat4.fromRotation(M, rot_angle, rot_axis);
+  
+  var rot = mat4.create();   
+  mat4.fromRotation(rot, rot_angle, rot_axis);
+  mat4.multiply(V,get_initial_V(),rot);
 };
 
 /////////////////////
@@ -151,13 +159,13 @@ function render(time){
 
   //Draw lobe
   gl.bindVertexArray(lobeVAO);
-  updateMVP(M, lobeProgram, lobe_mUniformLoc);
+  updateMVP(V, lobeProgram, lobe_vUniformLoc);
   var first = 0; //see https://stackoverflow.com/q/10221647
   gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
 
   //Draw line
   gl.bindVertexArray(lineVAO);
-  updateMVP(M, lineProgram, line_mUniformLoc);
+  updateMVP(V, lineProgram, line_vUniformLoc);
   first = 0; 
   gl.drawArrays(gl.LINES, first, num_line_verts);
 

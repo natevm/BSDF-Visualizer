@@ -47,9 +47,19 @@ var setup_program = function(vsSource, fsSource){
   return program;
 };
 
+var get_initial_V = function(){
+  var cam_z = 1.5; // z-position of camera in camera space
+  var cam_y = 0.5; // altitude of camera
+  var V = [1,      0,     0, 0,
+           0,      0,     1, 0,
+           0,      1,     0, 0,
+           0, -cam_y,-cam_z, 1];
+  return V;
+};
+
 //TODO: We may want to pre-allocate V and pass it in if we end up changing V
 //often.
-var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
+var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc, initial_V){
   
   /*
    * gl-matrix stores matrices in column-major order
@@ -68,23 +78,22 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
    * 0 0 0 0
    */
 
-  var cam_z = 1.5; // z-position of camera in camera space
-  var cam_y = 0.5; // altitude of camera
 
   // BRDF is in tangent space. Tangent space is Z-up.
   // Also, we need to move the camera so that it's not at the origin 
-  var V = [1,      0,     0, 0,
-           0,      0,     1, 0,
-           0,      1,     0, 0,
-           0, -cam_y,-cam_z, 1];
   
   //var V = [1,      0,     0, 0,
            //0,      1,     0, 0,
            //0,      0,     1, 0,
            //0,      0,-cam_z, 1];
 
+  var V = initial_V; 
+
+  var M = mat4.create(); //creates identity
+
   gl.useProgram(program);
   gl.uniformMatrix4fv(vUniformLoc, false, V);
+  gl.uniformMatrix4fv(mUniformLoc, false, M);
 
   // Perspective projection
   var fov = Math.PI * 0.5;
@@ -100,9 +109,10 @@ var setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
 };
 
 //prev_time is the time when previous frame was drawn
-function updateMVP(M,program,mUniformLoc){
+//Right now we only need to update V.
+function updateMVP(V,program,vUniformLoc){
   gl.useProgram(program);
-  gl.uniformMatrix4fv(mUniformLoc, false, M);
+  gl.uniformMatrix4fv(vUniformLoc, false, V);
 };
 
 //output is unit reflected vector

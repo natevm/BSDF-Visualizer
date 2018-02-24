@@ -21,7 +21,8 @@ class ModelViewport {
     this.mvMatrix = mat4.create();
     this.mvMatrixStack = [];
     this.pMatrix = mat4.create();
-
+	//initial light direction -- 45 degree pitch 45 degree yaw
+	this.lightDirection = [Math.sin(Math.PI/4)*Math.cos(Math.PI/4), Math.cos(Math.PI/4), Math.sin(Math.PI/4)*Math.sin(Math.PI/4)];
     this.loadModels();
     this.modelsLoaded = false;
   }
@@ -38,7 +39,7 @@ class ModelViewport {
     this.gl.viewportHeight = this.canvas.height;
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
   }
-
+  
   getShader(gl, id) {
   var shaderScript = document.getElementById(id);
     if (!shaderScript){
@@ -114,7 +115,8 @@ class ModelViewport {
     this.shaderProgram.pMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uPMatrix");
     this.shaderProgram.mvMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uMVMatrix");
     this.shaderProgram.nMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uNMatrix");
-
+	this.shaderProgram.lightDirectionUniform = gl.getUniformLocation(this.shaderProgram, "uLightDirection");
+	
     this.shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
         for (const attrName in attrs) {
@@ -178,6 +180,7 @@ class ModelViewport {
       var normalMatrix = mat3.create();
       mat3.normalFromMat4(normalMatrix, this.mvMatrix);
       this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, normalMatrix);
+	  this.gl.uniform3fv(this.shaderProgram.lightDirectionUniform, new Float32Array(this.lightDirection));
   }
 
   loadModels() {

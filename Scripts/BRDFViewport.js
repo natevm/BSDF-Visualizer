@@ -15,6 +15,10 @@ class BRDFViewport {
 
     /* Programs are initialized in createShaders */
     this.lobeProgram = null;
+    this.lobe_nUniformLoc = null;
+    this.lobe_lUniformLoc = null;
+    this.lobe_delThetaUniformLoc = null;
+    this.lobe_delPhiUniformLoc = null;
     this.lobe_mUniformLoc = null;
     this.lobe_vUniformLoc = null;
     this.lobe_pUniformLoc = null;
@@ -45,7 +49,6 @@ class BRDFViewport {
     this.rot_axis = vec3.create();
     vec3.set(this.rot_axis, 0, 0, 1);
 
-
     this.setupWebGL2();
     this.createShaders();
     this.setupGeometry();
@@ -71,7 +74,7 @@ class BRDFViewport {
   // SET UP PROGRAM
   /////////////////////
   createShaders() {
-    const lobeVsSource = document.getElementById("phong.vert").text.trim();
+    const lobeVsSource = document.getElementById("lobe.vert").text.trim();
     const lobeFsSource = document.getElementById("phong.frag").text.trim();
     const lineVsSource = document.getElementById("color_only.vert").text.trim();
     const lineFsSource = document.getElementById("color_only.frag").text.trim();
@@ -79,9 +82,17 @@ class BRDFViewport {
     this.lobeProgram = setup_program(this.gl, lobeVsSource, lobeFsSource);
     this.lineProgram = setup_program(this.gl, lineVsSource, lineFsSource);
 
-    this.lobe_mUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_m"); // model matrix
-    this.lobe_vUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_v"); // view matrix
-    this.lobe_pUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_p"); // proj matrix
+    this.lobe_nUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_n"); 
+    this.lobe_lUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_l"); 
+    this.lobe_delThetaUniformLoc = 
+      this.gl.getUniformLocation(this.lobeProgram, "u_delTheta"); 
+    this.lobe_delPhiUniformLoc = 
+      this.gl.getUniformLocation(this.lobeProgram, "u_delPhi"); 
+
+    // model, view, and projection matrices, respectively.
+    this.lobe_mUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_m"); 
+    this.lobe_vUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_v"); 
+    this.lobe_pUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_p"); 
 
     this.line_mUniformLoc = this.gl.getUniformLocation(this.lineProgram, "u_m"); 
     this.line_vUniformLoc = this.gl.getUniformLocation(this.lineProgram, "u_v"); 
@@ -92,9 +103,6 @@ class BRDFViewport {
   // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
   /////////////////////
   setupGeometry() {
-    // Conversion code snippet from:
-    // http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion/
-
 
     //const default_in_angle_deg = 45; //Default value when we open the app.
     //var in_angle = Math.radians(default_in_angle_deg);
@@ -107,16 +115,29 @@ class BRDFViewport {
     var N_hat = compute_N_hat();
 
     this.lobeVAO = this.gl.createVertexArray();
+ 
     //Assumes positions at attribute 0, colors at attribute 1, 
     //normals at attribute 2 in lobe shader
     this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
+    this.gl.useProgram(this.lobeProgram);
+    this.gl.useProgram(this.lobeProgram);
+    this.gl.uniform3fv(this.lobe_nUniformLoc,N_hat);
+    this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
+
+    //TODO: calc_delPHi and calc_delTheta should be called exactly once, at init time,
+    //and their values should be stored in consts.
+    this.gl.uniform1f(this.lobe_delPhiUniformLoc,calc_delPhi(this.numPhiDivisions));
+    this.gl.uniform1f(this.lobe_delThetaUniformLoc,calc_delTheta(this.numThetaDivisions));
 
     this.lineVAO = this.gl.createVertexArray();
     //Assumes positions at attribute 0, colors at attribute 1 in line shader
     this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
 
-    this.setupMVP(this.lobeProgram, this.lobe_mUniformLoc, this.lobe_vUniformLoc, this.lobe_pUniformLoc);
-    this.setupMVP(this.lineProgram, this.line_mUniformLoc, this.line_vUniformLoc, this.line_pUniformLoc);
+    //TODO: Modify the V matrix, not the M matrix
+    this.setupMVP(this.lobeProgram, this.lobe_mUniformLoc, 
+      this.lobe_vUniformLoc, this.lobe_pUniformLoc);
+    this.setupMVP(this.lineProgram, this.line_mUniformLoc, 
+      this.line_vUniformLoc, this.line_pUniformLoc);
   }
 
   //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
@@ -129,14 +150,21 @@ class BRDFViewport {
     var pos_dim = 3;
     var color_dim = 3;
     var norm_dim = 3;
+    var polar_dim = 2;
 
     var positions = [];
     var colors = [];
 
     //var indices = [];
-    var normals = [];
+    var normals = []; //TODO: We can actually get rid of this attribute
+    var polar_coords = [];
 
     var num_verts = 0;
+
+    //TODO: fix these two as constant computed at init time
+    var delTheta = calc_delTheta(this.numThetaDivisions);
+    var delPhi = calc_delPhi(this.numPhiDivisions); 
+
     for(var i = 0; i < this.numThetaDivisions; i++){
       for(var j = 0; j < this.numPhiDivisions; j++){
         // degrees 
@@ -153,11 +181,12 @@ class BRDFViewport {
 
         //Right now these four points are on a perfect hemisphere... 
 
+        //NOTE: We now do the commented out code below in the vertex shader.
         //Scale by BRDF
-        p = this.shade_vtx(L_hat,N_hat,p);
-        p_k_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_1);
-        p_k_plus_N = this.shade_vtx(L_hat,N_hat,p_k_plus_N);
-        p_k_plus_N_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
+        //p = this.shade_vtx(L_hat,N_hat,p);
+        //p_k_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_1);
+        //p_k_plus_N = this.shade_vtx(L_hat,N_hat,p_k_plus_N);
+        //p_k_plus_N_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
 
         //Four color attributes of our quad 
         var c = this.polar_to_color(theta_deg,this.phi_deg); 
@@ -184,6 +213,9 @@ class BRDFViewport {
         colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
         colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
         normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+        polar_coords.push(theta_deg,phi_deg);
+        polar_coords.push(theta_deg, (j+1)*delPhi);
+        polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
 
         //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
         positions.push(p[0],p[1],p[2]); 
@@ -193,6 +225,10 @@ class BRDFViewport {
         colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
         colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
         normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+        polar_coords.push(theta_deg,phi_deg);
+        polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
+        polar_coords.push((i+1)*delTheta, phi_deg);
+
         num_verts += 6;
           //num_verts += 3;
 
@@ -264,6 +300,15 @@ class BRDFViewport {
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.DYNAMIC_DRAW);
     this.gl.vertexAttribPointer(normalAttribLoc, norm_dim, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(normalAttribLoc); 
+
+    const polar_coordAttribLoc = 3;
+    const polar_coordBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, polar_coordBuffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, 
+      new Float32Array(polar_coords), this.gl.DYNAMIC_DRAW);
+    this.gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(polar_coordAttribLoc);
+
     return num_verts;
   };
 
@@ -479,8 +524,12 @@ class BRDFViewport {
       this.in_theta_deg = event.target.value;
       output_incidentTheta.innerHTML = this.in_theta_deg;
       var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
-      var N_hat = compute_N_hat();
-      this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
+      var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+
+      this.gl.useProgram(this.lobeProgram);
+      this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
+
+      //this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
       this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
     };
 
@@ -488,8 +537,12 @@ class BRDFViewport {
       this.in_phi_deg = event.target.value;
       output_incidentPhi.innerHTML = this.in_phi_deg;
       var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
-      var N_hat = compute_N_hat();
-      this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
+      var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+
+      this.gl.useProgram(this.lobeProgram);
+      this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
+
+      //this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
       this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
     };
 

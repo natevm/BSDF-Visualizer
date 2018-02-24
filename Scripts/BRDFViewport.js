@@ -1,3 +1,5 @@
+"use strict";
+
 // Requires gl-wrangle-funcs.js
 // Requires gl-matrix.js
 // Requires math-utils.js
@@ -9,6 +11,9 @@ class BRDFViewport {
     this.canvas = document.getElementById(canvasName);
     this.canvas.width = 512;
     this.canvas.height = 512;
+
+    //TODO: is the best thing to do, to initialize to null or to 
+    //initialize to undefined? (I don't actually know.)
 
     /* GL context is initialized in "setupWebGL2" */
     this.gl = null;
@@ -39,15 +44,13 @@ class BRDFViewport {
 
     /* For render function */
     this.prev_time = 0;
-    this.M = mat4.create();
-    this.rot_angle = 0;
+    //this.M = mat4.create(); //Right now we are keeping M as identity
+    this.initial_V = get_initial_V();
+    this.V = mat4.clone(this.initial_V); 
+
 
     this.num_lobe_verts = 0;
     this.num_line_verts = 0;
-
-    this.rot_angle = 0; // radians
-    this.rot_axis = vec3.create();
-    vec3.set(this.rot_axis, 0, 0, 1);
 
     this.setupWebGL2();
     this.createShaders();
@@ -143,6 +146,8 @@ class BRDFViewport {
   //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
   //NORMALS AT ATTRIBUTE 2 IN SHADER.
   lobe_setupGeometry(lobeVAO, L_hat, N_hat){
+
+    console.log("setting up lobe geometry");
     
     this.gl.bindVertexArray(this.lobeVAO);
 
@@ -310,7 +315,7 @@ class BRDFViewport {
     this.gl.enableVertexAttribArray(polar_coordAttribLoc);
 
     return num_verts;
-  };
+  }
 
   //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
   line_setupGeometry(lineVAO, L_hat, N_hat){
@@ -358,7 +363,7 @@ class BRDFViewport {
 
     var num_verts = positions.length/pos_dim; 
     return num_verts;
-  };
+  }
 
   polar_to_cartesian(theta_deg,phi_deg){
       // radians
@@ -369,7 +374,7 @@ class BRDFViewport {
       var y = Math.sin(theta)*Math.sin(phi);
       var z = Math.cos(theta);
       return vec3.fromValues(x, y, z);
-  };
+  }
 
   polar_to_color(theta_deg, phi_deg){
       //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
@@ -378,11 +383,11 @@ class BRDFViewport {
       var v = 100;
       
       return hsvToRgb(h, s, v);
-  };
+  }
 
   diffuse(light_dir, normal_dir){
     return Math.max(0,vec3.dot(light_dir, normal_dir));
-  };
+  }
 
   phong(L_hat, V_hat, N_hat){
     const k_d = 0.7; 
@@ -394,7 +399,7 @@ class BRDFViewport {
     var diffuse_value = this.diffuse(L_hat,N_hat); //diffuse coefficient
 
     return k_d*diffuse_value + k_s*specular_value; 
-  };
+  }
 
   //vtx is the original vertex on the hemisphere
   //return value is the same vertex with length scaled by the BRDF
@@ -404,7 +409,7 @@ class BRDFViewport {
       var result = vec3.create(); 
       vec3.scale(result,vtx,phong_shade);
       return result;
-  };
+  }
 
   //TODO: We may want to pre-allocate V and pass it in if we end up changing V
   //often.
@@ -427,20 +432,26 @@ class BRDFViewport {
      * 0 0 0 0
      */
 
-    var cam_z = 1.5; // z-position of camera in camera space
-    var cam_y = 0.5; // altitude of camera
+    //var cam_z = 1.5; // z-position of camera in camera space
+    //var cam_y = 0.5; // altitude of camera
 
     // BRDF is in tangent space. Tangent space is Z-up.
     // Also, we need to move the camera so that it's not at the origin 
-    var V = [1,      0,     0, 0,
-             0,      0,     1, 0,
-             0,      1,     0, 0,
-             0, -cam_y,-cam_z, 1];
+    //var V = [1,      0,     0, 0,
+             //0,      0,     1, 0,
+             //0,      1,     0, 0,
+             //0, -cam_y,-cam_z, 1];
 
     this.gl.useProgram(program);
-    this.gl.uniformMatrix4fv(vUniformLoc, false, V);
 
-    // Perspective projection
+    //View
+    this.gl.uniformMatrix4fv(vUniformLoc, false, this.initial_V);
+
+    //Model
+    var M = mat4.create(); 
+    this.gl.uniformMatrix4fv(mUniformLoc, false, M);
+
+    // Projection (perspective)
     var fov = Math.PI * 0.5;
     var canvas = document.getElementById('brdf-canvas');
     var width = canvas.width;
@@ -451,13 +462,12 @@ class BRDFViewport {
     var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
 
     this.gl.uniformMatrix4fv(pUniformLoc, false, P);
-  };
+  }
 
   //prev_time is the time when previous frame was drawn
-  updateMVP(M,program,mUniformLoc){
-    this.gl.useProgram(program);
-    this.gl.uniformMatrix4fv(mUniformLoc, false, M);
-  };
+  updateV(V,vUniformLoc){ 
+    this.gl.uniformMatrix4fv(vUniformLoc, false, V);
+  }
 
   /////////////////////
   // SET UP UI CALLBACKS 
@@ -478,7 +488,7 @@ class BRDFViewport {
     this.menu.append("br");
     
     var thetaOutput = this.menu.append("output")
-       .attr("id", "output_incidentTheta")
+       .attr("id", "output_incidentTheta");
 
     this.menu.append("br");
 
@@ -549,8 +559,15 @@ class BRDFViewport {
     var output_camRot = document.getElementById("output_camRot");
     document.getElementById("slider_camRot").oninput = (event) => {
       var rot_angle_deg = event.target.value;
-      this.rot_angle = Math.radians(rot_angle_deg);
-      mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
+      var rot_angle = Math.radians(rot_angle_deg);
+      //mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
+
+      var rot_axis = vec3.create();
+      vec3.set(rot_axis, 0, 0, 1);
+
+      var rot = mat4.create();
+      mat4.fromRotation(rot, rot_angle, rot_axis);
+      mat4.multiply(this.V,this.initial_V,rot);
     };
   }
 
@@ -571,13 +588,15 @@ class BRDFViewport {
 
     //Draw lobe
     this.gl.bindVertexArray(this.lobeVAO);
-    this.updateMVP(this.M, this.lobeProgram, this.lobe_mUniformLoc);
+    this.gl.useProgram(this.lobeProgram);
+    this.updateV(this.V, this.lobe_vUniformLoc);
     var first = 0; //see https://stackoverflow.com/q/10221647
     this.gl.drawArrays(this.gl.TRIANGLES, first, this.num_lobe_verts);
 
     //Draw line
     this.gl.bindVertexArray(this.lineVAO);
-    this.updateMVP(this.M, this.lineProgram, this.line_mUniformLoc);
+    this.gl.useProgram(this.lineProgram);
+    this.updateV(this.V, this.line_vUniformLoc);
     first = 0; 
     this.gl.drawArrays(this.gl.LINES, first, this.num_line_verts);
 
@@ -774,7 +793,6 @@ class BRDFViewport {
 
 //     var then = 0;
 //     var rot = 0;
-
 
 
 //     

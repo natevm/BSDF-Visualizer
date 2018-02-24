@@ -13,6 +13,16 @@ MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
   ];
 };
 
+var get_initial_V = function(){
+  var cam_z = 1.5; // z-position of camera in camera space
+  var cam_y = 0.5; // altitude of camera
+  var V = [1,      0,     0, 0,
+           0,      0,     1, 0,
+           0,      1,     0, 0,
+           0, -cam_y,-cam_z, 1];
+  return V;
+};
+
 var setup_program = function(gl, vsSource, fsSource){
 
   var vertexShader = gl.createShader(gl.VERTEX_SHADER);

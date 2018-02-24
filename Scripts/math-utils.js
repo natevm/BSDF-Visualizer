@@ -1,3 +1,6 @@
+// Conversion code snippet from:
+// http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion//
+
 // Converts from degrees to radians.
 Math.radians = function(degrees) {
   return degrees * Math.PI / 180;
@@ -25,4 +28,17 @@ mat3.rotZ = function(angle_radians){
   return mat3.fromValues( Math.cos(z),  Math.sin(z), 0, 
                           -Math.sin(z), Math.cos(z),  0,
                           0,            0,            1); 
+};
+
+//TODO: These shouldn't be global variables? We probably
+//need to put math-utils in its own module?
+
+//Result in degrees
+var calc_delTheta = function(numThetaDivisions){
+  return 90 / numThetaDivisions;
+};
+
+//Result in degrees
+var calc_delPhi = function(numPhiDivisions){
+  return 360 / numPhiDivisions;
 };

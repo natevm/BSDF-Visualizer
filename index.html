@@ -8,240 +8,279 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	</header>
 	<body id="main-container">
-    <script src="Scripts/gl-matrix.js"></script>
-    <script src="Scripts/math-utils.js"></script>
-    <script src='Scripts/webgl-obj-loader.js'></script>
-    <script src="Scripts/hsvToRgb.js"></script>
-    <script src="Scripts/gl-wrangling-funcs.js"></script>
-    <script type="vertex" id="lobe.vert">#version 300 es
-        #define M_PI 3.1415926535897932384626433832795
+    <div id="brdf-column">
+      <div id="brdf-menu">BRDF menu</div>
+      <canvas id="brdf-canvas">BRDF canvas</canvas>
+    </div>
 
-        layout (location=0) in vec4 model_position;
-        layout (location=1) in vec3 color;
-        layout (location=2) in vec4 model_normal;
-        layout (location=3) in vec2 polar_coords;
+    <div id="model-column">
+      <div id="model-menu">Model menu</div>
+      <canvas id="model-canvas">Model canvas</canvas>
+    </div>
+    <br>
+  <!-- Incident &theta;: <input id="slider_incidentTheta" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentTheta"></output>
+  <br>
+  Incident &phi;: <input id="slider_incidentPhi" type="range" min="-180" max="180" step="1" value="0"/> <output id="output_incidentPhi"></output>
+  <br>
+  Camera Rotation: <input id="slider_camRot" type="range" min="-180" max="180" step="1" value="0"/>  -->
+	</body>
 
-        uniform mat4 u_m;
-        uniform mat4 u_v;
-        uniform mat4 u_p;
+<!--
+   -<script type="vertex" id="phong.vert">
+   -    #version 300 es
+   -    layout (location=0) in vec4 model_position;
+   -    layout (location=1) in vec3 color;
+   -    layout (location=2) in vec4 model_normal;
+   -
+   -    uniform mat4 u_m;
+   -    uniform mat4 u_v;
+   -    uniform mat4 u_p;
+   -    
+   -    out vec3 vColor;
+   -    //out vec4 world_position;
+   -    out vec4 world_normal;
+   -
+   -    void main() {
+   -        vColor = color;
+   -        gl_Position = u_p * u_v * u_m * model_position;
+   -        //world_normal = u_m * model_normal;
+   -        world_normal = model_normal; //DEBUG ONLY.
+   -    }
+   -  </script>
+   -->
 
-        uniform vec3 u_n;
-        uniform vec3 u_l;
+  <script type="vertex" id="lobe.vert">#version 300 es
+      #define M_PI 3.1415926535897932384626433832795
 
-        uniform float u_delTheta;
-        uniform float u_delPhi;
+      layout (location=0) in vec4 model_position;
+      layout (location=1) in vec3 color;
+      layout (location=2) in vec4 model_normal;
+      layout (location=3) in vec2 polar_coords;
+
+      uniform mat4 u_m;
+      uniform mat4 u_v;
+      uniform mat4 u_p;
+
+      uniform vec3 u_n;
+      uniform vec3 u_l;
+
+      uniform float u_delTheta;
+      uniform float u_delPhi;
+      
+      out vec3 vColor;
+      out vec4 world_normal;
+
+      vec3 polar_to_cartesian(float theta_deg, float phi_deg){
+        float theta = (M_PI/180.0) * theta_deg; 
+        float phi = (M_PI/180.0) * phi_deg;
+        return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
+      }
+
+      //L and N are assumed to be unit vectors
+      vec3 get_reflected(vec3 L, vec3 N){
+        vec3 L_plus_R = N * 2.0 * dot(L, N);
+        return normalize(L_plus_R - L);
+      }
+      
+      //TODO: Disney's tool doesn't incorporate the dot product / cosine weight because 
+      //that's not part of the BRDF, it's the "form factor" in the rendering equation.
+
+      //TODO: Disney's tool assumes BRDF returns a vec3? But I don't see where the color
+      //input is? 
+
+      //L, V, N assumed to be unit vectors
+      float BRDF(vec3 L, vec3 V, vec3 N){
+        //TODO: These should actually be uniforms.
+        const float k_d = 0.7;
+        const float k_s = 0.3;
+        const float spec_power = 20.0; 
         
-        out vec3 vColor;
-        out vec4 world_normal;
+        vec3 R = get_reflected(L, N);
+        float spec_val = pow(max(dot(R,V),0.0), spec_power);
+        float diffuse_val = max(0.0, dot(L,N)); 
 
-        vec3 polar_to_cartesian(float theta_deg, float phi_deg){
-          float theta = (M_PI/180.0) * theta_deg; 
-          float phi = (M_PI/180.0) * phi_deg;
-          return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
-        }
+        return k_d*diffuse_val + k_s*spec_val;
+      }
 
-        //L and N are assumed to be unit vectors
-        vec3 get_reflected(vec3 L, vec3 N){
-          vec3 L_plus_R = N * 2.0 * dot(L, N);
-          return normalize(L_plus_R - L);
-        }
-        
-        //TODO: Disney's tool doesn't incorporate the dot product / cosine weight because 
-        //that's not part of the BRDF, it's the "form factor" in the rendering equation.
+      void main() {
+          /*
+          //FOR DEBUG OF UNIT SPHERE
+          //Assumes our input model coordinates are on the unit sphere.
+          vec3 polar_color = vec3(polar_coords.x/90.0,polar_coords.y/360.0,0);
+          vColor = 0.99*polar_color + 0.01*color; //DEBUG ONLY
+          */
 
-        //TODO: Disney's tool assumes BRDF returns a vec3? But I don't see where the color
-        //input is? 
-
-        //L, V, N assumed to be unit vectors
-        float BRDF(vec3 L, vec3 V, vec3 N){
-          //TODO: These should actually be uniforms.
-          const float k_d = 0.7;
-          const float k_s = 0.3;
-          const float spec_power = 20.0; 
+          vColor = color;
           
-          vec3 R = get_reflected(L, N);
-          float spec_val = pow(max(dot(R,V),0.0), spec_power);
-          float diffuse_val = max(0.0, dot(L,N)); 
+          //TODO: should we be working with radians "natively"?
+          float theta_deg = polar_coords.x; 
+          float phi_deg = polar_coords.y; 
 
-          return k_d*diffuse_val + k_s*spec_val;
-        }
+          //prior to scaling, p SHOULD BE the same as position as model_position
+          vec3 p = polar_to_cartesian(theta_deg,phi_deg); 
+          vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg); 
+          vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg); 
+          vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi); 
+          vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi); 
 
-        void main() {
-            /*
-            //FOR DEBUG OF UNIT SPHERE
-            //Assumes our input model coordinates are on the unit sphere.
-            vec3 polar_color = vec3(polar_coords.x/90.0,polar_coords.y/360.0,0);
-            vColor = 0.99*polar_color + 0.01*color; //DEBUG ONLY
-            */
+          //Scale points by the BRDF
+          //float shade = BRDF(u_l, normalize(p), u_n);
+          p *= BRDF(u_l, normalize(p), u_n);
+          p_U *= BRDF(u_l, normalize(p_U), u_n);
+          p_D *= BRDF(u_l, normalize(p_D), u_n);
+          p_L *= BRDF(u_l, normalize(p_L), u_n);
+          p_R *= BRDF(u_l, normalize(p_R), u_n);
 
-            vColor = color;
-            
-            //TODO: should we be working with radians "natively"?
-            float theta_deg = polar_coords.x; 
-            float phi_deg = polar_coords.y; 
+          vec3 v1 = p_R - p;
+          vec3 v2 = p_U - p; 
+          vec3 v3 = p_L - p;
+          vec3 v4 = p_D - p;
 
-            //prior to scaling, p SHOULD BE the same as position as model_position
-            vec3 p = polar_to_cartesian(theta_deg,phi_deg); 
-            vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg); 
-            vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg); 
-            vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi); 
-            vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi); 
+          vec3 n1 = normalize(cross(v2,v1));
+          vec3 n2 = normalize(cross(v3,v2));
+          vec3 n3 = normalize(cross(v4,v3));
+          vec3 n4 = normalize(cross(v1,v4));
 
-            //Scale points by the BRDF
-            //float shade = BRDF(u_l, normalize(p), u_n);
-            p *= BRDF(u_l, normalize(p), u_n);
-            p_U *= BRDF(u_l, normalize(p_U), u_n);
-            p_D *= BRDF(u_l, normalize(p_D), u_n);
-            p_L *= BRDF(u_l, normalize(p_L), u_n);
-            p_R *= BRDF(u_l, normalize(p_R), u_n);
+          vec3 avg_model_normal = normalize(n1 + n2 + n3 + n4);
 
-            vec3 v1 = p_R - p;
-            vec3 v2 = p_U - p; 
-            vec3 v3 = p_L - p;
-            vec3 v4 = p_D - p;
+          //gl_Position = u_p * u_v * u_m * model_position; //old
+          gl_Position = u_p * u_v * u_m * vec4(p,1);
 
-            vec3 n1 = normalize(cross(v2,v1));
-            vec3 n2 = normalize(cross(v3,v2));
-            vec3 n3 = normalize(cross(v4,v3));
-            vec3 n4 = normalize(cross(v1,v4));
+          //world_normal = u_m * model_normal;
+          //world_normal = model_normal; //DEBUG ONLY.
+          //world_normal = vec4(avg_model_normal,1); //DEBUG ONLY
+          world_normal = u_m * vec4(avg_model_normal,1); 
+      }
+  </script>
 
-            vec3 avg_model_normal = normalize(n1 + n2 + n3 + n4);
+  <script type="fragment" id="phong.frag">
+    #version 300 es
+    precision highp float;
+    
+    //uniform vec3 u_world_light_pos; 
 
-            //gl_Position = u_p * u_v * u_m * model_position; //old
-            gl_Position = u_p * u_v * u_m * vec4(p,1);
+    //float k_a = 0.1;
+    //float k_d = 0.9;
 
-            //world_normal = u_m * model_normal;
-            //world_normal = model_normal; //DEBUG ONLY.
-            //world_normal = vec4(avg_model_normal,1); //DEBUG ONLY
-            world_normal = u_m * vec4(avg_model_normal,1); 
-        }
-    </script>
-    <script type="fragment" id="phong.frag">#version 300 es
+    in vec3 vColor;
+    //in vec4 world_position; 
+    in vec4 world_normal; 
 
-        precision highp float;
-        
-        //uniform vec3 u_world_light_pos; 
+    out vec4 fragColor;
 
-        //float k_a = 0.1;
-        //float k_d = 0.9;
+    void main() {
+        vec3 norm = normalize(world_normal.xyz);
+        //vec3 to_light = normalize((u_world_light_pos.xyz - world_position.xyz)); 
+        //fragColor = k_a*vColor + k_d*dot(norm, to_light)*vColor;
+        //vec3 final_color = 0.01 * norm + 0.99 * vColor;
+        //vec3 final_color = 0.99 * norm + 0.01 * vColor;  
+        fragColor = vec4(world_normal.xyz, 1.0); 
+    }
+  </script>
 
-        in vec3 vColor;
-        //in vec4 world_position; 
-        in vec4 world_normal; 
+  <!-- TODO: Move shaders outside of index.html -->
+  <script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
 
-        out vec4 fragColor;
+	uniform vec3 uLightDirection;
+	
+    varying vec2 vTextureCoord;
+    varying vec3 vTransformedNormal;
+    varying vec4 vPosition;
 
-        void main() {
-            //vec3 norm = normalize(world_normal.xyz);
-            //vec3 to_light = normalize((u_world_light_pos.xyz - world_position.xyz)); 
-            //fragColor = k_a*vColor + k_d*dot(norm, to_light)*vColor;
-            //vec3 final_color = 0.01 * norm + 0.99 * vColor;
-            //vec3 final_color = 0.99 * norm + 0.01 * vColor;  
-            //vec3 final_color = vColor;
+    varying vec3 vDiffuse;
+    varying vec3 vSpecular;
+    varying float vSpecularExponent;
 
-            fragColor = vec4(world_normal.xyz, 1.0); 
-            //fragColor = vec4(vColor, 1);
-        }
-    </script>
+    void main(void) {
+        vec3 V = -normalize(vPosition.xyz);
+        vec3 L = normalize(uLightDirection);
+        vec3 H = normalize(L + V);
+        vec3 N = normalize(vTransformedNormal);
 
-	    <script id="shader-fs" type="x-shader/x-fragment">
-        precision mediump float;
+        vec3 color = vDiffuse * dot(N, L) +
+          vSpecular * pow(dot(H, N), vSpecularExponent);
+        gl_FragColor = vec4(color, 1.0);
+    }
+  </script>
+  <script id="shader-vs" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec3 aVertexNormal;
+      attribute vec2 aTextureCoord;
+      attribute vec3 aDiffuse;
+      attribute vec3 aSpecular;
+      attribute float aSpecularExponent;
 
-        varying vec2 vTextureCoord;
-        varying vec3 vTransformedNormal;
-        varying vec4 vPosition;
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat3 uNMatrix;
 
-        varying vec3 vDiffuse;
-        varying vec3 vSpecular;
-        varying float vSpecularExponent;
+      varying vec2 vTextureCoord;
+      varying vec3 vTransformedNormal;
+      varying vec4 vPosition;
 
-        void main(void) {
-            vec3 V = -normalize(vPosition.xyz);
-            vec3 L = normalize(vec3(1.0, 1.0, 1.0));
-            vec3 H = normalize(L + V);
-            vec3 N = normalize(vTransformedNormal);
+      varying vec3 vDiffuse;
+      varying vec3 vSpecular;
+      varying float vSpecularExponent;
 
-            vec3 color = vDiffuse * dot(N, L) +
-              vSpecular * pow(dot(H, N), vSpecularExponent);
-            gl_FragColor = vec4(color, 1.0);
-        }
-    </script>
-    <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 aVertexPosition;
-        attribute vec3 aVertexNormal;
-        attribute vec2 aTextureCoord;
-        attribute vec3 aDiffuse;
-        attribute vec3 aSpecular;
-        attribute float aSpecularExponent;
+      void main(void) {
+          vDiffuse = aDiffuse;
+          vSpecular = aSpecular;
+          vSpecularExponent = aSpecularExponent;
 
-        uniform mat4 uMVMatrix;
-        uniform mat4 uPMatrix;
-        uniform mat3 uNMatrix;
+          vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+          gl_Position = uPMatrix * vPosition;
+          vTextureCoord = aTextureCoord;
+          vTransformedNormal = uNMatrix * aVertexNormal;
+      }
+  </script>
 
-        varying vec2 vTextureCoord;
-        varying vec3 vTransformedNormal;
-        varying vec4 vPosition;
+  <!-- Old shader below, color only -->
+  <script type="vertex" id="color_only.vert">
+      #version 300 es
+      
+      layout (location=0) in vec4 position;
+      layout (location=1) in vec3 color;
 
-        varying vec3 vDiffuse;
-        varying vec3 vSpecular;
-        varying float vSpecularExponent;
+      //uniform mat4 u_mvp;
+      uniform mat4 u_m;
+      uniform mat4 u_v;
+      uniform mat4 u_p;
+      
+      out vec3 vColor;
 
-        void main(void) {
-            vDiffuse = aDiffuse;
-            vSpecular = aSpecular;
-            vSpecularExponent = aSpecularExponent;
+      void main() {
+          vColor = color;
+          gl_PointSize = 10.0;
+          gl_Position = u_p * u_v * u_m * position;
+      }
+  </script>
+  <script type="fragment" id="color_only.frag">
+      #version 300 es
+      precision highp float;
+      
+      in vec3 vColor;
+      out vec4 fragColor;
 
-            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
-            gl_Position = uPMatrix * vPosition;
-            vTextureCoord = aTextureCoord;
-            vTransformedNormal = uNMatrix * aVertexNormal;
-        }
-    </script>
+      void main() {
+          fragColor = vec4(vColor, 1.0);
+      }
+  </script>
 
-    <!-- Old shader below, color only -->
-    <script type="vertex" id="color_only.vert">
-        #version 300 es
-        
-        layout (location=0) in vec4 position;
-        layout (location=1) in vec3 color;
+  <script src="Scripts/gl-wrangling-funcs.js"></script>
+  <script src="Scripts/gl-matrix.js"></script>
+  <script src="Scripts/math-utils.js"></script>
+  <script src="Scripts/hsvToRgb.js"></script>
+  <script src='Scripts/webgl-obj-loader.js'></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  <script type="application/javascript" src="Scripts/BRDFViewport.js"></script>
+  <!-- <script type="application/javascript" src="Scripts/meshview.js"></script> -->
+  <script type="application/javascript" src="Scripts/ModelViewport.js"></script>
+  <script type="application/javascript" src="Scripts/main.js"></script>
 
-        //uniform mat4 u_mvp;
-        uniform mat4 u_m;
-        uniform mat4 u_v;
-        uniform mat4 u_p;
-        
-        out vec3 vColor;
 
-        void main() {
-            vColor = color;
-            gl_PointSize = 10.0;
-            gl_Position = u_p * u_v * u_m * position;
-        }
-    </script>
-    <script type="fragment" id="color_only.frag">
-        #version 300 es
-        precision highp float;
-        
-        in vec3 vColor;
-        out vec4 fragColor;
+  <!-- <script src="Scripts/gl-matrix.js"></script>
+  <script src="Scripts/math-utils.js"></script>
+  <script src="Scripts/hsvToRgb.js"></script> -->
 
-        void main() {
-            fragColor = vec4(vColor, 1.0);
-        }
-    </script>
-
-    <canvas id="webgl-canvas"></canvas>
-    <canvas id="webgl-canvas2"></canvas>
-    <script type="application/javascript" src="Scripts/meshview.js"></script>
-    <br>
-    Incident &theta;: <input id="slider_incidentTheta" type="range" min="0" max="90" step="1" value="45"/> <output id="output_incidentTheta"></output>
-    <br>
-    Incident &phi;: <input id="slider_incidentPhi" type="range" min="-180" max="180" step="1" value="0"/> <output id="output_incidentPhi"></output>
-    <br>
-    Camera Rotation: <input id="slider_camRot" type="range" min="-180" max="180" step="1" value="0"/> 
-
-    <!-- It looks like main.js has to be below the shaders and UI elements like 
-      the slider. Otherwise document.getElementById() does not seem to work. -->
-    <script type="application/javascript" src="Scripts/main.js"></script>
-  </body>
 </html>

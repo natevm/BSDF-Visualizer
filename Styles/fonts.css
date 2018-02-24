@@ -1,0 +1,92 @@
+@import url("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
+@import url("https://fonts.googleapis.com/css?family=Roboto:100,300,100italic,300italic");
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+	will-change: transform
+}
+
+body, input, select, textarea {
+    color: rgba(255, 255, 255, 0.75);
+    font-family: "Roboto", Helvetica, sans-serif;
+    font-size: 15pt;
+    font-weight: 100;
+    line-height: 1.75em;
+}
+
+@media screen and (orientation:portrait) {
+	.label {
+		font-size: 1.75vw;
+	}
+
+	.sidebar-item {
+		font-size: 3vw;
+	}
+
+	.h {
+		fill: rgba(255, 255, 255, 1.0);
+		font-family: "Roboto", Helvetica, sans-serif;
+
+		font-size: 3.0vw;
+	    font-weight: 100;
+	}
+
+	.p {
+		fill: rgba(255, 255, 255, 1.0);
+		font-family: "Roboto", Helvetica, sans-serif;
+
+		font-size: 1.5vw;
+	    font-weight: 100;
+	}
+}
+
+@media screen and (orientation:landscape) { 
+	.label {
+		font-size: 1.0vw
+	}
+
+	.sidebar-item {
+		font-size: 3.0vh;
+ 		white-space: nowrap; 
+	}
+
+	.h {
+	fill: rgba(255, 255, 255, 1.0);
+	font-family: "Roboto", Helvetica, sans-serif;
+
+	font-size: 1.5vw;
+    font-weight: 100;
+}
+
+.p {
+	fill: rgba(255, 255, 255, 1.0);
+	font-family: "Roboto", Helvetica, sans-serif;
+
+	font-size: 1vw;
+    font-weight: 100;
+}
+}
+
+.rotate {
+
+/* Safari */
+-webkit-transform: rotate(-90deg);
+
+/* Firefox */
+-moz-transform: rotate(-90deg);
+
+/* IE */
+-ms-transform: rotate(-90deg);
+
+/* Opera */
+-o-transform: rotate(-90deg);
+
+/* Internet Explorer */
+filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+
+}

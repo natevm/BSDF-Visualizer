@@ -182,6 +182,8 @@
   <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
 
+	uniform vec3 uLightDirection;
+	
     varying vec2 vTextureCoord;
     varying vec3 vTransformedNormal;
     varying vec4 vPosition;
@@ -192,7 +194,7 @@
 
     void main(void) {
         vec3 V = -normalize(vPosition.xyz);
-        vec3 L = normalize(vec3(1.0, 1.0, 1.0));
+        vec3 L = normalize(uLightDirection);
         vec3 H = normalize(L + V);
         vec3 N = normalize(vTransformedNormal);
 

@@ -4,3 +4,6 @@
 #ctags
 tags 
 !models/*.obj
+
+.vs/
+.idea/

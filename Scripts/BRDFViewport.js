@@ -544,8 +544,7 @@ class BRDFViewport {
 	  // change light direction in model viewport at same time
 	  var deg = event.target.value;
 	  var rad = deg * Math.PI / 180;
-	  modelViewport.lightDirection = [Math.sin(rad)*Math.cos(Math.PI/4) , Math.cos(rad), Math.sin(rad)*Math.sin(Math.PI/4)]; 
-	  
+	  modelViewport.lightTheta = rad;
     };
 
     document.getElementById("slider_incidentPhi").oninput = (event) => {
@@ -559,6 +558,9 @@ class BRDFViewport {
 
       //this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
       this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
+      var deg = event.target.value;
+      var rad = deg * Math.PI / 180;
+      modelViewport.lightPhi = rad;
     };
 
     var output_camRot = document.getElementById("output_camRot");

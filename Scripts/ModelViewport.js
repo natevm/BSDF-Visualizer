@@ -22,7 +22,8 @@ class ModelViewport {
     this.mvMatrixStack = [];
     this.pMatrix = mat4.create();
 	//initial light direction -- 45 degree pitch 45 degree yaw
-	this.lightDirection = [Math.sin(Math.PI/4)*Math.cos(Math.PI/4), Math.cos(Math.PI/4), Math.sin(Math.PI/4)*Math.sin(Math.PI/4)];
+	this.lightPhi = 0;
+	this.lightTheta =  Math.PI/4;
     this.loadModels();
     this.modelsLoaded = false;
   }
@@ -180,7 +181,8 @@ class ModelViewport {
       var normalMatrix = mat3.create();
       mat3.normalFromMat4(normalMatrix, this.mvMatrix);
       this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, normalMatrix);
-	  this.gl.uniform3fv(this.shaderProgram.lightDirectionUniform, new Float32Array(this.lightDirection));
+      var lightDirection = [Math.sin(this.lightTheta)*Math.cos(this.lightPhi) , Math.cos(this.lightTheta), Math.sin(this.lightTheta)*Math.sin(this.lightPhi)];
+      this.gl.uniform3fv(this.shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
   }
 
   loadModels() {

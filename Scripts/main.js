@@ -1,3 +1,7 @@
+"use strict"; 
+
+import BRDFViewport from "./BRDFViewport.js";
+
 var brdfViewport = null;
 var modelViewport = null;
 
@@ -5,7 +9,7 @@ var render = function(time) {
   brdfViewport.render(time);
   modelViewport.render(time);
   requestAnimationFrame(render);
-}
+};
 
 /* Requires BRDFViewport.js */
 document.addEventListener('DOMContentLoaded', function () {

@@ -1,6 +1,7 @@
+import {deg2rad, rotY, rotZ} from './math-utils.js';
+
 // Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
-var MDN = {};
-MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
+export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
 
   var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
   var rangeInv = 1 / (near - far);
@@ -11,9 +12,9 @@ MDN.perspectiveMatrix = function(fieldOfViewInRadians, aspectRatio, near, far) {
     0,               0,    (near + far) * rangeInv,  -1,
     0,               0,  near * far * rangeInv * 2,   0
   ];
-};
+}
 
-var get_initial_V = function(){
+export function get_initial_V(){
   var cam_z = 1.5; // z-position of camera in camera space
   var cam_y = 0.5; // altitude of camera
   var V = [1,      0,     0, 0,
@@ -21,9 +22,10 @@ var get_initial_V = function(){
            0,      1,     0, 0,
            0, -cam_y,-cam_z, 1];
   return V;
-};
+}
 
-var setup_program = function(gl, vsSource, fsSource){
+//var setup_program = function(gl, vsSource, fsSource){
+export function setup_program(gl, vsSource, fsSource){
 
   var vertexShader = gl.createShader(gl.VERTEX_SHADER);
   gl.shaderSource(vertexShader, vsSource);
@@ -51,41 +53,35 @@ var setup_program = function(gl, vsSource, fsSource){
   }
 
   return program;
-};
+}
 
 //output is unit reflected vector
-var get_reflected = function(L_hat,N_hat){
+//var get_reflected = function(L_hat,N_hat){
+export function get_reflected(L_hat,N_hat){
   var L_plus_R = vec3.create();
   vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
   var R_hat = vec3.create(); 
   vec3.sub(R_hat, L_plus_R, L_hat);
   vec3.normalize(R_hat,R_hat); //I don't think this is needed?
   return R_hat;
-};
+}
 
 //incident angle is the angle between the incident light vector and the normal
 
-var compute_L_hat = function(in_theta_deg, in_phi_deg){
-  var in_theta = Math.radians(in_theta_deg);
-  var in_phi = Math.radians(in_phi_deg); 
+export function compute_L_hat(in_theta_deg, in_phi_deg){
+  var in_theta = deg2rad(in_theta_deg);
+  var in_phi = deg2rad(in_phi_deg); 
 
-  var rot_Y = mat3.rotY(-in_theta);
-  var rot_Z = mat3.rotZ(in_phi);
+  var rot_Y = rotY(-in_theta);
+  var rot_Z = rotZ(in_phi);
 
   var rot = mat3.create(); mat3.multiply(rot, rot_Z, rot_Y);
   var L_hat_unrotated = vec3.fromValues(0,0,1);
   var L_hat = vec3.create(); vec3.transformMat3(L_hat, L_hat_unrotated, rot);
   return L_hat;
-};
+}
 
-/*
- *var compute_L_hat = function(in_angle){
- *  return vec3.fromValues(-Math.cos(Math.PI/2 - in_angle),0,
- *    Math.sin(Math.PI/2 - in_angle));
- *};
- */
-
-var compute_N_hat = function(){
+//var compute_N_hat = function(){
+export function compute_N_hat(){
   return vec3.fromValues(0,0,1);
-};
-
+}

@@ -150,7 +150,7 @@
   </script>
 
   <!-- TODO: Move shaders outside of index.html -->
-  <script id="shader-fs" type="x-shader/x-fragment">
+  <script id="model-renderer.frag" type="x-shader/x-fragment">
     precision mediump float;
 
 	uniform vec3 uLightDirection;
@@ -175,7 +175,7 @@
         gl_FragColor = vec4(color, 1.0);
     }
   </script>
-  <script id="shader-vs" type="x-shader/x-vertex">
+  <script id="model-renderer.vert" type="x-shader/x-vertex">
       attribute vec3 aVertexPosition;
       attribute vec3 aVertexNormal;
       attribute vec2 aTextureCoord;

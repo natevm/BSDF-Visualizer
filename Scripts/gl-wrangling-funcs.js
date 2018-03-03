@@ -33,8 +33,7 @@ export function get_initial_V(){
   return V;
 }
 
-//var setup_program = function(gl, vsSource, fsSource){
-export function setup_program(gl, vsSource, fsSource){
+export function compile_and_link_shdr(gl, vsSource, fsSource){
 
   var vertexShader = gl.createShader(gl.VERTEX_SHADER);
   gl.shaderSource(vertexShader, vsSource);

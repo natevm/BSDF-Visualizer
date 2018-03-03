@@ -1,5 +1,5 @@
 import {deg2rad, calc_delTheta, calc_delPhi, hsv2Rgb} from './math-utils.js';
-import {perspectiveMatrix, get_initial_V, setup_program, get_reflected,
+import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
         compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
 import {loadTextFile} from './network-wranglers.js';
 
@@ -84,8 +84,8 @@ export default class BRDFViewport {
     const lineVsSource = document.getElementById("color_only.vert").text.trim();
     const lineFsSource = document.getElementById("color_only.frag").text.trim();
 
-    this.lobeProgram = setup_program(this.gl, lobeVsSource, lobeFsSource);
-    this.lineProgram = setup_program(this.gl, lineVsSource, lineFsSource);
+    this.lobeProgram = compile_and_link_shdr(this.gl, lobeVsSource, lobeFsSource);
+    this.lineProgram = compile_and_link_shdr(this.gl, lineVsSource, lineFsSource);
 
     this.lobe_nUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_n"); 
     this.lobe_lUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_l"); 

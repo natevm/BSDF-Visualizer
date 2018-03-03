@@ -5,7 +5,7 @@
 //Requires gl-matrix.js
 //Requires webgl-obj-loader.js
 
-import {init_gl_context} from './gl-wrangling-funcs.js';
+import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 
 export default class ModelViewport {
     constructor(canvasName, width, height) {
@@ -46,7 +46,6 @@ export default class ModelViewport {
             this.mouseDown = true;
             this.lastMouseX = event.clientX;
             this.lastMouseY = event.clientY;
-
         };
 
         document.getElementById(canvasName).onmouseup = (event) => {
@@ -70,7 +69,6 @@ export default class ModelViewport {
             this.lastMouseX = newX;
             this.lastMouseY = newY;
         };
-
     }
 
     setupWebGL2() {
@@ -82,54 +80,58 @@ export default class ModelViewport {
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    getShader(gl, id) {
-        var shaderScript = document.getElementById(id);
-        if (!shaderScript){
-            return null;
-        }
+    //getShader(gl, id) {
+        //var shaderScript = document.getElementById(id);
+        //if (!shaderScript){
+            //return null;
+        //}
 
-        var str = "";
-        var k = shaderScript.firstChild;
-        while (k){
-            if (k.nodeType == 3){
-                str += k.textContent;
-            }
-            k = k.nextSibling;
-        }
+        //var str = "";
+        //var k = shaderScript.firstChild;
+        //while (k){
+            //if (k.nodeType == 3){
+                //str += k.textContent;
+            //}
+            //k = k.nextSibling;
+        //}
 
-        var shader;
-        if (shaderScript.type == "x-shader/x-fragment"){
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
-        } else if (shaderScript.type == "x-shader/x-vertex"){
-            shader = gl.createShader(gl.VERTEX_SHADER);
-        } else{
-            return null;
-        }
+        //var shader;
+        //if (shaderScript.type == "x-shader/x-fragment"){
+            //shader = gl.createShader(gl.FRAGMENT_SHADER);
+        //} else if (shaderScript.type == "x-shader/x-vertex"){
+            //shader = gl.createShader(gl.VERTEX_SHADER);
+        //} else{
+            //return null;
+        //}
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
+        //gl.shaderSource(shader, str);
+        //gl.compileShader(shader);
 
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-            alert(gl.getShaderInfoLog(shader));
-            return null;
-        }
+        //if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+            //alert(gl.getShaderInfoLog(shader));
+            //return null;
+        //}
 
-        return shader;
-    }
+        //return shader;
+    //}
 
     initShaders() {
         var gl = this.gl;
-        var fragmentShader = this.getShader(gl, "shader-fs");
-        var vertexShader = this.getShader(gl, "shader-vs");
+        //var fragmentShader = this.getShader(gl, "shader-fs");
+        //var vertexShader = this.getShader(gl, "shader-vs");
 
-        this.shaderProgram = gl.createProgram();
-        gl.attachShader(this.shaderProgram, vertexShader);
-        gl.attachShader(this.shaderProgram, fragmentShader);
-        gl.linkProgram(this.shaderProgram);
+        //this.shaderProgram = gl.createProgram();
+        //gl.attachShader(this.shaderProgram, vertexShader);
+        //gl.attachShader(this.shaderProgram, fragmentShader);
+        //gl.linkProgram(this.shaderProgram);
 
-        if (!gl.getProgramParameter(this.shaderProgram, gl.LINK_STATUS)){
-            alert("Could not initialise shaders");
-        }
+        //if (!gl.getProgramParameter(this.shaderProgram, gl.LINK_STATUS)){
+            //alert("Could not initialise shaders");
+        //}
+        
+        const vsSource = document.getElementById("model-renderer.vert").text.trim();
+        const fsSource = document.getElementById("model-renderer.frag").text.trim();
+        this.shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
         gl.useProgram(this.shaderProgram);
 
         const attrs = {

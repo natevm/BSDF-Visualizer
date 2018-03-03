@@ -23,7 +23,27 @@ export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) 
   ];
 }
 
+//TODO: move this into BRDFViewport.js, since it's specific to that viewer.
 export function get_initial_V(){
+  /*
+   * gl-matrix stores matrices in column-major order
+   * Therefore, the following matrix:
+   *
+   * [1, 0, 0, 0,
+   * 0, 1, 0, 0,
+   * 0, 0, 1, 0,
+   * x, y, z, 0]
+   *
+   * Is equivalent to this in the OpenGL docs:
+   *
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 0
+   */
+
+  // BRDF is in tangent space. Tangent space is Z-up.
+  // Also, we need to move the camera so that it's not at the origin 
   var cam_z = 1.5; // z-position of camera in camera space
   var cam_y = 0.5; // altitude of camera
   var V = [1,      0,     0, 0,

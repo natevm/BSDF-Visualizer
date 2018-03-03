@@ -1,4 +1,6 @@
-// Conversion code snippet from:
+"use strict";
+
+// Conversion code snippets from:
 // http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion//
 
 // Converts from degrees to radians.
@@ -134,4 +136,24 @@ export function hsv2Rgb(h, s, v) {
      *];
      */
     return [r,g,b];
+}
+
+export function polar_to_cartesian(theta_deg,phi_deg){
+    // radians
+    var phi = (Math.PI / 180) * phi_deg;
+    var theta = (Math.PI / 180) * theta_deg;
+
+    var x = Math.sin(theta)*Math.cos(phi);
+    var y = Math.sin(theta)*Math.sin(phi);
+    var z = Math.cos(theta);
+    return vec3.fromValues(x, y, z);
+}
+
+export function polar_to_color(theta_deg, phi_deg){
+    //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
+    var h = phi_deg; 
+    var s = (theta_deg / 90)*100;
+    var v = 100;
+    
+    return hsv2Rgb(h, s, v);
 }

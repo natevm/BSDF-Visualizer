@@ -1,6 +1,13 @@
+"use strict";
+
 /*jshint esversion: 6 */
 
-class ModelViewport {
+//Requires gl-matrix.js
+//Requires webgl-obj-loader.js
+
+import {init_gl_context} from './gl-wrangling-funcs.js';
+
+export default class ModelViewport {
     constructor(canvasName, width, height) {
         // the canvas2 element
         this.canvas = document.getElementById(canvasName);
@@ -67,22 +74,13 @@ class ModelViewport {
     }
 
     setupWebGL2() {
-        this.gl = this.canvas.getContext("webgl2");
-        if (!this.gl) {
-            console.error("WebGL 2 not available");
-            document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
-        }
+        this.gl = init_gl_context(this.canvas);
         this.gl.clearColor(0, 0, 0, 1);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.viewportWidth = this.canvas.width;
         this.gl.viewportHeight = this.canvas.height;
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
-
-
-
-
-
 
     getShader(gl, id) {
         var shaderScript = document.getElementById(id);
@@ -197,7 +195,7 @@ class ModelViewport {
             // Create the vertex buffer for this mesh
             var vertexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-            var vertexData = this.models[modelKey].makeBufferData(layout)
+            var vertexData = this.models[modelKey].makeBufferData(layout);
             this.gl.bufferData(this.gl.ARRAY_BUFFER, vertexData, this.gl.STATIC_DRAW);
             vertexBuffer.numItems = vertexData.numItems;
             vertexBuffer.layout = layout;
@@ -206,7 +204,7 @@ class ModelViewport {
             // Create the index buffer for this mesh
             var indexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-            var indexData = this.models[modelKey].makeIndexBufferData()
+            var indexData = this.models[modelKey].makeIndexBufferData();
             this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);
             indexBuffer.numItems = indexData.numItems;
             this.models[modelKey].indexBuffer = indexBuffer;

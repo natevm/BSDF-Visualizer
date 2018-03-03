@@ -1,10 +1,10 @@
-import {deg2rad, calc_delTheta, calc_delPhi} from './math-utils.js';
+import {deg2rad, calc_delTheta, calc_delPhi, hsv2Rgb} from './math-utils.js';
 import {perspectiveMatrix, get_initial_V, setup_program, get_reflected,
-        compute_L_hat, compute_N_hat} from './gl-wrangling-funcs.js';
+        compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
+import {loadTextFile} from './network-wranglers.js';
 
-// Requires gl-wrangle-funcs.js
 // Requires gl-matrix.js
-// Requires hsvToRGB.js
+// Requires d3.js
 
 export default class BRDFViewport {
   constructor(canvasName, width, height) {
@@ -49,7 +49,6 @@ export default class BRDFViewport {
     this.initial_V = get_initial_V();
     this.V = mat4.clone(this.initial_V); 
 
-
     this.num_lobe_verts = 0;
     this.num_line_verts = 0;
 
@@ -65,11 +64,12 @@ export default class BRDFViewport {
   // SET UP CANVAS AND GL CONTEXT
   /////////////////////
   setupWebGL2() {
-    this.gl = this.canvas.getContext("webgl2");
-    if (!this.gl) {
-        console.error("WebGL 2 not available");
-        document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
-    }
+    //this.gl = this.canvas.getContext("webgl2");
+    //if (!this.gl) {
+        //console.error("WebGL 2 not available");
+        //document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
+    //}
+    this.gl = init_gl_context(this.canvas);
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.enable(this.gl.DEPTH_TEST);
   }
@@ -78,6 +78,7 @@ export default class BRDFViewport {
   // SET UP PROGRAM
   /////////////////////
   createShaders() {
+
     const lobeVsSource = document.getElementById("lobe.vert").text.trim();
     const lobeFsSource = document.getElementById("phong.frag").text.trim();
     const lineVsSource = document.getElementById("color_only.vert").text.trim();
@@ -283,27 +284,21 @@ export default class BRDFViewport {
     const posAttribLoc = 0;
     const positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.DYNAMIC_DRAW);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
     this.gl.vertexAttribPointer(posAttribLoc, pos_dim, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(posAttribLoc); 
 
     const colorAttribLoc = 1;
     const colorBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.DYNAMIC_DRAW);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
     this.gl.vertexAttribPointer(colorAttribLoc, color_dim, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(colorAttribLoc);
-
-    //const indexBuffer = this.gl.createBuffer();
-    //this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    //const idxType = this.gl.UNSIGNED_INT; // This is why we use Uint16Array on the next line. 
-    ////idxType is passed to our draw command later.
-    //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.STATIC_DRAW); 
 
     const normalAttribLoc = 2;
     const normalBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.DYNAMIC_DRAW);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
     this.gl.vertexAttribPointer(normalAttribLoc, norm_dim, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(normalAttribLoc); 
 
@@ -311,7 +306,7 @@ export default class BRDFViewport {
     const polar_coordBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, polar_coordBuffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, 
-      new Float32Array(polar_coords), this.gl.DYNAMIC_DRAW);
+      new Float32Array(polar_coords), this.gl.STATIC_DRAW);
     this.gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(polar_coordAttribLoc);
 
@@ -383,7 +378,7 @@ export default class BRDFViewport {
       var s = (theta_deg / 90)*100;
       var v = 100;
       
-      return hsvToRgb(h, s, v);
+      return hsv2Rgb(h, s, v);
   }
 
   diffuse(light_dir, normal_dir){

@@ -1,5 +1,14 @@
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 
+export function init_gl_context(canvas){
+  const gl = canvas.getContext("webgl2");
+    if (gl === null) {
+        console.error("WebGL 2 not available");
+        document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
+    }
+  return gl;
+}
+
 // Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
 export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
 

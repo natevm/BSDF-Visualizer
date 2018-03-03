@@ -11,7 +11,7 @@ import {loadTextFile} from './network-wranglers.js';
 
 export default function BRDFViewport(spec) {
 
-  var //crockford: this should be "let". Thing on GitHub: this should be "var".
+  var 
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
     gl, //GL context is initialized in "setupWebGL2"
@@ -47,13 +47,19 @@ export default function BRDFViewport(spec) {
     num_lobe_verts = 0,
     num_line_verts = 0,
     
+    /////////////////////
+    // SET UP CANVAS AND GL CONTEXT
+    /////////////////////
     setupWebGL2 = function() {
       gl = init_gl_context(canvas);
       gl.clearColor(0, 0, 0, 1);
       gl.enable(gl.DEPTH_TEST);
     },
 
-    createShaders = function() {
+    /////////////////////
+    // SET UP PROGRAM
+    /////////////////////
+    setupShaders = function() {
       const lobeVsSource = document.getElementById("lobe.vert").text.trim();
       const lobeFsSource = document.getElementById("phong.frag").text.trim();
       const lineVsSource = document.getElementById("color_only.vert").text.trim();
@@ -77,7 +83,14 @@ export default function BRDFViewport(spec) {
       line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m"); 
       line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v"); 
       line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p"); 
+
+      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
+
+     /////////////////////
+     // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
+     /////////////////////
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
     line_setupGeometry = function(lineVAO, L_hat, N_hat){
@@ -275,8 +288,8 @@ export default function BRDFViewport(spec) {
 
       //TODO: Modify the V matrix, not the M matrix
       //TODO: should probably move this to setupShaders
-      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-      setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
     diffuse = function(light_dir, normal_dir){
@@ -482,11 +495,10 @@ export default function BRDFViewport(spec) {
     };
 
   //************* Start "constructor" (not really a constructor) **************
-  //TODO: We shouldn't be hardcoding the canvas width and height.
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = width;
+  canvas.height = height;
   setupWebGL2();
-  createShaders(); //change to setupShaders?
+  setupShaders(); //change to setupShaders?
   setupGeometry();
 
   setupUI();

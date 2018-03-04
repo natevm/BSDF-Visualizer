@@ -10,7 +10,6 @@ import {loadTextFile} from './network-wranglers.js';
 // Requires d3.js
 
 export default function BRDFViewport(spec) {
-
   var 
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
@@ -33,6 +32,8 @@ export default function BRDFViewport(spec) {
     line_pUniformLoc,
     lineVAO,
 
+    //TODO: remove in_theta_deg, in_phi_deg once we setup our
+    //separate ControlsManager object
     in_theta_deg = 45,
     in_phi_deg = 0,
     numPhiDivisions = 200,
@@ -88,9 +89,9 @@ export default function BRDFViewport(spec) {
       setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
-     /////////////////////
-     // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
-     /////////////////////
+    /////////////////////
+    // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
+    /////////////////////
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
     line_setupGeometry = function(lineVAO, L_hat, N_hat){
@@ -336,10 +337,6 @@ export default function BRDFViewport(spec) {
     /////////////////////
     setupUI = function() {
 
-      //TODO: this menu for incident and outgoing ray
-      //really affects both views... so we shouldn't be 
-      //handling all of that input here...
-
       var menu = d3.select("#brdf-menu");
       var thetaInput;
       var thetaOutput;
@@ -347,31 +344,31 @@ export default function BRDFViewport(spec) {
       var phiOutput;
       var camRotInput;
 
-      menu.html("");
+      //menu.html("");
 
-      /* Add incident theta slider */
-      menu.append("input")
-        .attr("id", "slider_incidentTheta")
-        .attr("type", "range")
-        .attr("min", 0)
-        .attr("max", 90)
-        .attr("step", 1)
-        .attr("value", 0);
+      //[> Add incident theta slider <]
+      //menu.append("input")
+        //.attr("id", "slider_incidentTheta")
+        //.attr("type", "range")
+        //.attr("min", 0)
+        //.attr("max", 90)
+        //.attr("step", 1)
+        //.attr("value", 0);
       
-      menu.append("output")
-         .attr("id", "output_incidentTheta");
+      //menu.append("output")
+         //.attr("id", "output_incidentTheta");
 
-      /* Add incident phi slider */
-      menu.append("input")
-        .attr("id", "slider_incidentPhi")
-        .attr("type", "range")
-        .attr("min", -180)
-        .attr("max", 180)
-        .attr("step", 1)
-        .attr("value", 0);
+      //[> Add incident phi slider <]
+      //menu.append("input")
+        //.attr("id", "slider_incidentPhi")
+        //.attr("type", "range")
+        //.attr("min", -180)
+        //.attr("max", 180)
+        //.attr("step", 1)
+        //.attr("value", 0);
 
-      menu.append("output")
-         .attr("id", "output_incidentPhi");
+      //menu.append("output")
+         //.attr("id", "output_incidentPhi");
 
       /* add camRot slider */
       menu.append("input")
@@ -384,62 +381,62 @@ export default function BRDFViewport(spec) {
     },
 
     setupUICallbacks = function() {
-      var output_incidentTheta = document.getElementById("output_incidentTheta");
-      var output_incidentPhi = document.getElementById("output_incidentPhi");
+      //var output_incidentTheta = document.getElementById("output_incidentTheta");
+      //var output_incidentPhi = document.getElementById("output_incidentPhi");
 
-      //Set initial values
-      output_incidentTheta.innerHTML = in_theta_deg; 
-      output_incidentPhi.innerHTML = in_phi_deg; 
+      ////Set initial values
+      //output_incidentTheta.innerHTML = in_theta_deg; 
+      //output_incidentPhi.innerHTML = in_phi_deg; 
 
-      document.getElementById("slider_incidentTheta").oninput = (event) => {
-        var L_hat;
-        var N_hat; 
-        //var deg;
-        //var rad;
+      //document.getElementById("slider_incidentTheta").oninput = (event) => {
+        //var L_hat;
+        //var N_hat; 
+        ////var deg;
+        ////var rad;
 
-        in_theta_deg = event.target.value;
-        output_incidentTheta.innerHTML = in_theta_deg;
-        L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+        //in_theta_deg = event.target.value;
+        //output_incidentTheta.innerHTML = in_theta_deg;
+        //L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+        //N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
 
-        gl.useProgram(lobeProgram);
-        gl.uniform3fv(lobe_lUniformLoc,L_hat);
+        //gl.useProgram(lobeProgram);
+        //gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-        //num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
-        num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+        ////num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+        //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 
-        //FIXME: the below is not strictly necessary for now.
-        //We may be better off with an object that holds common state
-        //
-        // change light direction in model viewport at same time
-        //deg = event.target.value;
-        //rad = deg * Math.PI / 180;
-        //modelViewport.lightTheta = rad;
-      };
+        ////FIXME: the below is not strictly necessary for now.
+        ////We may be better off with an object that holds common state
+        ////
+        //// change light direction in model viewport at same time
+        ////deg = event.target.value;
+        ////rad = deg * Math.PI / 180;
+        ////modelViewport.lightTheta = rad;
+      //};
 
-      document.getElementById("slider_incidentPhi").oninput = (event) => {
-        var L_hat;
-        var N_hat;
-        //var deg;
-        //var rad;
+      //document.getElementById("slider_incidentPhi").oninput = (event) => {
+        //var L_hat;
+        //var N_hat;
+        ////var deg;
+        ////var rad;
 
-        in_phi_deg = event.target.value;
-        output_incidentPhi.innerHTML = in_phi_deg;
-        L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+        //in_phi_deg = event.target.value;
+        //output_incidentPhi.innerHTML = in_phi_deg;
+        //L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+        //N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
 
-        gl.useProgram(lobeProgram);
-        gl.uniform3fv(lobe_lUniformLoc,L_hat);
+        //gl.useProgram(lobeProgram);
+        //gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-        num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+        //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 
-        //FIXME: the below is not strictly necessary for now.
-        //We may be better off with an object that holds common state
-        //
-        //deg = event.target.value;
-        //rad = deg * Math.PI / 180;
-        //modelViewport.lightPhi = rad; 
-      };
+        ////FIXME: the below is not strictly necessary for now.
+        ////We may be better off with an object that holds common state
+        ////
+        ////deg = event.target.value;
+        ////rad = deg * Math.PI / 180;
+        ////modelViewport.lightPhi = rad; 
+      //};
 
       document.getElementById("slider_camRot").oninput = (event) => {
         var rot_angle_deg = event.target.value;

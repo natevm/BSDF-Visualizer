@@ -381,63 +381,6 @@ export default function BRDFViewport(spec) {
     },
 
     setupUICallbacks = function() {
-      //var output_incidentTheta = document.getElementById("output_incidentTheta");
-      //var output_incidentPhi = document.getElementById("output_incidentPhi");
-
-      ////Set initial values
-      //output_incidentTheta.innerHTML = in_theta_deg; 
-      //output_incidentPhi.innerHTML = in_phi_deg; 
-
-      //document.getElementById("slider_incidentTheta").oninput = (event) => {
-        //var L_hat;
-        //var N_hat; 
-        ////var deg;
-        ////var rad;
-
-        //in_theta_deg = event.target.value;
-        //output_incidentTheta.innerHTML = in_theta_deg;
-        //L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        //N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
-
-        //gl.useProgram(lobeProgram);
-        //gl.uniform3fv(lobe_lUniformLoc,L_hat);
-
-        ////num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
-        //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
-
-        ////FIXME: the below is not strictly necessary for now.
-        ////We may be better off with an object that holds common state
-        ////
-        //// change light direction in model viewport at same time
-        ////deg = event.target.value;
-        ////rad = deg * Math.PI / 180;
-        ////modelViewport.lightTheta = rad;
-      //};
-
-      //document.getElementById("slider_incidentPhi").oninput = (event) => {
-        //var L_hat;
-        //var N_hat;
-        ////var deg;
-        ////var rad;
-
-        //in_phi_deg = event.target.value;
-        //output_incidentPhi.innerHTML = in_phi_deg;
-        //L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        //N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
-
-        //gl.useProgram(lobeProgram);
-        //gl.uniform3fv(lobe_lUniformLoc,L_hat);
-
-        //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
-
-        ////FIXME: the below is not strictly necessary for now.
-        ////We may be better off with an object that holds common state
-        ////
-        ////deg = event.target.value;
-        ////rad = deg * Math.PI / 180;
-        ////modelViewport.lightPhi = rad; 
-      //};
-
       document.getElementById("slider_camRot").oninput = (event) => {
         var rot_angle_deg = event.target.value;
         var rot_angle = deg2rad(rot_angle_deg);

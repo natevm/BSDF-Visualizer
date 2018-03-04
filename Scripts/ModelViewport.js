@@ -7,132 +7,58 @@
 
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 
-export default class ModelViewport {
-    constructor(canvasName, width, height) {
-        // the canvas2 element
-        this.canvas = document.getElementById(canvasName);
-        this.canvas.width = 512;
-        this.canvas.height = 512;
+export default function ModelViewport(spec) {
+  var
+    { canvasName, width, height } = spec,
+    canvas = document.getElementById(canvasName),
+    gl, // WebGL context
+    shaderProgram,
+    models = {},
+    mvMatrix = mat4.create(),
+    mvMatrixStack = [],
+    pMatrix = mat4.create(),
+    vMatrix = mat4.create(),
+    lightPhi = 0,
+    lightTheta =  Math.PI/4,
+    modelsLoaded = false,
 
-        // WebGL context
-        this.gl = null;
+    cameraXRotation = 0,
+    cameraYRotation = 0,
+    mouseDown = false,
+    lastMouseX,
+    lastMouseY,
 
-        // main shader program
-        this.shaderProgram = null;
+    timeNow,
+    lastTime, //FIXME: we don't ever set a valid initial value
+    elapsed,
+    time,
 
-        this.setupWebGL2();
-        this.initShaders();
+    setupWebGL2 = function(){
+        gl = init_gl_context(canvas);
+        gl.clearColor(0, 0, 0, 1);
+        gl.enable(gl.DEPTH_TEST);
+        gl.viewportWidth = canvas.width;
+        gl.viewportHeight = canvas.height;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+    },
 
-        this.models = {};
-        this.mvMatrix = mat4.create();
-        this.mvMatrixStack = [];
-        this.pMatrix = mat4.create();
-        this.vMatrix = mat4.create();
-        //initial light direction -- 45 degree pitch 45 degree yaw
-        this.lightPhi = 0;
-        this.lightTheta =  Math.PI/4;
-        this.loadModels();
-        this.modelsLoaded = false;
+    initShaders = function() {
+        //var fragmentShader = getShader(gl, "shader-fs");
+        //var vertexShader = getShader(gl, "shader-vs");
 
-        this.cameraXRotation = 0;
-        this.cameraYRotation = 0;
+        //shaderProgram = gl.createProgram();
+        //gl.attachShader(shaderProgram, vertexShader);
+        //gl.attachShader(shaderProgram, fragmentShader);
+        //gl.linkProgram(shaderProgram);
 
-        this.mouseDown = false;
-        this.lastMouseX = null;
-        this.lastMouseY = null;
-
-        document.getElementById(canvasName).onmousedown = (event) => {
-            console.log("detected!\n");
-            this.mouseDown = true;
-            this.lastMouseX = event.clientX;
-            this.lastMouseY = event.clientY;
-        };
-
-        document.getElementById(canvasName).onmouseup = (event) => {
-            this.mouseDown = false;
-        };
-
-        document.getElementById(canvasName).onmousemove = (event) => {
-            if (!this.mouseDown) {
-                return;
-            }
-
-            var newX = event.clientX;
-            var newY = event.clientY;
-
-            var deltaY = newY - this.lastMouseY;
-            var deltaX = newX - this.lastMouseX;
-            if (Math.abs(deltaX) > Math.abs(deltaY)) this.cameraXRotation += 0.01*deltaX;
-            else this.cameraYRotation += 0.01*deltaY;
-            console.log(this.cameraXRotation);
-
-            this.lastMouseX = newX;
-            this.lastMouseY = newY;
-        };
-    }
-
-    setupWebGL2() {
-        this.gl = init_gl_context(this.canvas);
-        this.gl.clearColor(0, 0, 0, 1);
-        this.gl.enable(this.gl.DEPTH_TEST);
-        this.gl.viewportWidth = this.canvas.width;
-        this.gl.viewportHeight = this.canvas.height;
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    //getShader(gl, id) {
-        //var shaderScript = document.getElementById(id);
-        //if (!shaderScript){
-            //return null;
-        //}
-
-        //var str = "";
-        //var k = shaderScript.firstChild;
-        //while (k){
-            //if (k.nodeType == 3){
-                //str += k.textContent;
-            //}
-            //k = k.nextSibling;
-        //}
-
-        //var shader;
-        //if (shaderScript.type == "x-shader/x-fragment"){
-            //shader = gl.createShader(gl.FRAGMENT_SHADER);
-        //} else if (shaderScript.type == "x-shader/x-vertex"){
-            //shader = gl.createShader(gl.VERTEX_SHADER);
-        //} else{
-            //return null;
-        //}
-
-        //gl.shaderSource(shader, str);
-        //gl.compileShader(shader);
-
-        //if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-            //alert(gl.getShaderInfoLog(shader));
-            //return null;
-        //}
-
-        //return shader;
-    //}
-
-    initShaders() {
-        var gl = this.gl;
-        //var fragmentShader = this.getShader(gl, "shader-fs");
-        //var vertexShader = this.getShader(gl, "shader-vs");
-
-        //this.shaderProgram = gl.createProgram();
-        //gl.attachShader(this.shaderProgram, vertexShader);
-        //gl.attachShader(this.shaderProgram, fragmentShader);
-        //gl.linkProgram(this.shaderProgram);
-
-        //if (!gl.getProgramParameter(this.shaderProgram, gl.LINK_STATUS)){
+        //if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
             //alert("Could not initialise shaders");
         //}
         
         const vsSource = document.getElementById("model-renderer.vert").text.trim();
         const fsSource = document.getElementById("model-renderer.frag").text.trim();
-        this.shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
-        gl.useProgram(this.shaderProgram);
+        shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
+        gl.useProgram(shaderProgram);
 
         const attrs = {
             'aVertexPosition': OBJ.Layout.POSITION.key,
@@ -143,36 +69,36 @@ export default class ModelViewport {
             'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
         };
 
-        this.shaderProgram.attrIndices = {};
+        shaderProgram.attrIndices = {};
         for (const attrName in attrs) {
             if (!attrs.hasOwnProperty(attrName)) {
                 continue;
             }
-            this.shaderProgram.attrIndices[attrName] = gl.getAttribLocation(this.shaderProgram, attrName);
-            if (this.shaderProgram.attrIndices[attrName] != -1) {
-                gl.enableVertexAttribArray(this.shaderProgram.attrIndices[attrName]);
+            shaderProgram.attrIndices[attrName] = gl.getAttribLocation(shaderProgram, attrName);
+            if (shaderProgram.attrIndices[attrName] != -1) {
+                gl.enableVertexAttribArray(shaderProgram.attrIndices[attrName]);
             } else {
                 console.warn('Shader attribute "' + attrName + '" not found in shader. Is it undeclared or unused in the shader code?');
             }
         }
 
-        this.shaderProgram.pMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uPMatrix");
-        this.shaderProgram.mvMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uMVMatrix");
-        this.shaderProgram.vMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uVMatrix");
-        this.shaderProgram.nMatrixUniform = gl.getUniformLocation(this.shaderProgram, "uNMatrix");
-        this.shaderProgram.lightDirectionUniform = gl.getUniformLocation(this.shaderProgram, "uLightDirection");
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+        shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
+        shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+        shaderProgram.lightDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightDirection");
 
-        this.shaderProgram.applyAttributePointers = (model) => {
+        shaderProgram.applyAttributePointers = (model) => {
             const layout = model.vertexBuffer.layout;
             for (const attrName in attrs) {
-                if (!attrs.hasOwnProperty(attrName) || this.shaderProgram.attrIndices[attrName] == -1) {
+                if (!attrs.hasOwnProperty(attrName) || shaderProgram.attrIndices[attrName] == -1) {
                     continue;
                 }
                 const layoutKey = attrs[attrName];
-                if (this.shaderProgram.attrIndices[attrName] != -1) {
+                if (shaderProgram.attrIndices[attrName] != -1) {
                     const attr = layout[layoutKey];
                     gl.vertexAttribPointer(
-                        this.shaderProgram.attrIndices[attrName],
+                        shaderProgram.attrIndices[attrName],
                         attr.size,
                         gl[attr.type],
                         attr.normalized,
@@ -181,9 +107,9 @@ export default class ModelViewport {
                 }
             }
         };
-    }
+    },
 
-    initBuffers() {
+    initBuffers = function(){
         var layout = new OBJ.Layout(
             OBJ.Layout.POSITION,
             OBJ.Layout.NORMAL,
@@ -193,44 +119,44 @@ export default class ModelViewport {
             OBJ.Layout.SPECULAR_EXPONENT);
 
         // initialize the mesh's buffers
-        for (var modelKey in this.models){
+        for (var modelKey in models){
             // Create the vertex buffer for this mesh
-            var vertexBuffer = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-            var vertexData = this.models[modelKey].makeBufferData(layout);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, vertexData, this.gl.STATIC_DRAW);
+            var vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertexData = models[modelKey].makeBufferData(layout);
+            gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
             vertexBuffer.numItems = vertexData.numItems;
             vertexBuffer.layout = layout;
-            this.models[modelKey].vertexBuffer = vertexBuffer;
+            models[modelKey].vertexBuffer = vertexBuffer;
 
             // Create the index buffer for this mesh
-            var indexBuffer = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-            var indexData = this.models[modelKey].makeIndexBufferData();
-            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);
+            var indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            var indexData = models[modelKey].makeIndexBufferData();
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
             indexBuffer.numItems = indexData.numItems;
-            this.models[modelKey].indexBuffer = indexBuffer;
+            models[modelKey].indexBuffer = indexBuffer;
 
             // this loops through the mesh names and creates new
             // model objects and setting their mesh to the current mesh
-            //this.models[modelKey] = {};
-            //this.models[modelKey].mesh = this.models[modelKey];
+            //models[modelKey] = {};
+            //models[modelKey].mesh = models[modelKey];
         }
-    }
+    },
 
-    setMatrixUniforms(){
-        this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, this.pMatrix);
-        this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.mvMatrix);
-        this.gl.uniformMatrix4fv(this.shaderProgram.vMatrixUniform, false, this.vMatrix);
+    setMatrixUniforms = function(){
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
 
         var normalMatrix = mat3.create();
-        mat3.normalFromMat4(normalMatrix, this.mvMatrix);
-        this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, normalMatrix);
-        var lightDirection = [Math.sin(this.lightTheta)*Math.cos(this.lightPhi) , Math.cos(this.lightTheta), Math.sin(this.lightTheta)*Math.sin(this.lightPhi)];
-        this.gl.uniform3fv(this.shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
-    }
+        mat3.normalFromMat4(normalMatrix, mvMatrix);
+        gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
+        var lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
+        gl.uniform3fv(shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
+    },
 
-    loadModels() {
+    loadModels = function(){
         let p = OBJ.downloadModels([
             {
                 name: 'teapot',
@@ -248,35 +174,35 @@ export default class ModelViewport {
         //     // for ([name, mesh] of Object.entries(models)) {
 
         //     // }
-        //     this.models = models;
-        //     this.modelsLoaded = true;
+        //     models = models;
+        //     modelsLoaded = true;
 
         //     /* Now that the models are loaded, we can initialize the buffers */
-        //     this.initBuffers();
+        //     initBuffers();
         // });
 
-        p.then((models) => {
-            console.log(models);
-        this.models = models;
-        this.initBuffers();
-        this.modelsLoaded = true;
-    });
-    }
+        p.then((loaded_models) => {
+          console.log(loaded_models);
+          models = loaded_models;
+          initBuffers();
+          modelsLoaded = true;
+        });
+    },
 
-    mvPushMatrix(){
+    mvPushMatrix = function(){
         var copy = mat4.create();
-        mat4.copy(copy, this.mvMatrix);
-        this.mvMatrixStack.push(copy);
-    }
+        mat4.copy(copy, mvMatrix);
+        mvMatrixStack.push(copy);
+    },
 
-    mvPopMatrix(){
-        if (this.mvMatrixStack.length === 0){
+    mvPopMatrix = function(){
+        if (mvMatrixStack.length === 0){
             throw "Invalid popMatrix!";
         }
-        this.mvMatrix = this.mvMatrixStack.pop();
-    }
+        mvMatrix = mvMatrixStack.pop();
+    },
 
-    drawObject(model){
+    drawObject = function(model){
         /*
          Takes in a model that points to a mesh and draws the object on the scene.
          Assumes that the setMatrixUniforms function exists
@@ -284,48 +210,89 @@ export default class ModelViewport {
          */
         //    gl2.useProgram(shaderProgram);
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, model.vertexBuffer);
-        this.shaderProgram.applyAttributePointers(model);
+        gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
+        shaderProgram.applyAttributePointers(model);
 
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
-        this.setMatrixUniforms();
-        this.gl.drawElements(this.gl.TRIANGLES, model.indexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
-    }
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+        setMatrixUniforms();
+        gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    },
 
-    drawScene() {
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-        mat4.perspective(this.pMatrix, 45 * Math.PI / 180.0, this.gl.viewportWidth / this.gl.viewportHeight, 0.01, 1000.0);
-        mat4.identity(this.mvMatrix);
-        // move the camera
-        mat4.translate(this.mvMatrix, this.mvMatrix, [0, -10, -40]);
-        mat4.rotate(this.mvMatrix, this.mvMatrix, this.cameraYRotation, [1, 0, 0]);
-        mat4.rotate(this.mvMatrix, this.mvMatrix, this.cameraXRotation, [0, 1, 0]);
-        this.vMatrix = mat4.clone(this.mvMatrix);
-        mat4.rotate(this.mvMatrix, this.mvMatrix, -0.5 * Math.PI, [1, 0, 0]);
-        // set up the scene
-        //this.mvPushMatrix();
-        this.drawObject(this.models.teapot);
-        //this.mvPopMatrix();
-    }
+    drawScene = function() {
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+          mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.01, 1000.0);
+          mat4.identity(mvMatrix);
+          // move the camera
+          mat4.translate(mvMatrix, mvMatrix, [0, -10, -40]);
+          mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
+          mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
+          vMatrix = mat4.clone(mvMatrix);
+          mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);
+          // set up the scene
+          //mvPushMatrix();
+          drawObject(models.teapot);
+          //mvPopMatrix();
+      },
 
-    animate() {
-        this.timeNow = new Date().getTime();
-        this.elapsed = this.timeNow - this.lastTime;
-        if (!this.time) {
-            this.time = 0.0;
+    animate = function() {
+        timeNow = new Date().getTime();
+        elapsed = timeNow - lastTime;
+        if (!time) { //TODO: check against undefined, or init at beginning
+            time = 0.0;
         }
-        this.time += this.elapsed / 1000.0;
-        if (this.lastTime !== 0){
+        time += elapsed / 1000.0;
+        if (lastTime !== 0){
             // do animations
         }
-        this.lastTime = this.timeNow;
-    }
+        lastTime = timeNow;
+    },
 
-    render(time) {
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-        if (this.modelsLoaded) {
-            this.drawScene();
-            this.animate();
+    render = function(time) {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        if (modelsLoaded) {
+            drawScene();
+            animate();
         }
-    }
+    };
+  //************* Start "constructor" (not really a constructor) **************
+  canvas.width = width;
+  canvas.height = height;
+  setupWebGL2();
+  initShaders();
+  loadModels();
+
+  document.getElementById(canvasName).onmousedown = (event) => {
+      //console.log("detected!\n");
+      mouseDown = true;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+  };
+
+  document.getElementById(canvasName).onmouseup = (event) => {
+      mouseDown = false;
+  };
+
+  document.getElementById(canvasName).onmousemove = (event) => {
+      if (!mouseDown) {
+          return;
+      }
+
+      var newX = event.clientX;
+      var newY = event.clientY;
+
+      var deltaY = newY - lastMouseY;
+      var deltaX = newX - lastMouseX;
+      if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
+      else cameraYRotation += 0.01*deltaY;
+      //console.log(cameraXRotation);
+
+      lastMouseX = newX;
+      lastMouseY = newY;
+  };
+  //************* End "constructor" (not really a constructor) **************
+  
+  //Only put things we want to expose publicly in here
+  return Object.freeze({
+    render    
+  });
 }

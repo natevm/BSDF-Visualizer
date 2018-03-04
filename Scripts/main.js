@@ -15,6 +15,7 @@ var render = function(time) {
 document.addEventListener('DOMContentLoaded', function () {
   //brdfViewport = new BRDFViewport("brdf-canvas", 512, 512);
   brdfViewport = BRDFViewport({canvasName: "brdf-canvas", width: 512, height: 512});
-  modelViewport = new ModelViewport("model-canvas", 512, 512);
+  //modelViewport = new ModelViewport("model-canvas", 512, 512);
+  modelViewport = ModelViewport({canvasName: "model-canvas", width: 512, height: 512});
   requestAnimationFrame(render);
 });

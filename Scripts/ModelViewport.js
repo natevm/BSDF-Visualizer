@@ -5,6 +5,7 @@
 //Requires gl-matrix.js
 //Requires webgl-obj-loader.js
 
+import {deg2rad} from './math-utils.js';
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 
 export default function ModelViewport(spec) {
@@ -254,7 +255,16 @@ export default function ModelViewport(spec) {
         drawScene();
         animate();
       }
+    },
+
+    updateTheta = function(newThetaDeg){
+      lightTheta = deg2rad(newThetaDeg);
+    },
+
+    updatePhi = function(newPhiDeg){
+      lightPhi = deg2rad(newPhiDeg);
     };
+
   //************* Start "constructor" (not really a constructor) **************
   canvas.width = width;
   canvas.height = height;
@@ -292,6 +302,8 @@ export default function ModelViewport(spec) {
 
   //Only put things we want to expose publicly in here
   return Object.freeze({
-    render    
+    render,
+    updateTheta,
+    updatePhi
   });
 }

@@ -450,11 +450,11 @@ export default function BRDFViewport(spec) {
       };
     },
 
-    updateTheta = function(new_theta){
+    updateTheta = function(newThetaDeg){
       var L_hat;
       var N_hat; 
 
-      in_theta_deg = new_theta; 
+      in_theta_deg = newThetaDeg; 
       L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
       N_hat = compute_N_hat(); 
 
@@ -466,11 +466,11 @@ export default function BRDFViewport(spec) {
       num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
     },
 
-    updatePhi = function(new_phi){
+    updatePhi = function(newPhiDeg){
       var L_hat;
       var N_hat;
 
-      in_phi_deg = new_phi;
+      in_phi_deg = newPhiDeg;
       L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
       N_hat = compute_N_hat(); 
 

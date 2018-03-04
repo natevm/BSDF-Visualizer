@@ -23,7 +23,7 @@ import ControlsManager from "./ControlsManager.js";
     modelViewport = ModelViewport({canvasName: "model-canvas", width: 512, height: 512});
 
     ctrlManager.registerViewer(brdfViewport);
-    //ctrlManager.registerViewer(modelViewport);
+    ctrlManager.registerViewer(modelViewport);
 
     requestAnimationFrame(render);
   });

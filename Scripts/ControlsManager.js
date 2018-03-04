@@ -3,7 +3,7 @@
 //requires d3.js 
 
 export default function ControlsManager(){
-  var
+  let
     viewers = [],
     in_theta_deg = 45,
     in_phi_deg = 0,
@@ -13,12 +13,12 @@ export default function ControlsManager(){
     setupUI = function() {
       //FIXME: ControlsManager should be writing to its
       //own div, not to #brdf-menu
-      var menu = d3.select("#brdf-menu");
-      var thetaInput;
-      var thetaOutput;
-      var phiInput;
-      var phiOutput;
-      var camRotInput;
+      let menu = d3.select("#brdf-menu");
+      let thetaInput;
+      let thetaOutput;
+      let phiInput;
+      let phiOutput;
+      let camRotInput;
 
       //FIXME: this gets called before
       //setupUI() gets called in BRDFViewport. 
@@ -50,19 +50,11 @@ export default function ControlsManager(){
       menu.append("output")
         .attr("id", "output_incidentPhi");
 
-      /* add camRot slider */
-      menu.append("input")
-        .attr("id", "slider_camRot")
-        .attr("type", "range")
-        .attr("min", -180)
-        .attr("max", 180)
-        .attr("step", 1)
-        .attr("value", 0);
     },
 
     setupUICallbacks = function() {
-      var output_incidentTheta = document.getElementById("output_incidentTheta");
-      var output_incidentPhi = document.getElementById("output_incidentPhi");
+      let output_incidentTheta = document.getElementById("output_incidentTheta");
+      let output_incidentPhi = document.getElementById("output_incidentPhi");
 
       //Set initial values
       output_incidentTheta.innerHTML = in_theta_deg; 
@@ -76,4 +68,13 @@ export default function ControlsManager(){
         console.log(event.target.value);
       };
     };
+
+  //************* Start "constructor" **************
+  setupUI();
+  setupUICallbacks();
+  //************* End "constructor" **************
+
+  return Object.freeze({
+    addViewer    
+  });
 }

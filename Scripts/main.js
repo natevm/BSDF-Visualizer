@@ -2,13 +2,14 @@
 
 import BRDFViewport from "./BRDFViewport.js";
 import ModelViewport from "./ModelViewport.js";
-//import ControlsManager from "./ControlsManager.js";
+import ControlsManager from "./ControlsManager.js";
 
 //Wrap everything in a function so that we do not pollute
 //the global namespace.
 (function () { 
-  var brdfViewport = null;
-  var modelViewport = null;
+  var brdfViewport;
+  var modelViewport;
+  var ctrlManager;
 
   var render = function(time) {
     brdfViewport.render(time);
@@ -17,8 +18,13 @@ import ModelViewport from "./ModelViewport.js";
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    ctrlManager = ControlsManager();
     brdfViewport = BRDFViewport({canvasName: "brdf-canvas", width: 512, height: 512});
     modelViewport = ModelViewport({canvasName: "model-canvas", width: 512, height: 512});
+
+    ctrlManager.addViewer(brdfViewport);
+    ctrlManager.addViewer(modelViewport);
+
     requestAnimationFrame(render);
   });
 }());

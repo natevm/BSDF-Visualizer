@@ -2,11 +2,23 @@
 
 //requires d3.js 
 
+//************************
+//"Class" ControlsManager
+//
+// Using "Classless OOP": 
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+//************************
+
+//Currently there are no "constructor" arguments
+//See BRDFViewport.js for an example of one with arguments
 export default function ControlsManager(){
   const starting_theta = 45;
   const starting_phi = 0;
 
-  let
+  //Declare our object's variables and methods below.
+  //They are private by default, unless we put them
+  //in the "frozen" object that gets returned at the end.
+  var
     viewers = [],
     registerViewer = function(new_viewer){
       viewers.push(new_viewer);
@@ -83,6 +95,7 @@ export default function ControlsManager(){
   setupUICallbacks();
   //************* End "constructor" **************
 
+  //Put any methods / properties that we want to make pulic inside this object.
   return Object.freeze({
     registerViewer    
   });

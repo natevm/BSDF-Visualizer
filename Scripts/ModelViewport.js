@@ -8,7 +8,19 @@
 import {deg2rad} from './math-utils.js';
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 
+//************************
+//"Class" ModelViewport
+//
+// Using "Classless OOP": 
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
+//************************
+
+//put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function ModelViewport(spec) {
+
+  //Declare our object's variables and methods below.
+  //They are private by default, unless we put them
+  //in the "frozen" object that gets returned at the end.
   var
   { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName),
@@ -300,7 +312,7 @@ export default function ModelViewport(spec) {
   };
   //************* End "constructor" (not really a constructor) **************
 
-  //Only put things we want to expose publicly in here
+  //Put any methods / properties that we want to make pulic inside this object.
   return Object.freeze({
     render,
     updateTheta,

@@ -9,7 +9,19 @@ import {loadTextFile} from './network-wranglers.js';
 // Requires gl-matrix.js
 // Requires d3.js
 
-export default function BRDFViewport(spec) {
+//************************
+//"Class" BRDFViewport
+//
+// Using "Classless OOP": 
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+//************************
+
+//put "constructor" arguments inside "spec" (see main.js for usage example)
+export default function BRDFViewport(spec) { 
+
+  //Declare our object's variables and methods below.
+  //They are private by default, unless we put them
+  //in the "frozen" object that gets returned at the end.
   var 
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
@@ -454,19 +466,18 @@ export default function BRDFViewport(spec) {
       prev_time = time;
     };
 
-  //************* Start "constructor" (not really a constructor) **************
+  //************* Start "constructor" **************
   canvas.width = width;
   canvas.height = height;
   setupWebGL2();
-  setupShaders(); //change to setupShaders?
+  setupShaders(); 
   setupGeometry();
 
   setupUI();
   setupUICallbacks();
+  //************* End "constructor" **************
 
-  //************* End "constructor" (not really a constructor) **************
-
-  //Only put things we want to expose publicly in here
+  //Put any methods / properties that we want to make pulic inside this object. 
   return Object.freeze({
     render,   
     updateTheta,

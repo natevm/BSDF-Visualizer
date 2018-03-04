@@ -3,11 +3,12 @@
 //requires d3.js 
 
 export default function ControlsManager(){
+  const starting_theta = 45;
+  const starting_phi = 0;
+
   let
     viewers = [],
-    in_theta_deg = 45,
-    in_phi_deg = 0,
-    addViewer = function(new_viewer){
+    registerViewer = function(new_viewer){
       viewers.push(new_viewer);
     },
     setupUI = function() {
@@ -33,7 +34,7 @@ export default function ControlsManager(){
         .attr("min", 0)
         .attr("max", 90)
         .attr("step", 1)
-        .attr("value", 0);
+        .attr("value", starting_theta);
 
       menu.append("output")
         .attr("id", "output_incidentTheta");
@@ -45,7 +46,7 @@ export default function ControlsManager(){
         .attr("min", -180)
         .attr("max", 180)
         .attr("step", 1)
-        .attr("value", 0);
+        .attr("value", starting_phi);
 
       menu.append("output")
         .attr("id", "output_incidentPhi");
@@ -57,15 +58,23 @@ export default function ControlsManager(){
       let output_incidentPhi = document.getElementById("output_incidentPhi");
 
       //Set initial values
-      output_incidentTheta.innerHTML = in_theta_deg; 
-      output_incidentPhi.innerHTML = in_phi_deg; 
+      output_incidentTheta.innerHTML = starting_theta; 
+      output_incidentPhi.innerHTML = starting_phi; 
 
       document.getElementById("slider_incidentTheta").oninput = (event) => {
-        console.log(event.target.value);
+        viewers.forEach(function(v) {
+          let new_theta = event.target.value;
+          output_incidentTheta.innerHTML = new_theta; 
+          v.updateTheta(new_theta);
+        });
       };
 
       document.getElementById("slider_incidentPhi").oninput = (event) => {
-        console.log(event.target.value);
+        viewers.forEach(function(v) {
+          let new_phi = event.target.value;
+          output_incidentPhi.innerHTML = new_phi; 
+          v.updatePhi(new_phi);
+        });
       };
     };
 
@@ -75,6 +84,6 @@ export default function ControlsManager(){
   //************* End "constructor" **************
 
   return Object.freeze({
-    addViewer    
+    registerViewer    
   });
 }

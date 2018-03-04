@@ -450,6 +450,38 @@ export default function BRDFViewport(spec) {
       };
     },
 
+    updateTheta = function(new_theta){
+      var L_hat;
+      var N_hat; 
+
+      in_theta_deg = new_theta; 
+      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      N_hat = compute_N_hat(); 
+
+      gl.useProgram(lobeProgram);
+      gl.uniform3fv(lobe_lUniformLoc,L_hat);
+
+      //TODO: we should just be modifying uniforms, not setting up
+      //the geometry again.
+      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+    },
+
+    updatePhi = function(new_phi){
+      var L_hat;
+      var N_hat;
+
+      in_phi_deg = new_phi;
+      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      N_hat = compute_N_hat(); 
+
+      gl.useProgram(lobeProgram);
+      gl.uniform3fv(lobe_lUniformLoc,L_hat);
+
+      //TODO: we should just be modifying uniforms, not setting up
+      //the geometry again.
+      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+    },
+
     /////////////////////
     // DRAW 
     /////////////////////
@@ -493,6 +525,8 @@ export default function BRDFViewport(spec) {
 
   //Only put things we want to expose publicly in here
   return Object.freeze({
-    render    
+    render,   
+    updateTheta,
+    updatePhi
   });
 }

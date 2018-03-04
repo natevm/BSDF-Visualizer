@@ -48,7 +48,7 @@ export default function BRDFViewport(spec) {
     num_line_verts = 0,
     
     /////////////////////
-    // SET UP CANVAS AND GL CONTEXT
+    // CANVAS AND GL CONTEXT FUNCTIONS
     /////////////////////
     setupWebGL2 = function() {
       gl = init_gl_context(canvas);
@@ -94,16 +94,13 @@ export default function BRDFViewport(spec) {
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
     line_setupGeometry = function(lineVAO, L_hat, N_hat){
-      gl.bindVertexArray(lineVAO);
-
       var R_hat = get_reflected(L_hat, N_hat); 
-
-      //Dimensionality of positions, colors, normals
-      var pos_dim = 3;
-      var color_dim = 3;
-
+      var pos_dim = 3; //dimensionality of position vectors
+      var color_dim = 3; //dimensionality of color vectors
       var positions = [];
       var colors = [];
+
+      gl.bindVertexArray(lineVAO);
 
       //Incoming ray (cyan)
       positions.push(L_hat[0], L_hat[1], L_hat[2]); colors.push(0,1,1);
@@ -135,15 +132,12 @@ export default function BRDFViewport(spec) {
       gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(colorAttribLoc);
 
-      var num_verts = positions.length/pos_dim; 
-      return num_verts;
+      return positions.length/pos_dim; 
     },
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
     //NORMALS AT ATTRIBUTE 2 IN SHADER.
     lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
-      gl.bindVertexArray(lobeVAO);
-
       //Dimensionality of positions, colors, normals
       var pos_dim = 3;
       var color_dim = 3;
@@ -163,40 +157,38 @@ export default function BRDFViewport(spec) {
       var delTheta = calc_delTheta(numThetaDivisions);
       var delPhi = calc_delPhi(numPhiDivisions); 
 
-      for(var i = 0; i < numThetaDivisions; i++){
-        for(var j = 0; j < numPhiDivisions; j++){
+      gl.bindVertexArray(lobeVAO);
+
+      for(let i = 0; i < numThetaDivisions; i++){
+        for(let j = 0; j < numPhiDivisions; j++){
           // degrees 
-          var phi_deg = j*delPhi; 
-          var theta_deg = i*delTheta; 
+          let phi_deg = j*delPhi; 
+          let theta_deg = i*delTheta; 
 
           // TODO: Take a picture of my updated diagram.
 
           //Four position attributes of our quad
-          var p = polar_to_cartesian(theta_deg,phi_deg); 
-          var p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
-          var p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
-          var p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
+          let p = polar_to_cartesian(theta_deg,phi_deg); 
+          let p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
+          let p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
+          let p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
 
           //Right now these four points are on a perfect hemisphere... 
 
-          //NOTE: We now do the commented out code below in the vertex shader.
-          //Scale by BRDF
-          //p = shade_vtx(L_hat,N_hat,p);
-          //p_k_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_1);
-          //p_k_plus_N = shade_vtx(L_hat,N_hat,p_k_plus_N);
-          //p_k_plus_N_plus_1 = shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
-
           //Four color attributes of our quad 
-          var c = polar_to_color(theta_deg,phi_deg); 
-          var c_k_plus_1 = polar_to_color(theta_deg, (j+1)*delPhi);
-          var c_k_plus_N = polar_to_color((i+1)*delTheta, phi_deg);
-          var c_k_plus_N_plus_1 = polar_to_color((i+1)*delTheta, (j+1)*delPhi);
+          let c = polar_to_color(theta_deg,phi_deg); 
+          let c_k_plus_1 = polar_to_color(theta_deg, (j+1)*delPhi);
+          let c_k_plus_N = polar_to_color((i+1)*delTheta, phi_deg);
+          let c_k_plus_N_plus_1 = polar_to_color((i+1)*delTheta, (j+1)*delPhi);
 
           //All verts share the same normal
-          var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
-          var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-          var n = vec3.create(); vec3.cross(n,v2,v1); //the normal
+          let v1 = vec3.create(); 
+          let v2 = vec3.create(); 
+          let n = vec3.create(); //The normal
 
+          vec3.sub(v1, p_k_plus_N_plus_1, p); 
+          vec3.sub(v2, p_k_plus_N, p);
+          vec3.cross(n,v2,v1); 
           vec3.normalize(n,n);
 
           //Push these values to the buffers. 
@@ -319,26 +311,19 @@ export default function BRDFViewport(spec) {
     },
 
     setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
-      gl.useProgram(program);
-
-      //View
-      gl.uniformMatrix4fv(vUniformLoc, false, initial_V);
-
-      //Model
-      var M = mat4.create(); 
-      gl.uniformMatrix4fv(mUniformLoc, false, M);
-
-      // Projection (perspective)
       var fov = Math.PI * 0.5;
       var canvas = document.getElementById('brdf-canvas');
-      var width = canvas.width;
-      var height = canvas.height;
-      var aspectRatio = width/height; // TODO: get the actual width and height
+      var aspectRatio = canvas.width/canvas.height;
       var nearClip = 0.5;
       var farClip  = 50;
       var P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+      var M = mat4.create(); 
 
-      gl.uniformMatrix4fv(pUniformLoc, false, P);
+      gl.useProgram(program);
+
+      gl.uniformMatrix4fv(vUniformLoc, false, initial_V); //View
+      gl.uniformMatrix4fv(mUniformLoc, false, M); //Model
+      gl.uniformMatrix4fv(pUniformLoc, false, P); //Projection
     },
 
     //prev_time is the time when previous frame was drawn
@@ -356,10 +341,16 @@ export default function BRDFViewport(spec) {
       //handling all of that input here...
 
       var menu = d3.select("#brdf-menu");
+      var thetaInput;
+      var thetaOutput;
+      var phiInput;
+      var phiOutput;
+      var camRotInput;
+
       menu.html("");
 
       /* Add incident theta slider */
-      var thetaInput = menu.append("input")
+      menu.append("input")
         .attr("id", "slider_incidentTheta")
         .attr("type", "range")
         .attr("min", 0)
@@ -367,15 +358,11 @@ export default function BRDFViewport(spec) {
         .attr("step", 1)
         .attr("value", 0);
       
-      menu.append("br");
-      
-      var thetaOutput = menu.append("output")
+      menu.append("output")
          .attr("id", "output_incidentTheta");
 
-      menu.append("br");
-
       /* Add incident phi slider */
-      var phiInput = menu.append("input")
+      menu.append("input")
         .attr("id", "slider_incidentPhi")
         .attr("type", "range")
         .attr("min", -180)
@@ -383,15 +370,11 @@ export default function BRDFViewport(spec) {
         .attr("step", 1)
         .attr("value", 0);
 
-      menu.append("br");
-      
-      var phiOutput = menu.append("output")
+      menu.append("output")
          .attr("id", "output_incidentPhi");
 
-      menu.append("br");
-
       /* add camRot slider */
-       var camRotInput = menu.append("input")
+      menu.append("input")
         .attr("id", "slider_camRot")
         .attr("type", "range")
         .attr("min", -180)
@@ -409,54 +392,62 @@ export default function BRDFViewport(spec) {
       output_incidentPhi.innerHTML = in_phi_deg; 
 
       document.getElementById("slider_incidentTheta").oninput = (event) => {
+        var L_hat;
+        var N_hat; 
+        //var deg;
+        //var rad;
+
         in_theta_deg = event.target.value;
         output_incidentTheta.innerHTML = in_theta_deg;
-        var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+        L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+        N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
 
         gl.useProgram(lobeProgram);
         gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
         //num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
         num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
-      // change light direction in model viewport at same time
-      var deg = event.target.value;
-      var rad = deg * Math.PI / 180;
 
         //FIXME: the below is not strictly necessary for now.
         //We may be better off with an object that holds common state
+        //
+        // change light direction in model viewport at same time
+        //deg = event.target.value;
+        //rad = deg * Math.PI / 180;
         //modelViewport.lightTheta = rad;
       };
 
       document.getElementById("slider_incidentPhi").oninput = (event) => {
+        var L_hat;
+        var N_hat;
+        //var deg;
+        //var rad;
+
         in_phi_deg = event.target.value;
         output_incidentPhi.innerHTML = in_phi_deg;
-        var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-        var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+        L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+        N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
 
         gl.useProgram(lobeProgram);
         gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-        //num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
         num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
-        var deg = event.target.value;
-        var rad = deg * Math.PI / 180;
 
-        //not strictly necessary for now.
+        //FIXME: the below is not strictly necessary for now.
         //We may be better off with an object that holds common state
+        //
+        //deg = event.target.value;
+        //rad = deg * Math.PI / 180;
         //modelViewport.lightPhi = rad; 
       };
 
-      var output_camRot = document.getElementById("output_camRot");
       document.getElementById("slider_camRot").oninput = (event) => {
         var rot_angle_deg = event.target.value;
         var rot_angle = deg2rad(rot_angle_deg);
-        //mat4.fromRotation(M, rot_angle, rot_axis);
-
         var rot_axis = vec3.create();
-        vec3.set(rot_axis, 0, 0, 1);
-
         var rot = mat4.create();
+
+        vec3.set(rot_axis, 0, 0, 1);
         mat4.fromRotation(rot, rot_angle, rot_axis);
         mat4.multiply(V,initial_V,rot);
       };
@@ -466,22 +457,19 @@ export default function BRDFViewport(spec) {
     // DRAW 
     /////////////////////
     render = function(time){
+      var deltaTime;
+      var first; 
+
       time *= 0.001; // convert to seconds
-      var deltaTime = time - prev_time;
+      deltaTime = time - prev_time;
 
       gl.clear(gl.COLOR_BUFFER_BIT);
-      //gl.drawArrays(gl.POINTS, 0, numVerts);
       
-      // //auto-rotate M
-      // var rotationSpeed = 1.2;
-      // rot_angle += rotationSpeed * deltaTime;
-      // mat4.fromRotation(M, rot_angle, rot_axis);
-
       //Draw lobe
       gl.bindVertexArray(lobeVAO);
       gl.useProgram(lobeProgram);
       updateV(V, lobe_vUniformLoc);
-      var first = 0; //see https://stackoverflow.com/q/10221647
+      first = 0; //see https://stackoverflow.com/q/10221647
       gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
 
       //Draw line
@@ -503,6 +491,7 @@ export default function BRDFViewport(spec) {
 
   setupUI();
   setupUICallbacks();
+
   //************* End "constructor" (not really a constructor) **************
 
   //Only put things we want to expose publicly in here

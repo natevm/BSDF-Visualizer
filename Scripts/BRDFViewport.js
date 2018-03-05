@@ -439,59 +439,62 @@ export default function BRDFViewport(spec) {
     };
 
   //************* Start "constructor" **************
-  canvas.width = width;
-  canvas.height = height;
-  setupWebGL2();
+  {
+    const shdrDir = "Shaders/";
 
-  const shdrDir = "Shaders/";
-  let lobeVertSrc;
-  let lobeFragSrc;
-  let lineVertSrc;
-  let lineFragSrc;
+    let lobeVertSrc;
+    let lobeFragSrc;
+    let lineVertSrc;
+    let lineFragSrc;
 
-  let promises = [];
-  promises.push($.ajax({
-    url: shdrDir + "color_only.vert", 
-    success: function(result){
-      lineVertSrc = result.trim();
-    }
-  }));
-  promises.push($.ajax({
-    url: shdrDir + "color_only.frag", 
-    success: function(result){
-      lineFragSrc = result.trim();
-    }
-  }));
-  promises.push($.ajax({
-    url: shdrDir + "lobe.vert", 
-    success: function(result){
-      lobeVertSrc = result.trim();
-    }
-  }));
-  promises.push($.ajax({
-    url: shdrDir + "phong.frag", 
-    success: function(result){
-      lobeFragSrc = result.trim();
-    }
-  }));
+    let promises = [];
 
-  //JQuery promise snippet from https://stackoverflow.com/a/10004137
-  //Wait for all async callbacks to return, then execute the code below.
-  $.when.apply($, promises).then(function() {
-    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
-    // you can process it here
-    setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc); 
-    setupGeometry();
-    renderReady = true;
+    canvas.width = width;
+    canvas.height = height;
+    setupWebGL2();
 
-    setupUI();
-    setupUICallbacks();
-      
-  }, function() {
-      // error occurred
-      console.log("Error loading shaders!");
-  });
+    promises.push($.ajax({
+      url: shdrDir + "color_only.vert", 
+      success: function(result){
+        lineVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "color_only.frag", 
+      success: function(result){
+        lineFragSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "lobe.vert", 
+      success: function(result){
+        lobeVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "phong.frag", 
+      success: function(result){
+        lobeFragSrc = result.trim();
+      }
+    }));
 
+    //JQuery promise snippet from https://stackoverflow.com/a/10004137
+    //Wait for all async callbacks to return, then execute the code below.
+    $.when.apply($, promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc); 
+      setupGeometry();
+      renderReady = true;
+
+      setupUI();
+      setupUICallbacks();
+        
+    }, function() {
+        // error occurred
+        console.log("Error loading shaders!");
+    });
+  }
   //************* End "constructor" **************
 
   //Put any methods / properties that we want to make public inside this object. 

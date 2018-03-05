@@ -15,7 +15,7 @@ export default function ControlsManager(){
   const starting_theta = 45;
   const starting_phi = 0;
 
-  //Declare our object's variables and methods below.
+  //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let

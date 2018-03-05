@@ -18,10 +18,10 @@ import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 //put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function ModelViewport(spec) {
 
-  //Declare our object's variables and methods below.
+  //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
-  var
+  let
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
@@ -56,11 +56,6 @@ export default function ModelViewport(spec) {
     },
 
     initShaders = function(vsSource, fsSource) {
-      //const vsSource = document.getElementById("model-renderer.vert").text.trim();
-      //const fsSource = document.getElementById("model-renderer.frag").text.trim();
-      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
-      gl.useProgram(shaderProgram);
-
       const attrs = {
         'aVertexPosition': OBJ.Layout.POSITION.key,
         'aVertexNormal': OBJ.Layout.NORMAL.key,
@@ -70,13 +65,17 @@ export default function ModelViewport(spec) {
         'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
       };
 
+      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
+      gl.useProgram(shaderProgram);
+
+
       shaderProgram.attrIndices = {};
       for (const attrName in attrs) {
         if (!attrs.hasOwnProperty(attrName)) {
           continue;
         }
         shaderProgram.attrIndices[attrName] = gl.getAttribLocation(shaderProgram, attrName);
-        if (shaderProgram.attrIndices[attrName] != -1) {
+        if (shaderProgram.attrIndices[attrName] !== -1) {
           gl.enableVertexAttribArray(shaderProgram.attrIndices[attrName]);
         } else {
           console.warn('Shader attribute "' + attrName + '" not found in shader. Is it undeclared or unused in the shader code?');
@@ -92,11 +91,12 @@ export default function ModelViewport(spec) {
       shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
         for (const attrName in attrs) {
-          if (!attrs.hasOwnProperty(attrName) || shaderProgram.attrIndices[attrName] == -1) {
+          if (!attrs.hasOwnProperty(attrName) || 
+            shaderProgram.attrIndices[attrName] === -1) {
             continue;
           }
           const layoutKey = attrs[attrName];
-          if (shaderProgram.attrIndices[attrName] != -1) {
+          if (shaderProgram.attrIndices[attrName] !== -1) {
             const attr = layout[layoutKey];
             gl.vertexAttribPointer(
               shaderProgram.attrIndices[attrName],
@@ -111,7 +111,7 @@ export default function ModelViewport(spec) {
     },
 
     initBuffers = function(){
-      var layout = new OBJ.Layout(
+      let layout = new OBJ.Layout(
         OBJ.Layout.POSITION,
         OBJ.Layout.NORMAL,
         OBJ.Layout.DIFFUSE,
@@ -120,20 +120,25 @@ export default function ModelViewport(spec) {
         OBJ.Layout.SPECULAR_EXPONENT);
 
       // initialize the mesh's buffers
-      for (var modelKey in models){
+      for (let modelKey in models){
+        let vertexBuffer = gl.createBuffer();
+        let vertexData = models[modelKey].makeBufferData(layout);
+        let indexBuffer = gl.createBuffer();
+        let indexData = models[modelKey].makeIndexBufferData();
+
         // Create the vertex buffer for this mesh
-        var vertexBuffer = gl.createBuffer();
+        //var vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        var vertexData = models[modelKey].makeBufferData(layout);
+        //var vertexData = models[modelKey].makeBufferData(layout);
         gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
         vertexBuffer.numItems = vertexData.numItems;
         vertexBuffer.layout = layout;
         models[modelKey].vertexBuffer = vertexBuffer;
 
         // Create the index buffer for this mesh
-        var indexBuffer = gl.createBuffer();
+        //var indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        var indexData = models[modelKey].makeIndexBufferData();
+        //var indexData = models[modelKey].makeIndexBufferData();
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
         indexBuffer.numItems = indexData.numItems;
         models[modelKey].indexBuffer = indexBuffer;
@@ -146,8 +151,8 @@ export default function ModelViewport(spec) {
     },
 
     setMatrixUniforms = function(){
-      var normalMatrix = mat3.create();
-      var lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
+      let normalMatrix = mat3.create();
+      let lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
 
       gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
       gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
@@ -192,7 +197,7 @@ export default function ModelViewport(spec) {
     },
 
     mvPushMatrix = function(){
-      var copy = mat4.create();
+      let copy = mat4.create();
       mat4.copy(copy, mvMatrix);
       mvMatrixStack.push(copy);
     },
@@ -265,70 +270,72 @@ export default function ModelViewport(spec) {
       lightPhi = deg2rad(newPhiDeg);
     };
 
-  //************* Start "constructor" (not really a constructor) **************
-  canvas.width = width;
-  canvas.height = height;
-  setupWebGL2();
+  //************* Start "constructor" **************
+  {
+    const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
 
-  const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
-  let vertSrc;
-  let fragSrc;
+    let vertSrc;
+    let fragSrc;
+    let promises = [];
 
-  let promises = [];
-  promises.push($.ajax({
-    url: shdrDir + "model-renderer.vert", 
-    success: function(result){
-      vertSrc = result.trim();
-    }
-  }));
-  promises.push($.ajax({
-    url: shdrDir + "model-renderer.frag", 
-    success: function(result){
-      fragSrc = result.trim();
-    }
-  }));
+    canvas.width = width;
+    canvas.height = height;
+    setupWebGL2();
 
-  //JQuery promise snippet from https://stackoverflow.com/a/10004137
-  //Wait for all async callbacks to return, then execute the code below.
-  $.when.apply($, promises).then(function() {
-    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
-    // you can process it here
-    
-    initShaders(vertSrc, fragSrc);
-    loadModels();
+    promises.push($.ajax({
+      url: shdrDir + "model-renderer.vert", 
+      success: function(result){
+        vertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "model-renderer.frag", 
+      success: function(result){
+        fragSrc = result.trim();
+      }
+    }));
 
-  }, function() {
-      // error occurred
-      console.log("Error loading shaders!");
-  });
+    //JQuery promise snippet from https://stackoverflow.com/a/10004137
+    //Wait for all async callbacks to return, then execute the code below.
+    $.when.apply($, promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      
+      initShaders(vertSrc, fragSrc);
+      loadModels();
 
+    }, function() {
+        // error occurred
+        console.log("Error loading shaders!");
+    });
 
-  document.getElementById(canvasName).onmousedown = (event) => {
-    //console.log("detected!\n");
-    mouseDown = true;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-  };
+    document.getElementById(canvasName).onmousedown = (event) => {
+      //console.log("detected!\n");
+      mouseDown = true;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+    };
 
-  document.getElementById(canvasName).onmouseup = (event) => {
-    mouseDown = false;
-  };
+    document.getElementById(canvasName).onmouseup = (event) => {
+      mouseDown = false;
+    };
 
-  document.getElementById(canvasName).onmousemove = (event) => {
-    if (mouseDown) {
-      let newX = event.clientX;
-      let newY = event.clientY;
-      let deltaY = newY - lastMouseY;
-      let deltaX = newX - lastMouseX;
+    document.getElementById(canvasName).onmousemove = (event) => {
+      if (mouseDown) {
+        let newX = event.clientX;
+        let newY = event.clientY;
+        let deltaY = newY - lastMouseY;
+        let deltaX = newX - lastMouseX;
 
-      if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
-      else cameraYRotation += 0.01*deltaY;
-      //console.log(cameraXRotation);
+        if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
+        else cameraYRotation += 0.01*deltaY;
+        //console.log(cameraXRotation);
 
-      lastMouseX = newX;
-      lastMouseY = newY;
-    }
-  };
+        lastMouseX = newX;
+        lastMouseY = newY;
+      }
+    };
+  }
   //************* End "constructor" (not really a constructor) **************
 
   //Put any methods / properties that we want to make public inside this object.

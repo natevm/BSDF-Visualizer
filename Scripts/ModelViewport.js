@@ -70,17 +70,22 @@ export default function ModelViewport(spec) {
 
 
       shaderProgram.attrIndices = {};
-      for (const attrName in attrs) {
-        if (!attrs.hasOwnProperty(attrName)) {
-          continue;
-        }
+
+      //NathanX: if we use Object.keys(object).forEach we don't have
+      //to check for attrs.hasOwnProperty() 
+      //
+      //for (const attrName in attrs) {
+        //if (!attrs.hasOwnProperty(attrName)) {
+          //continue;
+        //}
+      Object.keys(attrs).forEach(function(attrName) {
         shaderProgram.attrIndices[attrName] = gl.getAttribLocation(shaderProgram, attrName);
         if (shaderProgram.attrIndices[attrName] !== -1) {
           gl.enableVertexAttribArray(shaderProgram.attrIndices[attrName]);
         } else {
           console.warn('Shader attribute "' + attrName + '" not found in shader. Is it undeclared or unused in the shader code?');
         }
-      }
+      });
 
       shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
       shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
@@ -90,11 +95,14 @@ export default function ModelViewport(spec) {
 
       shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
-        for (const attrName in attrs) {
-          if (!attrs.hasOwnProperty(attrName) || 
-            shaderProgram.attrIndices[attrName] === -1) {
-            continue;
-          }
+
+        //NathanX: if we use Object.keys(object).forEach we don't have
+        //to check for attrs.hasOwnProperty() 
+        //
+        //for (const attrName in attrs) {
+          //if (!attrs.hasOwnProperty(attrName) || 
+            //shaderProgram.attrIndices[attrName] === -1) {
+         Object.keys(attrs).forEach(function(attrName) {
           const layoutKey = attrs[attrName];
           if (shaderProgram.attrIndices[attrName] !== -1) {
             const attr = layout[layoutKey];
@@ -106,11 +114,11 @@ export default function ModelViewport(spec) {
               attr.stride,
               attr.offset);
           }
-        }
+        });
       };
     },
 
-    initBuffers = function(){
+    initBuffers = function() {
       let layout = new OBJ.Layout(
         OBJ.Layout.POSITION,
         OBJ.Layout.NORMAL,
@@ -120,7 +128,15 @@ export default function ModelViewport(spec) {
         OBJ.Layout.SPECULAR_EXPONENT);
 
       // initialize the mesh's buffers
-      for (let modelKey in models){
+
+      //NathanX: if we use Object.keys(object).forEach we don't have
+      //to check for attrs.hasOwnProperty() 
+      //
+      //While there was never a check for hasOwnProperty() here, it's still 
+      //safer to not have to check for it at all.
+      //
+      //for (let modelKey in models){
+      Object.keys(models).forEach(function(modelKey) {
         let vertexBuffer = gl.createBuffer();
         let vertexData = models[modelKey].makeBufferData(layout);
         let indexBuffer = gl.createBuffer();
@@ -147,7 +163,7 @@ export default function ModelViewport(spec) {
         // model objects and setting their mesh to the current mesh
         //models[modelKey] = {};
         //models[modelKey].mesh = models[modelKey];
-      }
+      });
     },
 
     setMatrixUniforms = function(){

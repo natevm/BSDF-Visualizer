@@ -22,7 +22,7 @@ export default function ModelViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   var
-  { canvasName, width, height } = spec,
+    { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
     shaderProgram,

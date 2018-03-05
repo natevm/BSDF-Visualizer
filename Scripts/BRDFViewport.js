@@ -19,10 +19,10 @@ import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
 //put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function BRDFViewport(spec) { 
 
-  //Declare our object's variables and methods below.
+  //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
-  var 
+  let 
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
     gl, //GL context is initialized in "setupWebGL2"
@@ -104,11 +104,17 @@ export default function BRDFViewport(spec) {
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
     line_setupGeometry = function(lineVAO, L_hat, N_hat){
-      var R_hat = get_reflected(L_hat, N_hat); 
-      var pos_dim = 3; //dimensionality of position vectors
-      var color_dim = 3; //dimensionality of color vectors
-      var positions = [];
-      var colors = [];
+      const pos_dim = 3; //dimensionality of position vectors
+      const color_dim = 3; //dimensionality of color vectors
+
+      const posAttribLoc = 0;
+      const positionBuffer = gl.createBuffer();
+      const colorAttribLoc = 1;
+      const colorBuffer = gl.createBuffer();
+
+      let R_hat = get_reflected(L_hat, N_hat); 
+      let positions = [];
+      let colors = [];
 
       gl.bindVertexArray(lineVAO);
 
@@ -128,15 +134,11 @@ export default function BRDFViewport(spec) {
       positions.push(0, 0, 0); colors.push(0, 0, 1);
       positions.push(0, 0, 1); colors.push(0, 0, 1);
 
-      const posAttribLoc = 0;
-      const positionBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(posAttribLoc); 
 
-      const colorAttribLoc = 1;
-      const colorBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
@@ -149,23 +151,29 @@ export default function BRDFViewport(spec) {
     //NORMALS AT ATTRIBUTE 2 IN SHADER.
     lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
       //Dimensionality of positions, colors, normals
-      var pos_dim = 3;
-      var color_dim = 3;
-      var norm_dim = 3;
-      var polar_dim = 2;
+      const pos_dim = 3;
+      const color_dim = 3;
+      const norm_dim = 3;
+      const polar_dim = 2;
 
-      var positions = [];
-      var colors = [];
+      const posAttribLoc = 0;
+      const positionBuffer = gl.createBuffer();
+      const colorAttribLoc = 1;
+      const colorBuffer = gl.createBuffer();
+      const normalAttribLoc = 2;
+      const normalBuffer = gl.createBuffer();
+      const polar_coordAttribLoc = 3;
+      const polar_coordBuffer = gl.createBuffer();
 
-      //var indices = [];
-      var normals = []; //TODO: We can actually get rid of this attribute
-      var polar_coords = [];
+      let positions = [];
+      let colors = [];
+      let normals = []; //TODO: We can actually get rid of this attribute
+      let polar_coords = [];
 
-      var num_verts = 0;
+      let num_verts = 0;
 
-      //TODO: fix these two as constant computed at init time
-      var delTheta = calc_delTheta(numThetaDivisions);
-      var delPhi = calc_delPhi(numPhiDivisions); 
+      let delTheta = calc_delTheta(numThetaDivisions);
+      let delPhi = calc_delPhi(numPhiDivisions); 
 
       gl.bindVertexArray(lobeVAO);
 
@@ -233,29 +241,21 @@ export default function BRDFViewport(spec) {
         }
       }
 
-      const posAttribLoc = 0;
-      const positionBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
       gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(posAttribLoc); 
 
-      const colorAttribLoc = 1;
-      const colorBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
       gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(colorAttribLoc);
 
-      const normalAttribLoc = 2;
-      const normalBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
       gl.vertexAttribPointer(normalAttribLoc, norm_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(normalAttribLoc); 
 
-      const polar_coordAttribLoc = 3;
-      const polar_coordBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, polar_coordBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, 
         new Float32Array(polar_coords), gl.STATIC_DRAW);
@@ -266,8 +266,8 @@ export default function BRDFViewport(spec) {
     },
 
     setupGeometry = function() {
-      var L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
-      var N_hat = compute_N_hat();
+      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      let N_hat = compute_N_hat();
 
       lobeVAO = gl.createVertexArray();
    
@@ -303,9 +303,9 @@ export default function BRDFViewport(spec) {
       const k_s = 0.3; 
       const spec_power = 20; 
 
-      var R_hat = get_reflected(L_hat, N_hat);
-      var specular_value = Math.pow(Math.max(vec3.dot(R_hat, V_hat),0), spec_power);
-      var diffuse_value = diffuse(L_hat,N_hat); //diffuse coefficient
+      let R_hat = get_reflected(L_hat, N_hat);
+      let specular_value = Math.pow(Math.max(vec3.dot(R_hat, V_hat),0), spec_power);
+      let diffuse_value = diffuse(L_hat,N_hat); //diffuse coefficient
 
       return k_d*diffuse_value + k_s*specular_value; 
     },
@@ -313,21 +313,21 @@ export default function BRDFViewport(spec) {
     //vtx is the original vertex on the hemisphere
     //return value is the same vertex with length scaled by the BRDF
     shade_vtx = function(L_hat,N_hat,vtx){
-        var V_hat = vtx; //view (outgoing) direction 
-        var phong_shade = phong(L_hat, V_hat, N_hat);
-        var result = vec3.create(); 
+        let V_hat = vtx; //view (outgoing) direction 
+        let phong_shade = phong(L_hat, V_hat, N_hat);
+        let result = vec3.create(); 
         vec3.scale(result,vtx,phong_shade);
         return result;
     },
 
     setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
-      var fov = Math.PI * 0.5;
-      var canvas = document.getElementById('brdf-canvas');
-      var aspectRatio = canvas.width/canvas.height;
-      var nearClip = 0.5;
-      var farClip  = 50;
-      var P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
-      var M = mat4.create(); 
+      let fov = Math.PI * 0.5;
+      let canvas = document.getElementById('brdf-canvas');
+      let aspectRatio = canvas.width/canvas.height;
+      let nearClip = 0.5;
+      let farClip  = 50;
+      let P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+      let M = mat4.create(); 
 
       gl.useProgram(program);
 
@@ -345,39 +345,12 @@ export default function BRDFViewport(spec) {
     // SET UP UI CALLBACKS 
     /////////////////////
     setupUI = function() {
-
-      var menu = d3.select("#brdf-menu");
-      var thetaInput;
-      var thetaOutput;
-      var phiInput;
-      var phiOutput;
-      var camRotInput;
-
-      //menu.html("");
-
-      //[> Add incident theta slider <]
-      //menu.append("input")
-        //.attr("id", "slider_incidentTheta")
-        //.attr("type", "range")
-        //.attr("min", 0)
-        //.attr("max", 90)
-        //.attr("step", 1)
-        //.attr("value", 0);
-      
-      //menu.append("output")
-         //.attr("id", "output_incidentTheta");
-
-      //[> Add incident phi slider <]
-      //menu.append("input")
-        //.attr("id", "slider_incidentPhi")
-        //.attr("type", "range")
-        //.attr("min", -180)
-        //.attr("max", 180)
-        //.attr("step", 1)
-        //.attr("value", 0);
-
-      //menu.append("output")
-         //.attr("id", "output_incidentPhi");
+      const menu = d3.select("#brdf-menu");
+      let thetaInput;
+      let thetaOutput;
+      let phiInput;
+      let phiOutput;
+      let camRotInput;
 
       /* add camRot slider */
       menu.append("input")
@@ -391,10 +364,10 @@ export default function BRDFViewport(spec) {
 
     setupUICallbacks = function() {
       document.getElementById("slider_camRot").oninput = (event) => {
-        var rot_angle_deg = event.target.value;
-        var rot_angle = deg2rad(rot_angle_deg);
-        var rot_axis = vec3.create();
-        var rot = mat4.create();
+        let rot_angle_deg = event.target.value;
+        let rot_angle = deg2rad(rot_angle_deg);
+        let rot_axis = vec3.create();
+        let rot = mat4.create();
 
         vec3.set(rot_axis, 0, 0, 1);
         mat4.fromRotation(rot, rot_angle, rot_axis);
@@ -403,8 +376,8 @@ export default function BRDFViewport(spec) {
     },
 
     updateTheta = function(newThetaDeg){
-      var L_hat;
-      var N_hat; 
+      let L_hat;
+      let N_hat; 
 
       in_theta_deg = newThetaDeg; 
       L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
@@ -419,8 +392,8 @@ export default function BRDFViewport(spec) {
     },
 
     updatePhi = function(newPhiDeg){
-      var L_hat;
-      var N_hat;
+      let L_hat;
+      let N_hat;
 
       in_phi_deg = newPhiDeg;
       L_hat = compute_L_hat(in_theta_deg, in_phi_deg);

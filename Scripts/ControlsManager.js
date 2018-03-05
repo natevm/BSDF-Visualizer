@@ -18,7 +18,7 @@ export default function ControlsManager(){
   //Declare our object's variables and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
-  var
+  let
     viewers = [],
     registerViewer = function(new_viewer){
       viewers.push(new_viewer);

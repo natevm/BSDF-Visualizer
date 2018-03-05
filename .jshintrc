@@ -9,6 +9,7 @@
     "vec3" : true,
     "vec4" : true,
     "OBJ"  : true,
-    "d3"   : true
+    "d3"   : true,
+    "$"    : true
   }
 }

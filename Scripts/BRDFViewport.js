@@ -4,8 +4,8 @@ import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian,
     polar_to_color} from './math-utils.js';
 import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
     compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
-import {loadTextFile} from './network-wranglers.js';
 
+// Requires jquery
 // Requires gl-matrix.js
 // Requires d3.js
 
@@ -44,6 +44,8 @@ export default function BRDFViewport(spec) {
     line_pUniformLoc,
     lineVAO,
 
+    renderReady = false,
+
     //TODO: remove in_theta_deg, in_phi_deg once we setup our
     //separate ControlsManager object
     in_theta_deg = 45,
@@ -72,11 +74,11 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP PROGRAM
     /////////////////////
-    setupShaders = function() {
-      const lobeVsSource = document.getElementById("lobe.vert").text.trim();
-      const lobeFsSource = document.getElementById("phong.frag").text.trim();
-      const lineVsSource = document.getElementById("color_only.vert").text.trim();
-      const lineFsSource = document.getElementById("color_only.frag").text.trim();
+    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
+      //const lobeVsSource = document.getElementById("lobe.vert").text.trim();
+      //const lobeFsSource = document.getElementById("phong.frag").text.trim();
+      //const lineVsSource = document.getElementById("color_only.vert").text.trim();
+      //const lineFsSource = document.getElementById("color_only.frag").text.trim();
 
       lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
       lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
@@ -441,40 +443,101 @@ export default function BRDFViewport(spec) {
     // DRAW 
     /////////////////////
     render = function(time){
-      var deltaTime;
-      var first; 
+      if(renderReady === true){
+        var deltaTime;
+        var first; 
 
-      time *= 0.001; // convert to seconds
-      deltaTime = time - prev_time;
+        time *= 0.001; // convert to seconds
+        deltaTime = time - prev_time;
 
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      
-      //Draw lobe
-      gl.bindVertexArray(lobeVAO);
-      gl.useProgram(lobeProgram);
-      updateV(V, lobe_vUniformLoc);
-      first = 0; //see https://stackoverflow.com/q/10221647
-      gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        //Draw lobe
+        gl.bindVertexArray(lobeVAO);
+        gl.useProgram(lobeProgram);
+        updateV(V, lobe_vUniformLoc);
+        first = 0; //see https://stackoverflow.com/q/10221647
+        gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
 
-      //Draw line
-      gl.bindVertexArray(lineVAO);
-      gl.useProgram(lineProgram);
-      updateV(V, line_vUniformLoc);
-      first = 0; 
-      gl.drawArrays(gl.LINES, first, num_line_verts);
+        //Draw line
+        gl.bindVertexArray(lineVAO);
+        gl.useProgram(lineProgram);
+        updateV(V, line_vUniformLoc);
+        first = 0; 
+        gl.drawArrays(gl.LINES, first, num_line_verts);
 
-      prev_time = time;
+        prev_time = time;
+      }
     };
 
   //************* Start "constructor" **************
   canvas.width = width;
   canvas.height = height;
   setupWebGL2();
-  setupShaders(); 
-  setupGeometry();
 
-  setupUI();
-  setupUICallbacks();
+  const shdrDir = "Shaders/";
+  let lobeVertSrc;
+  let lobeFragSrc;
+  let lineVertSrc;
+  let lineFragSrc;
+
+  let promises = [];
+  promises.push($.ajax({
+    url: shdrDir + "color_only.vert", 
+    success: function(result){
+      lineVertSrc = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + "color_only.frag", 
+    success: function(result){
+      lineFragSrc = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + "lobe.vert", 
+    success: function(result){
+      lobeVertSrc = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + "phong.frag", 
+    success: function(result){
+      lobeFragSrc = result.trim();
+    }
+  }));
+
+  //JQuery promise snippet from https://stackoverflow.com/a/10004137
+  //Wait for all async callback to return, then execute the code below.
+  $.when.apply($, promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+    //console.log("Shader sources loaded!");
+    //console.log(lobeVertSrc);
+    //console.log("****************");
+    //console.log(lobeFragSrc);
+    //console.log("****************");
+    //console.log(lineVertSrc);
+    //console.log("****************");
+    //console.log(lineFragSrc);
+
+    setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc); 
+    setupGeometry();
+    renderReady = true;
+
+    setupUI();
+    setupUICallbacks();
+      
+  }, function() {
+      // error occurred
+      console.log("Error loading shaders!");
+  });
+
+  //$.ajax({url: "Shaders/color_only.vert", success: function(result){
+      //console.log(result);
+    //}
+  //});
+  
   //************* End "constructor" **************
 
   //Put any methods / properties that we want to make pulic inside this object. 

@@ -1,15 +1,19 @@
+#version 300 es
+
 precision mediump float;
 
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
 
-varying vec2 vTextureCoord;
-varying vec3 vTransformedNormal;
-varying vec4 vPosition;
+in vec2 vTextureCoord;
+in vec3 vTransformedNormal;
+in vec4 vPosition;
 
-varying vec3 vDiffuse;
-varying vec3 vSpecular;
-varying float vSpecularExponent;
+in vec3 vDiffuse;
+in vec3 vSpecular;
+in float vSpecularExponent;
+
+out vec4 vColor;
 
 void main(void) {
     vec3 V = -normalize(vPosition.xyz);
@@ -19,5 +23,5 @@ void main(void) {
 
     vec3 color = vDiffuse * dot(N, L) +
       vSpecular * pow(dot(H, N), vSpecularExponent);
-    gl_FragColor = vec4(color, 1.0);
+    vColor = vec4(color, 1.0);
 }

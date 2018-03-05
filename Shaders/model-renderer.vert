@@ -1,21 +1,23 @@
-attribute vec3 aVertexPosition;
-attribute vec3 aVertexNormal;
-attribute vec2 aTextureCoord;
-attribute vec3 aDiffuse;
-attribute vec3 aSpecular;
-attribute float aSpecularExponent;
+#version 300 es
+
+in vec3 aVertexPosition;
+in vec3 aVertexNormal;
+in vec2 aTextureCoord;
+in vec3 aDiffuse;
+in vec3 aSpecular;
+in float aSpecularExponent;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat3 uNMatrix;
 
-varying vec2 vTextureCoord;
-varying vec3 vTransformedNormal;
-varying vec4 vPosition;
+out vec2 vTextureCoord;
+out vec3 vTransformedNormal;
+out vec4 vPosition;
 
-varying vec3 vDiffuse;
-varying vec3 vSpecular;
-varying float vSpecularExponent;
+out vec3 vDiffuse;
+out vec3 vSpecular;
+out float vSpecularExponent;
 
 void main(void) {
     vDiffuse = aDiffuse;

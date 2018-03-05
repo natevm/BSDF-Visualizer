@@ -1,2 +1,4 @@
-1) We should probably change gl.DYNAMIC_DRAW calls to gl.STATIC_DRAW calls when we are done doing the lobe on GPU.
-2) There is some sort of... seam when we set the color using polar_to_color. It's definitely not a mach band... does it appear near phi=0?
+1) There is some sort of... seam when we set the color using polar_to_color. It's definitely not a mach band... does it appear near phi=0?
+2) Currently we put our shaders inside index.html... ideally, especially once our shaders get larger, we will want to put them in their own standalone files. But in order to do that, it looks like we'll have to make an asynchronous XMLHttpRequest (see network-wranglers.js).
+3) Currently, our GUI controls are bolted on to the BRDFViewer... I believe that the "correct" way to do it is to have a third object store the GUI state (i.e. the model). The renderes function as views. Finally, a controller would modify the GUI state. For our application we can probably merge view and controller.
+4) Currently Firefox doesn't fully support ES6 modules. Therefore, our app works if dom.moduleScripts.enabled is set to "true" in about.config.

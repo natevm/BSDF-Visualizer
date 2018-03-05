@@ -1,805 +1,506 @@
 "use strict";
 
-// Requires gl-wrangle-funcs.js
+import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian, 
+    polar_to_color} from './math-utils.js';
+import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
+    compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
+
+// Requires jquery
 // Requires gl-matrix.js
-// Requires math-utils.js
-// Requires hsvToRGB.js
+// Requires d3.js
 
-class BRDFViewport {
-  constructor(canvasName, width, height) {
-    /* Store canvas to viewport instance */
-    this.canvas = document.getElementById(canvasName);
-    this.canvas.width = 512;
-    this.canvas.height = 512;
+//************************
+//"Class" BRDFViewport
+//
+// Using "Classless OOP": 
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+//************************
 
-    //TODO: is the best thing to do, to initialize to null or to 
-    //initialize to undefined? (I don't actually know.)
+//put "constructor" arguments inside "spec" (see main.js for usage example)
+export default function BRDFViewport(spec) { 
 
-    /* GL context is initialized in "setupWebGL2" */
-    this.gl = null;
+  //Declare our object's properties and methods below.
+  //They are private by default, unless we put them
+  //in the "frozen" object that gets returned at the end.
+  let 
+    { canvasName, width, height } = spec,
+    canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
+    gl, //GL context is initialized in "setupWebGL2"
 
-    /* Programs are initialized in createShaders */
-    this.lobeProgram = null;
-    this.lobe_nUniformLoc = null;
-    this.lobe_lUniformLoc = null;
-    this.lobe_delThetaUniformLoc = null;
-    this.lobe_delPhiUniformLoc = null;
-    this.lobe_mUniformLoc = null;
-    this.lobe_vUniformLoc = null;
-    this.lobe_pUniformLoc = null;
-    this.lobeVAO = null;
+    // Programs are initialized in createShaders
+    lobeProgram,
+    lobe_nUniformLoc,
+    lobe_lUniformLoc,
+    lobe_delThetaUniformLoc,
+    lobe_delPhiUniformLoc,
+    lobe_mUniformLoc,
+    lobe_vUniformLoc,
+    lobe_pUniformLoc,
+    lobeVAO,
 
-    this.lineProgram = null;
-    this.line_mUniformLoc = null;
-    this.line_vUniformLoc = null;
-    this.line_pUniformLoc = null;
-    this.lineVAO = null; 
+    lineProgram,
+    line_mUniformLoc,
+    line_vUniformLoc,
+    line_pUniformLoc,
+    lineVAO,
 
-    this.in_theta_deg = 45;
-    this.in_phi_deg = 0;
-    this.numPhiDivisions = 200;
-    this.numThetaDivisions = 100;
-    this.delTheta = 90 / this.numThetaDivisions;
-    this.delPhi = 360 / this.numPhiDivisions;
+    renderReady = false,
 
-    /* For render function */
-    this.prev_time = 0;
-    //this.M = mat4.create(); //Right now we are keeping M as identity
-    this.initial_V = get_initial_V();
-    this.V = mat4.clone(this.initial_V); 
+    //TODO: remove in_theta_deg, in_phi_deg once we setup our
+    //separate ControlsManager object
+    in_theta_deg = 45,
+    in_phi_deg = 0,
+    numPhiDivisions = 200,
+    numThetaDivisions = 100,
+    delTheta = 90 / numThetaDivisions,
+    delPhi = 360 / numPhiDivisions,
 
-
-    this.num_lobe_verts = 0;
-    this.num_line_verts = 0;
-
-    this.setupWebGL2();
-    this.createShaders();
-    this.setupGeometry();
-
-    this.setupUI();
-    this.setupUICallbacks();
-  }
-
-  /////////////////////
-  // SET UP CANVAS AND GL CONTEXT
-  /////////////////////
-  setupWebGL2() {
-    this.gl = this.canvas.getContext("webgl2");
-    if (!this.gl) {
-        console.error("WebGL 2 not available");
-        document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
-    }
-    this.gl.clearColor(0, 0, 0, 1);
-    this.gl.enable(this.gl.DEPTH_TEST);
-  }
-
-  /////////////////////
-  // SET UP PROGRAM
-  /////////////////////
-  createShaders() {
-    const lobeVsSource = document.getElementById("lobe.vert").text.trim();
-    const lobeFsSource = document.getElementById("phong.frag").text.trim();
-    const lineVsSource = document.getElementById("color_only.vert").text.trim();
-    const lineFsSource = document.getElementById("color_only.frag").text.trim();
-
-    this.lobeProgram = setup_program(this.gl, lobeVsSource, lobeFsSource);
-    this.lineProgram = setup_program(this.gl, lineVsSource, lineFsSource);
-
-    this.lobe_nUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_n"); 
-    this.lobe_lUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_l"); 
-    this.lobe_delThetaUniformLoc = 
-      this.gl.getUniformLocation(this.lobeProgram, "u_delTheta"); 
-    this.lobe_delPhiUniformLoc = 
-      this.gl.getUniformLocation(this.lobeProgram, "u_delPhi"); 
-
-    // model, view, and projection matrices, respectively.
-    this.lobe_mUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_m"); 
-    this.lobe_vUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_v"); 
-    this.lobe_pUniformLoc = this.gl.getUniformLocation(this.lobeProgram, "u_p"); 
-
-    this.line_mUniformLoc = this.gl.getUniformLocation(this.lineProgram, "u_m"); 
-    this.line_vUniformLoc = this.gl.getUniformLocation(this.lineProgram, "u_v"); 
-    this.line_pUniformLoc = this.gl.getUniformLocation(this.lineProgram, "u_p"); 
-  }
-
-  /////////////////////
-  // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
-  /////////////////////
-  setupGeometry() {
-
-    //const default_in_angle_deg = 45; //Default value when we open the app.
-    //var in_angle = Math.radians(default_in_angle_deg);
-
-    // L_hat points towards the light
-    // N_hat is the normal direction
-    // *_hat refers to a normalized vector
-
-    var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
-    var N_hat = compute_N_hat();
-
-    this.lobeVAO = this.gl.createVertexArray();
- 
-    //Assumes positions at attribute 0, colors at attribute 1, 
-    //normals at attribute 2 in lobe shader
-    this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
-    this.gl.useProgram(this.lobeProgram);
-    this.gl.useProgram(this.lobeProgram);
-    this.gl.uniform3fv(this.lobe_nUniformLoc,N_hat);
-    this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
-
-    //TODO: calc_delPHi and calc_delTheta should be called exactly once, at init time,
-    //and their values should be stored in consts.
-    this.gl.uniform1f(this.lobe_delPhiUniformLoc,calc_delPhi(this.numPhiDivisions));
-    this.gl.uniform1f(this.lobe_delThetaUniformLoc,calc_delTheta(this.numThetaDivisions));
-
-    this.lineVAO = this.gl.createVertexArray();
-    //Assumes positions at attribute 0, colors at attribute 1 in line shader
-    this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
-
-    //TODO: Modify the V matrix, not the M matrix
-    this.setupMVP(this.lobeProgram, this.lobe_mUniformLoc, 
-      this.lobe_vUniformLoc, this.lobe_pUniformLoc);
-    this.setupMVP(this.lineProgram, this.line_mUniformLoc, 
-      this.line_vUniformLoc, this.line_pUniformLoc);
-  }
-
-  //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
-  //NORMALS AT ATTRIBUTE 2 IN SHADER.
-  lobe_setupGeometry(lobeVAO, L_hat, N_hat){
-
-    console.log("setting up lobe geometry");
+    prev_time = 0,
+    //M = mat4.create(), //Right now we are keeping M as identity
+    initial_V = get_initial_V(),
+    V = mat4.clone(initial_V), 
+    num_lobe_verts = 0,
+    num_line_verts = 0,
     
-    this.gl.bindVertexArray(this.lobeVAO);
+    /////////////////////
+    // CANVAS AND GL CONTEXT FUNCTIONS
+    /////////////////////
+    setupWebGL2 = function() {
+      gl = init_gl_context(canvas);
+      gl.clearColor(0, 0, 0, 1);
+      gl.enable(gl.DEPTH_TEST);
+    },
 
-    //Dimensionality of positions, colors, normals
-    var pos_dim = 3;
-    var color_dim = 3;
-    var norm_dim = 3;
-    var polar_dim = 2;
+    /////////////////////
+    // SET UP PROGRAM
+    /////////////////////
+    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
+      lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
+      lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
 
-    var positions = [];
-    var colors = [];
+      lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n"); 
+      lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l"); 
+      lobe_delThetaUniformLoc = 
+          gl.getUniformLocation(lobeProgram, "u_delTheta"); 
+      lobe_delPhiUniformLoc = 
+          gl.getUniformLocation(lobeProgram, "u_delPhi"); 
 
-    //var indices = [];
-    var normals = []; //TODO: We can actually get rid of this attribute
-    var polar_coords = [];
+      // model, view, and projection matrices, respectively.
+      lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m"); 
+      lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v"); 
+      lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p"); 
 
-    var num_verts = 0;
+      line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m"); 
+      line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v"); 
+      line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p"); 
 
-    //TODO: fix these two as constant computed at init time
-    var delTheta = calc_delTheta(this.numThetaDivisions);
-    var delPhi = calc_delPhi(this.numPhiDivisions); 
+      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+    },
 
-    for(var i = 0; i < this.numThetaDivisions; i++){
-      for(var j = 0; j < this.numPhiDivisions; j++){
-        // degrees 
-        var phi_deg = j*this.delPhi; 
-        var theta_deg = i*this.delTheta; 
+    /////////////////////
+    // SET UP GEOMETRY  (This was tricky to port over. Could use some refactoring )
+    /////////////////////
 
-        // TODO: Take a picture of my updated diagram.
+    //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
+    line_setupGeometry = function(lineVAO, L_hat, N_hat){
+      const pos_dim = 3; //dimensionality of position vectors
+      const color_dim = 3; //dimensionality of color vectors
 
-        //Four position attributes of our quad
-        var p = this.polar_to_cartesian(theta_deg,phi_deg); 
-        var p_k_plus_1 = this.polar_to_cartesian(theta_deg, (j+1)*this.delPhi);
-        var p_k_plus_N = this.polar_to_cartesian((i+1)*this.delTheta, phi_deg);
-        var p_k_plus_N_plus_1 = this.polar_to_cartesian((i+1)*this.delTheta, (j+1)*this.delPhi);
+      const posAttribLoc = 0;
+      const positionBuffer = gl.createBuffer();
+      const colorAttribLoc = 1;
+      const colorBuffer = gl.createBuffer();
 
-        //Right now these four points are on a perfect hemisphere... 
+      let R_hat = get_reflected(L_hat, N_hat); 
+      let positions = [];
+      let colors = [];
 
-        //NOTE: We now do the commented out code below in the vertex shader.
-        //Scale by BRDF
-        //p = this.shade_vtx(L_hat,N_hat,p);
-        //p_k_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_1);
-        //p_k_plus_N = this.shade_vtx(L_hat,N_hat,p_k_plus_N);
-        //p_k_plus_N_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
+      gl.bindVertexArray(lineVAO);
 
-        //Four color attributes of our quad 
-        var c = this.polar_to_color(theta_deg,this.phi_deg); 
-        var c_k_plus_1 = this.polar_to_color(theta_deg, (j+1)*this.delPhi);
-        var c_k_plus_N = this.polar_to_color((i+1)*this.delTheta, this.phi_deg);
-        var c_k_plus_N_plus_1 = this.polar_to_color((i+1)*this.delTheta, (j+1)*this.delPhi);
+      //Incoming ray (cyan)
+      positions.push(L_hat[0], L_hat[1], L_hat[2]); colors.push(0,1,1);
+      positions.push(0, 0, 0); colors.push(0,1,1);
 
-        //All verts share the same normal
-        var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
-        var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-        var n = vec3.create(); vec3.cross(n,v2,v1); //the normal
+      //Outgoing ray (magenta)
+      positions.push(0, 0, 0); colors.push(1,0,1);
+      positions.push(R_hat[0], R_hat[1], R_hat[2]); colors.push(1,0,1);
 
-        vec3.normalize(n,n);
+      //TODO: Draw x (red), y (green), z (blue) axes 
+      positions.push(0, 0, 0); colors.push(1, 0, 0);
+      positions.push(1, 0, 0); colors.push(1, 0, 0);
+      positions.push(0, 0, 0); colors.push(0, 1, 0);
+      positions.push(0, 1, 0); colors.push(0, 1, 0);
+      positions.push(0, 0, 0); colors.push(0, 0, 1);
+      positions.push(0, 0, 1); colors.push(0, 0, 1);
 
-        //Push these values to the buffers. 
-        //There are two tris per quad, so we need a total of six attributes.
-        //CCW winding order
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(posAttribLoc); 
 
-        //p_k --> p_k_plus_1 --> p_k_plus_N_plus_1
-        positions.push(p[0],p[1],p[2]); 
-        positions.push(p_k_plus_1[0],p_k_plus_1[1],p_k_plus_1[2]); 
-        positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-        colors.push(c[0],c[1],c[2]); 
-        colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
-        colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-        normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
-        polar_coords.push(theta_deg,phi_deg);
-        polar_coords.push(theta_deg, (j+1)*delPhi);
-        polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(colorAttribLoc);
 
-        //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
-        positions.push(p[0],p[1],p[2]); 
-        positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-        positions.push(p_k_plus_N[0],p_k_plus_N[1],p_k_plus_N[2]); 
-        colors.push(c[0],c[1],c[2]); 
-        colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-        colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
-        normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
-        polar_coords.push(theta_deg,phi_deg);
-        polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
-        polar_coords.push((i+1)*delTheta, phi_deg);
+      return positions.length/pos_dim; 
+    },
 
-        num_verts += 6;
-          //num_verts += 3;
+    //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
+    //NORMALS AT ATTRIBUTE 2 IN SHADER.
+    lobe_setupGeometry = function(lobeVAO, L_hat, N_hat){
+      //Dimensionality of positions, colors, normals
+      const pos_dim = 3;
+      const color_dim = 3;
+      const norm_dim = 3;
+      const polar_dim = 2;
 
-        // Set triangle indices
-    /*
-     *    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
-     *      var N = numPhiDivisions;
-     *      var k = vtx_idx;
-     *      var k_plus_N = vtx_idx + N;
-     *      var k_plus_1;
-     *      var k_plus_N_plus_1;
-     *      
-     *      if(j < numPhiDivisions - 1){
-     *        k_plus_1 = k + 1;
-     *        k_plus_N_plus_1 = k_plus_N + 1; 
-     *      } else { // circle back around to the first if we are the last on the ring
-     *        k_plus_1 = vtx_idx - j;
-     *        k_plus_N_plus_1 = k_plus_1 + N;
-     *      }
-     *
-     *      // two tris make a quad. CCW winding order
-     *      indices.push(k, k_plus_1, k_plus_N);
-     *      indices.push(k_plus_N, k_plus_1, k_plus_N_plus_1);
-     *    }
-     */
+      const posAttribLoc = 0;
+      const positionBuffer = gl.createBuffer();
+      const colorAttribLoc = 1;
+      const colorBuffer = gl.createBuffer();
+      const normalAttribLoc = 2;
+      const normalBuffer = gl.createBuffer();
+      const polar_coordAttribLoc = 3;
+      const polar_coordBuffer = gl.createBuffer();
 
-    /*
-     *    // line between current and next vertex
-     *    indices.push(vtx_idx);
-     *    if(j < numPhiDivisions - 1)  
-     *      indices.push(vtx_idx + 1); 
-     *    else // circle back around to the first if we are at last vertex
-     *      indices.push(vtx_idx - j);
-     *
-     *    // Line between current vertex and vertex directly beneath it. 
-     *    // Don't do this for the bottommost concentric ring because there's
-     *    // nothing beneath it
-     *    if(i < numThetaDivisions){
-     *      indices.push(vtx_idx);
-     *      indices.push(vtx_idx + numPhiDivisions);
-     *    }
-     */
+      let positions = [];
+      let colors = [];
+      let normals = []; //TODO: We can actually get rid of this attribute
+      let polar_coords = [];
+
+      let num_verts = 0;
+
+      let delTheta = calc_delTheta(numThetaDivisions);
+      let delPhi = calc_delPhi(numPhiDivisions); 
+
+      gl.bindVertexArray(lobeVAO);
+
+      for(let i = 0; i < numThetaDivisions; i++){
+        for(let j = 0; j < numPhiDivisions; j++){
+          // degrees 
+          let phi_deg = j*delPhi; 
+          let theta_deg = i*delTheta; 
+
+          // TODO: Take a picture of my updated diagram.
+
+          //Four position attributes of our quad
+          let p = polar_to_cartesian(theta_deg,phi_deg); 
+          let p_k_plus_1 = polar_to_cartesian(theta_deg, (j+1)*delPhi);
+          let p_k_plus_N = polar_to_cartesian((i+1)*delTheta, phi_deg);
+          let p_k_plus_N_plus_1 = polar_to_cartesian((i+1)*delTheta, (j+1)*delPhi);
+
+          //Right now these four points are on a perfect hemisphere... 
+
+          //Four color attributes of our quad 
+          let c = polar_to_color(theta_deg,phi_deg); 
+          let c_k_plus_1 = polar_to_color(theta_deg, (j+1)*delPhi);
+          let c_k_plus_N = polar_to_color((i+1)*delTheta, phi_deg);
+          let c_k_plus_N_plus_1 = polar_to_color((i+1)*delTheta, (j+1)*delPhi);
+
+          //All verts share the same normal
+          let v1 = vec3.create(); 
+          let v2 = vec3.create(); 
+          let n = vec3.create(); //The normal
+
+          vec3.sub(v1, p_k_plus_N_plus_1, p); 
+          vec3.sub(v2, p_k_plus_N, p);
+          vec3.cross(n,v2,v1); 
+          vec3.normalize(n,n);
+
+          //Push these values to the buffers. 
+          //There are two tris per quad, so we need a total of six attributes.
+          //CCW winding order
+
+          //p_k --> p_k_plus_1 --> p_k_plus_N_plus_1
+          positions.push(p[0],p[1],p[2]); 
+          positions.push(p_k_plus_1[0],p_k_plus_1[1],p_k_plus_1[2]); 
+          positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
+          colors.push(c[0],c[1],c[2]); 
+          colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
+          colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
+          normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+          polar_coords.push(theta_deg,phi_deg);
+          polar_coords.push(theta_deg, (j+1)*delPhi);
+          polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
+
+          //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
+          positions.push(p[0],p[1],p[2]); 
+          positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
+          positions.push(p_k_plus_N[0],p_k_plus_N[1],p_k_plus_N[2]); 
+          colors.push(c[0],c[1],c[2]); 
+          colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
+          colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
+          normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
+          polar_coords.push(theta_deg,phi_deg);
+          polar_coords.push((i+1)*delTheta, (j+1)*delPhi);
+          polar_coords.push((i+1)*delTheta, phi_deg);
+
+          num_verts += 6;
+        }
       }
-    }
 
-    const posAttribLoc = 0;
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(posAttribLoc, pos_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(posAttribLoc); 
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(posAttribLoc); 
 
-    const colorAttribLoc = 1;
-    const colorBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(colorAttribLoc, color_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(colorAttribLoc);
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(colorAttribLoc);
 
-    //const indexBuffer = this.gl.createBuffer();
-    //this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    //const idxType = this.gl.UNSIGNED_INT; // This is why we use Uint16Array on the next line. 
-    ////idxType is passed to our draw command later.
-    //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.STATIC_DRAW); 
+      gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(normalAttribLoc, norm_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(normalAttribLoc); 
 
-    const normalAttribLoc = 2;
-    const normalBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(normalAttribLoc, norm_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(normalAttribLoc); 
+      gl.bindBuffer(gl.ARRAY_BUFFER, polar_coordBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, 
+        new Float32Array(polar_coords), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(polar_coordAttribLoc);
 
-    const polar_coordAttribLoc = 3;
-    const polar_coordBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, polar_coordBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, 
-      new Float32Array(polar_coords), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(polar_coordAttribLoc);
+      return num_verts;
+    },
 
-    return num_verts;
-  }
+    setupGeometry = function() {
+      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      let N_hat = compute_N_hat();
 
-  //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
-  line_setupGeometry(lineVAO, L_hat, N_hat){
-    
-    this.gl.bindVertexArray(lineVAO);
+      lobeVAO = gl.createVertexArray();
+   
+      //Assumes positions at attribute 0, colors at attribute 1, 
+      //normals at attribute 2 in lobe shader
+      num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
+      gl.useProgram(lobeProgram);
+      gl.useProgram(lobeProgram);
+      gl.uniform3fv(lobe_nUniformLoc,N_hat);
+      gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-    var R_hat = get_reflected(L_hat, N_hat); 
+      //TODO: calc_delPHi and calc_delTheta should be called exactly once, 
+      //at init time, and their values should be stored in consts.
+      gl.uniform1f(lobe_delPhiUniformLoc,calc_delPhi(numPhiDivisions));
+      gl.uniform1f(lobe_delThetaUniformLoc,calc_delTheta(numThetaDivisions));
 
-    //Dimensionality of positions, colors, normals
-    var pos_dim = 3;
-    var color_dim = 3;
+      lineVAO = gl.createVertexArray();
+      //Assumes positions at attribute 0, colors at attribute 1 in line shader
+      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
 
-    var positions = [];
-    var colors = [];
+      //TODO: Modify the V matrix, not the M matrix
+      //TODO: should probably move this to setupShaders
+      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+    },
 
-    //Incoming ray (cyan)
-    positions.push(L_hat[0], L_hat[1], L_hat[2]); colors.push(0,1,1);
-    positions.push(0, 0, 0); colors.push(0,1,1);
+    diffuse = function(light_dir, normal_dir){
+      return Math.max(0,vec3.dot(light_dir, normal_dir));
+    },
 
-    //Outgoing ray (magenta)
-    positions.push(0, 0, 0); colors.push(1,0,1);
-    positions.push(R_hat[0], R_hat[1], R_hat[2]); colors.push(1,0,1);
+    phong = function(L_hat, V_hat, N_hat){
+      const k_d = 0.7; 
+      const k_s = 0.3; 
+      const spec_power = 20; 
 
-    //TODO: Draw x (red), y (green), z (blue) axes 
-    positions.push(0, 0, 0); colors.push(1, 0, 0);
-    positions.push(1, 0, 0); colors.push(1, 0, 0);
-    positions.push(0, 0, 0); colors.push(0, 1, 0);
-    positions.push(0, 1, 0); colors.push(0, 1, 0);
-    positions.push(0, 0, 0); colors.push(0, 0, 1);
-    positions.push(0, 0, 1); colors.push(0, 0, 1);
+      let R_hat = get_reflected(L_hat, N_hat);
+      let specular_value = Math.pow(Math.max(vec3.dot(R_hat, V_hat),0), spec_power);
+      let diffuse_value = diffuse(L_hat,N_hat); //diffuse coefficient
 
-    const posAttribLoc = 0;
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(posAttribLoc, pos_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(posAttribLoc); 
+      return k_d*diffuse_value + k_s*specular_value; 
+    },
 
-    const colorAttribLoc = 1;
-    const colorBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.DYNAMIC_DRAW);
-    this.gl.vertexAttribPointer(colorAttribLoc, color_dim, this.gl.FLOAT, false, 0, 0);
-    this.gl.enableVertexAttribArray(colorAttribLoc);
+    //vtx is the original vertex on the hemisphere
+    //return value is the same vertex with length scaled by the BRDF
+    shade_vtx = function(L_hat,N_hat,vtx){
+        let V_hat = vtx; //view (outgoing) direction 
+        let phong_shade = phong(L_hat, V_hat, N_hat);
+        let result = vec3.create(); 
+        vec3.scale(result,vtx,phong_shade);
+        return result;
+    },
 
-    var num_verts = positions.length/pos_dim; 
-    return num_verts;
-  }
+    setupMVP = function(program, mUniformLoc, vUniformLoc, pUniformLoc){
+      let fov = Math.PI * 0.5;
+      let canvas = document.getElementById('brdf-canvas');
+      let aspectRatio = canvas.width/canvas.height;
+      let nearClip = 0.5;
+      let farClip  = 50;
+      let P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+      let M = mat4.create(); 
 
-  polar_to_cartesian(theta_deg,phi_deg){
-      // radians
-      var phi = (Math.PI / 180) * phi_deg;
-      var theta = (Math.PI / 180) * theta_deg;
+      gl.useProgram(program);
 
-      var x = Math.sin(theta)*Math.cos(phi);
-      var y = Math.sin(theta)*Math.sin(phi);
-      var z = Math.cos(theta);
-      return vec3.fromValues(x, y, z);
-  }
+      gl.uniformMatrix4fv(vUniformLoc, false, initial_V); //View
+      gl.uniformMatrix4fv(mUniformLoc, false, M); //Model
+      gl.uniformMatrix4fv(pUniformLoc, false, P); //Projection
+    },
 
-  polar_to_color(theta_deg, phi_deg){
-      //in HSV, H ranges from 0 to 360, S and V range from 0 to 100
-      var h = phi_deg; 
-      var s = (theta_deg / 90)*100;
-      var v = 100;
-      
-      return hsvToRgb(h, s, v);
-  }
+    //prev_time is the time when previous frame was drawn
+    updateV = function(V,vUniformLoc){ 
+      gl.uniformMatrix4fv(vUniformLoc, false, V);
+    },
 
-  diffuse(light_dir, normal_dir){
-    return Math.max(0,vec3.dot(light_dir, normal_dir));
-  }
+    /////////////////////
+    // SET UP UI CALLBACKS 
+    /////////////////////
+    setupUI = function() {
+      const menu = d3.select("#brdf-menu");
+      let thetaInput;
+      let thetaOutput;
+      let phiInput;
+      let phiOutput;
+      let camRotInput;
 
-  phong(L_hat, V_hat, N_hat){
-    const k_d = 0.7; 
-    const k_s = 0.3; 
-    const spec_power = 20; 
+      /* add camRot slider */
+      menu.append("input")
+        .attr("id", "slider_camRot")
+        .attr("type", "range")
+        .attr("min", -180)
+        .attr("max", 180)
+        .attr("step", 1)
+        .attr("value", 0);
+    },
 
-    var R_hat = get_reflected(L_hat, N_hat);
-    var specular_value = Math.pow(Math.max(vec3.dot(R_hat, V_hat),0), spec_power);
-    var diffuse_value = this.diffuse(L_hat,N_hat); //diffuse coefficient
+    setupUICallbacks = function() {
+      document.getElementById("slider_camRot").oninput = (event) => {
+        let rot_angle_deg = event.target.value;
+        let rot_angle = deg2rad(rot_angle_deg);
+        let rot_axis = vec3.create();
+        let rot = mat4.create();
 
-    return k_d*diffuse_value + k_s*specular_value; 
-  }
+        vec3.set(rot_axis, 0, 0, 1);
+        mat4.fromRotation(rot, rot_angle, rot_axis);
+        mat4.multiply(V,initial_V,rot);
+      };
+    },
 
-  //vtx is the original vertex on the hemisphere
-  //return value is the same vertex with length scaled by the BRDF
-  shade_vtx(L_hat,N_hat,vtx){
-      var V_hat = vtx; //view (outgoing) direction 
-      var phong_shade = this.phong(L_hat, V_hat, N_hat);
-      var result = vec3.create(); 
-      vec3.scale(result,vtx,phong_shade);
-      return result;
-  }
+    updateTheta = function(newThetaDeg){
+      let L_hat;
+      let N_hat; 
 
-  //TODO: We may want to pre-allocate V and pass it in if we end up changing V
-  //often.
-  setupMVP(program, mUniformLoc, vUniformLoc, pUniformLoc){
-    
-    /*
-     * gl-matrix stores matrices in column-major order
-     * Therefore, the following matrix:
-     *
-     * [1, 0, 0, 0,
-     * 0, 1, 0, 0,
-     * 0, 0, 1, 0,
-     * x, y, z, 0]
-     *
-     * Is equivalent to this in the OpenGL docs:
-     *
-     * 1 0 0 x
-     * 0 1 0 y
-     * 0 0 1 z
-     * 0 0 0 0
-     */
+      in_theta_deg = newThetaDeg; 
+      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      N_hat = compute_N_hat(); 
 
-    //var cam_z = 1.5; // z-position of camera in camera space
-    //var cam_y = 0.5; // altitude of camera
+      gl.useProgram(lobeProgram);
+      gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-    // BRDF is in tangent space. Tangent space is Z-up.
-    // Also, we need to move the camera so that it's not at the origin 
-    //var V = [1,      0,     0, 0,
-             //0,      0,     1, 0,
-             //0,      1,     0, 0,
-             //0, -cam_y,-cam_z, 1];
+      //TODO: we should just be modifying uniforms, not setting up
+      //the geometry again.
+      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+    },
 
-    this.gl.useProgram(program);
+    updatePhi = function(newPhiDeg){
+      let L_hat;
+      let N_hat;
 
-    //View
-    this.gl.uniformMatrix4fv(vUniformLoc, false, this.initial_V);
+      in_phi_deg = newPhiDeg;
+      L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      N_hat = compute_N_hat(); 
 
-    //Model
-    var M = mat4.create(); 
-    this.gl.uniformMatrix4fv(mUniformLoc, false, M);
+      gl.useProgram(lobeProgram);
+      gl.uniform3fv(lobe_lUniformLoc,L_hat);
 
-    // Projection (perspective)
-    var fov = Math.PI * 0.5;
-    var canvas = document.getElementById('brdf-canvas');
-    var width = canvas.width;
-    var height = canvas.height;
-    var aspectRatio = width/height; // TODO: get the actual width and height
-    var nearClip = 0.5;
-    var farClip  = 50;
-    var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+      //TODO: we should just be modifying uniforms, not setting up
+      //the geometry again.
+      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+    },
 
-    this.gl.uniformMatrix4fv(pUniformLoc, false, P);
-  }
+    /////////////////////
+    // DRAW 
+    /////////////////////
+    render = function(time){
+      if(renderReady === true){
+        let deltaTime;
+        let first; 
 
-  //prev_time is the time when previous frame was drawn
-  updateV(V,vUniformLoc){ 
-    this.gl.uniformMatrix4fv(vUniformLoc, false, V);
-  }
+        time *= 0.001; // convert to seconds
+        deltaTime = time - prev_time;
 
-  /////////////////////
-  // SET UP UI CALLBACKS 
-  /////////////////////
-  setupUI() {
-    this.menu = d3.select("#brdf-menu");
-    this.menu.html("");
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        //Draw lobe
+        gl.bindVertexArray(lobeVAO);
+        gl.useProgram(lobeProgram);
+        updateV(V, lobe_vUniformLoc);
+        first = 0; //see https://stackoverflow.com/q/10221647
+        gl.drawArrays(gl.TRIANGLES, first, num_lobe_verts);
 
-    /* Add incident theta slider */
-    var thetaInput = this.menu.append("input")
-      .attr("id", "slider_incidentTheta")
-      .attr("type", "range")
-      .attr("min", 0)
-      .attr("max", 90)
-      .attr("step", 1)
-      .attr("value", 0);
-    
-    this.menu.append("br");
-    
-    var thetaOutput = this.menu.append("output")
-       .attr("id", "output_incidentTheta");
+        //Draw line
+        gl.bindVertexArray(lineVAO);
+        gl.useProgram(lineProgram);
+        updateV(V, line_vUniformLoc);
+        first = 0; 
+        gl.drawArrays(gl.LINES, first, num_line_verts);
 
-    this.menu.append("br");
-
-    /* Add incident phi slider */
-    var phiInput = this.menu.append("input")
-      .attr("id", "slider_incidentPhi")
-      .attr("type", "range")
-      .attr("min", -180)
-      .attr("max", 180)
-      .attr("step", 1)
-      .attr("value", 0);
-
-    this.menu.append("br");
-    
-    var phiOutput = this.menu.append("output")
-       .attr("id", "output_incidentPhi");
-
-    this.menu.append("br");
-
-    /* add camRot slider */
-     var camRotInput = this.menu.append("input")
-      .attr("id", "slider_camRot")
-      .attr("type", "range")
-      .attr("min", -180)
-      .attr("max", 180)
-      .attr("step", 1)
-      .attr("value", 0);
-  }
-
-  /////////////////////
-  // SET UP UI CALLBACKS 
-  /////////////////////
-  setupUICallbacks() {
-    var output_incidentTheta = document.getElementById("output_incidentTheta");
-    var output_incidentPhi = document.getElementById("output_incidentPhi");
-
-    //Set initial values
-    //TODO: this is a hack, we should be querying the default value from the HTML tag
-    output_incidentTheta.innerHTML = this.in_theta_deg; 
-    output_incidentPhi.innerHTML = this.in_phi_deg; 
-
-    document.getElementById("slider_incidentTheta").oninput = (event) => {
-      this.in_theta_deg = event.target.value;
-      output_incidentTheta.innerHTML = this.in_theta_deg;
-      var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
-      var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
-
-      this.gl.useProgram(this.lobeProgram);
-      this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
-
-      //this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
-      this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
-	  // change light direction in model viewport at same time
-	  var deg = event.target.value;
-	  var rad = deg * Math.PI / 180;
-	  modelViewport.lightTheta = rad;
+        prev_time = time;
+      }
     };
 
-    document.getElementById("slider_incidentPhi").oninput = (event) => {
-      this.in_phi_deg = event.target.value;
-      output_incidentPhi.innerHTML = this.in_phi_deg;
-      var L_hat = compute_L_hat(this.in_theta_deg, this.in_phi_deg);
-      var N_hat = compute_N_hat(); //TODO: N_hat only needs to be computed once. 
+  //************* Start "constructor" **************
+  {
+    const shdrDir = "Shaders/";
 
-      this.gl.useProgram(this.lobeProgram);
-      this.gl.uniform3fv(this.lobe_lUniformLoc,L_hat);
+    let lobeVertSrc;
+    let lobeFragSrc;
+    let lineVertSrc;
+    let lineFragSrc;
 
-      //this.num_lobe_verts = this.lobe_setupGeometry(this.lobeVAO, L_hat, N_hat);
-      this.num_line_verts = this.line_setupGeometry(this.lineVAO, L_hat, N_hat);
-      var deg = event.target.value;
-      var rad = deg * Math.PI / 180;
-      modelViewport.lightPhi = rad;
-    };
+    let promises = [];
 
-    var output_camRot = document.getElementById("output_camRot");
-    document.getElementById("slider_camRot").oninput = (event) => {
-      var rot_angle_deg = event.target.value;
-      var rot_angle = Math.radians(rot_angle_deg);
-      //mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
+    canvas.width = width;
+    canvas.height = height;
+    setupWebGL2();
 
-      var rot_axis = vec3.create();
-      vec3.set(rot_axis, 0, 0, 1);
+    promises.push($.ajax({
+      url: shdrDir + "color_only.vert", 
+      success: function(result){
+        lineVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "color_only.frag", 
+      success: function(result){
+        lineFragSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "lobe.vert", 
+      success: function(result){
+        lobeVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "phong.frag", 
+      success: function(result){
+        lobeFragSrc = result.trim();
+      }
+    }));
 
-      var rot = mat4.create();
-      mat4.fromRotation(rot, rot_angle, rot_axis);
-      mat4.multiply(this.V,this.initial_V,rot);
-    };
+    //JQuery promise snippet from https://stackoverflow.com/a/10004137
+    //Wait for all async callbacks to return, then execute the code below.
+    $.when.apply($, promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc); 
+      setupGeometry();
+      renderReady = true;
+
+      setupUI();
+      setupUICallbacks();
+        
+    }, function() {
+        // error occurred
+        console.log("Error loading shaders!");
+    });
   }
+  //************* End "constructor" **************
 
-  /////////////////////
-  // DRAW 
-  /////////////////////
-  render(time){
-    time *= 0.001; // convert to seconds
-    var deltaTime = time - this.prev_time;
-
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    //gl.drawArrays(gl.POINTS, 0, numVerts);
-    
-    // //auto-rotate M
-    // var rotationSpeed = 1.2;
-    // this.rot_angle += rotationSpeed * deltaTime;
-    // mat4.fromRotation(this.M, this.rot_angle, this.rot_axis);
-
-    //Draw lobe
-    this.gl.bindVertexArray(this.lobeVAO);
-    this.gl.useProgram(this.lobeProgram);
-    this.updateV(this.V, this.lobe_vUniformLoc);
-    var first = 0; //see https://stackoverflow.com/q/10221647
-    this.gl.drawArrays(this.gl.TRIANGLES, first, this.num_lobe_verts);
-
-    //Draw line
-    this.gl.bindVertexArray(this.lineVAO);
-    this.gl.useProgram(this.lineProgram);
-    this.updateV(this.V, this.line_vUniformLoc);
-    first = 0; 
-    this.gl.drawArrays(this.gl.LINES, first, this.num_line_verts);
-
-    this.prev_time = time;
-  }
+  //Put any methods / properties that we want to make public inside this object. 
+  return Object.freeze({
+    render,   
+    updateTheta,
+    updatePhi
+  });
 }
-
-
-// Not sure what this code originally did. 
-// //vtx is the original vertex on the hemisphere
-//     //return value is the same vertex with length scaled by the BRDF
-//     // var shade_vtx = function(L_hat,N_hat,vtx){
-//     //     var V_hat = vtx; //view (outgoing) direction 
-//     //     var phong_shade = this.phong(L_hat, V_hat, N_hat);
-//     //     var result = vec3.create(); 
-//     //     vec3.scale(result,vtx,phong_shade);
-//     //     return result;
-//     // };
-
-//     var num_verts = 0;
-//     for(var i = 0; i < this.numThetaDivisions; i++){
-//       for(var j = 0; j < this.numPhiDivisions; j++){
-//         // degrees 
-//         var phi_deg = j*this.delPhi; 
-//         var theta_deg = i*this.delTheta; 
-
-//         // TODO: Take a picture of my updated diagram.
-
-//         //Four position attributes of our quad
-//         var p = this.polar_to_cartesian(theta_deg,phi_deg); 
-//         var p_k_plus_1 = this.polar_to_cartesian(theta_deg, (j+1)*this.delPhi);
-//         var p_k_plus_N = this.polar_to_cartesian((i+1)*this.delTheta, phi_deg);
-//         var p_k_plus_N_plus_1 = this.polar_to_cartesian((i+1)*this.delTheta, (j+1)*this.delPhi);
-
-//         //Right now these four points are on a perfect hemisphere... 
-
-//         //Scale by BRDF
-//         p = this.shade_vtx(L_hat,N_hat,p);
-//         p_k_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_1);
-//         p_k_plus_N = this.shade_vtx(L_hat,N_hat,p_k_plus_N);
-//         p_k_plus_N_plus_1 = this.shade_vtx(L_hat,N_hat,p_k_plus_N_plus_1);
-
-//         //Four color attributes of our quad 
-//         var c = this.polar_to_color(theta_deg,phi_deg); 
-//         var c_k_plus_1 = this.polar_to_color(theta_deg, (j+1)*this.delPhi);
-//         var c_k_plus_N = this.polar_to_color((i+1)*this.delTheta, phi_deg);
-//         var c_k_plus_N_plus_1 = this.polar_to_color((i+1)*this.delTheta, (j+1)*this.delPhi);
-
-//         //All verts share the same normal
-//         var v1 = vec3.create(); vec3.sub(v1, p_k_plus_N_plus_1, p); 
-//         var v2 = vec3.create(); vec3.sub(v2, p_k_plus_N, p);
-//         var n = vec3.create(); vec3.cross(n,v2,v1); //the normal
-
-//         vec3.normalize(n,n);
-
-//         //Push these values to the buffers. 
-//         //There are two tris per quad, so we need a total of six attributes.
-//         //CCW winding order
-
-//         //p_k --> p_k_plus_1 --> p_k_plus_N_plus_1
-//         positions.push(p[0],p[1],p[2]); 
-//         positions.push(p_k_plus_1[0],p_k_plus_1[1],p_k_plus_1[2]); 
-//         positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-//         colors.push(c[0],c[1],c[2]); 
-//         colors.push(c_k_plus_1[0],c_k_plus_1[1],c_k_plus_1[2]); 
-//         colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-//         normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
-
-//         //p_k --> p_k_plus_N_plus_1 --> p_k_plus_N  
-//         positions.push(p[0],p[1],p[2]); 
-//         positions.push(p_k_plus_N_plus_1[0],p_k_plus_N_plus_1[1],p_k_plus_N_plus_1[2]); 
-//         positions.push(p_k_plus_N[0],p_k_plus_N[1],p_k_plus_N[2]); 
-//         colors.push(c[0],c[1],c[2]); 
-//         colors.push(c_k_plus_N_plus_1[0],c_k_plus_N_plus_1[1],c_k_plus_N_plus_1[2]); 
-//         colors.push(c_k_plus_N[0],c_k_plus_N[1],c_k_plus_N[2]); 
-//         normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]); normals.push(n[0],n[1],n[2]);
-//         num_verts += 6;
-//           //num_verts += 3;
-
-//         // Set triangle indices
-    
-//      *    if(i < numThetaDivisions){ // don't do the bottommost concentric ring
-//      *      var N = numPhiDivisions;
-//      *      var k = vtx_idx;
-//      *      var k_plus_N = vtx_idx + N;
-//      *      var k_plus_1;
-//      *      var k_plus_N_plus_1;
-//      *      
-//      *      if(j < numPhiDivisions - 1){
-//      *        k_plus_1 = k + 1;
-//      *        k_plus_N_plus_1 = k_plus_N + 1; 
-//      *      } else { // circle back around to the first if we are the last on the ring
-//      *        k_plus_1 = vtx_idx - j;
-//      *        k_plus_N_plus_1 = k_plus_1 + N;
-//      *      }
-//      *
-//      *      // two tris make a quad. CCW winding order
-//      *      indices.push(k, k_plus_1, k_plus_N);
-//      *      indices.push(k_plus_N, k_plus_1, k_plus_N_plus_1);
-//      *    }
-     
-
-//     /*
-//      *    // line between current and next vertex
-//      *    indices.push(vtx_idx);
-//      *    if(j < numPhiDivisions - 1)  
-//      *      indices.push(vtx_idx + 1); 
-//      *    else // circle back around to the first if we are at last vertex
-//      *      indices.push(vtx_idx - j);
-//      *
-//      *    // Line between current vertex and vertex directly beneath it. 
-//      *    // Don't do this for the bottommost concentric ring because there's
-//      *    // nothing beneath it
-//      *    if(i < numThetaDivisions){
-//      *      indices.push(vtx_idx);
-//      *      indices.push(vtx_idx + numPhiDivisions);
-//      *    }
-//      */
-//       }
-//     }
-
-//     const posAttribLoc = 0;
-//     const positionBuffer = this.gl.createBuffer();
-//     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-//     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
-//     this.gl.vertexAttribPointer(posAttribLoc, pos_dim, this.gl.FLOAT, false, 0, 0);
-//     this.gl.enableVertexAttribArray(posAttribLoc); 
-
-//     const colorAttribLoc = 1;
-//     const colorBuffer = this.gl.createBuffer();
-//     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-//     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-//     this.gl.vertexAttribPointer(colorAttribLoc, color_dim, this.gl.FLOAT, false, 0, 0);
-//     this.gl.enableVertexAttribArray(colorAttribLoc);
-
-//     //const indexBuffer = this.gl.createBuffer();
-//     //this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-//     //const idxType = this.gl.UNSIGNED_INT; // This is why we use Uint16Array on the next line. 
-//     ////idxType is passed to our draw command later.
-//     //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.STATIC_DRAW); 
-
-//     const normalAttribLoc = 2;
-//     const normalBuffer = this.gl.createBuffer();
-//     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-//     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
-//     this.gl.vertexAttribPointer(normalAttribLoc, norm_dim, this.gl.FLOAT, false, 0, 0);
-//     this.gl.enableVertexAttribArray(normalAttribLoc); 
-
-//     /*
-//      * gl-matrix stores matrices in column-major order
-//      * Therefore, the following matrix:
-//      *
-//      * [1, 0, 0, 0,
-//      * 0, 1, 0, 0,
-//      * 0, 0, 1, 0,
-//      * x, y, z, 0]
-//      *
-//      * Is equivalent to this in the OpenGL docs:
-//      *
-//      * 1 0 0 x
-//      * 0 1 0 y
-//      * 0 0 1 z
-//      * 0 0 0 0
-//      */
-
-//     var cam_z = 2; // z-position of camera in camera space
-//     var cam_y = 0.9; // altitude of camera
-
-//     // BRDF is in tangent space. Tangent space is Z-up.
-//     // Also, we need to move the camera so that it's not at the origin 
-//     var V = [1,      0,     0, 0,
-//              0,      0,     1, 0,
-//              0,      1,     0, 0,
-//              0, -cam_y,-cam_z, 1];
-
-//     this.gl.uniformMatrix4fv(vUniformLoc, false, V);
-
-//     // Perspective projection
-//     var fov = Math.PI * 0.5;
-//     var canvas = document.getElementById('brdf-canvas');
-//     var width = canvas.width;
-//     var height = canvas.height;
-//     var aspectRatio = width/height; // TODO: get the actual width and height
-//     var nearClip = 1;
-//     var farClip  = 50;
-//     var P = MDN.perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
-
-//     this.gl.uniformMatrix4fv(pUniformLoc, false, P);
-
-//     /*
-//      *var MV = mat4.create();
-//      *var MVP = mat4.create();
-//      */
-
-//     var then = 0;
-//     var rot = 0;
-
-
-//     

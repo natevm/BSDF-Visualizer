@@ -1,5 +1,15 @@
 {
   "browser" : true,
   "esversion" : 6,
-  "devel" : true
+  "devel" : true,
+  "node" : true,
+  "globals" : { 
+    "mat3" : true,
+    "mat4" : true,
+    "vec3" : true,
+    "vec4" : true,
+    "OBJ"  : true,
+    "d3"   : true,
+    "$"    : true
+  }
 }

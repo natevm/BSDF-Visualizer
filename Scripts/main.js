@@ -1,15 +1,26 @@
-var brdfViewport = null;
-var modelViewport = null;
+"use strict";
 
-var render = function(time) {
+import BRDFViewport from "./BRDFViewport.js";
+import ModelViewport from "./ModelViewport.js";
+import ControlsManager from "./ControlsManager.js";
+
+let brdfViewport;
+let modelViewport;
+let ctrlManager;
+
+const render = function(time) {
   brdfViewport.render(time);
   modelViewport.render(time);
   requestAnimationFrame(render);
-}
+};
 
-/* Requires BRDFViewport.js */
 document.addEventListener('DOMContentLoaded', function () {
-  brdfViewport = new BRDFViewport("brdf-canvas", 512, 512);
-  modelViewport = new ModelViewport("model-canvas", 512, 512);
+  ctrlManager = ControlsManager();
+  brdfViewport = BRDFViewport({canvasName: "brdf-canvas", width: 512, height: 512});
+  modelViewport = ModelViewport({canvasName: "model-canvas", width: 512, height: 512});
+
+  ctrlManager.registerViewer(brdfViewport);
+  ctrlManager.registerViewer(modelViewport);
+
   requestAnimationFrame(render);
 });

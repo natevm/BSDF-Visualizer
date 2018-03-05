@@ -23,7 +23,7 @@ export default function BRDFViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let 
-    { canvasName, width, height } = spec,
+    { canvasName, width, height, shdrDir } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance 
     gl, //GL context is initialized in "setupWebGL2"
 
@@ -440,8 +440,6 @@ export default function BRDFViewport(spec) {
 
   //************* Start "constructor" **************
   {
-    const shdrDir = "Shaders/";
-
     let lobeVertSrc;
     let lobeFragSrc;
     let lineVertSrc;

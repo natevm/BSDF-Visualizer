@@ -15,9 +15,12 @@ const render = function(time) {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
+  const shdrPath = "./Shaders/";
   ctrlManager = ControlsManager();
-  brdfViewport = BRDFViewport({canvasName: "brdf-canvas", width: 512, height: 512});
-  modelViewport = ModelViewport({canvasName: "model-canvas", width: 512, height: 512});
+  brdfViewport = BRDFViewport({canvasName: "brdf-canvas", 
+    width: 512, height: 512, shdrDir: shdrPath});
+  modelViewport = ModelViewport({canvasName: "model-canvas", 
+    width: 512, height: 512, shdrDir: shdrPath});
 
   ctrlManager.registerViewer(brdfViewport);
   ctrlManager.registerViewer(modelViewport);

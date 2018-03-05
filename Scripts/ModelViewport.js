@@ -22,7 +22,7 @@ export default function ModelViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height } = spec,
+    { canvasName, width, height, shdrDir } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
     shaderProgram,
@@ -288,8 +288,6 @@ export default function ModelViewport(spec) {
 
   //************* Start "constructor" **************
   {
-    const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
-
     let vertSrc;
     let fragSrc;
     let promises = [];

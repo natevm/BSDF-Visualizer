@@ -75,11 +75,6 @@ export default function BRDFViewport(spec) {
     // SET UP PROGRAM
     /////////////////////
     setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
-      //const lobeVsSource = document.getElementById("lobe.vert").text.trim();
-      //const lobeFsSource = document.getElementById("phong.frag").text.trim();
-      //const lineVsSource = document.getElementById("color_only.vert").text.trim();
-      //const lineFsSource = document.getElementById("color_only.frag").text.trim();
-
       lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
       lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
 
@@ -444,8 +439,8 @@ export default function BRDFViewport(spec) {
     /////////////////////
     render = function(time){
       if(renderReady === true){
-        var deltaTime;
-        var first; 
+        let deltaTime;
+        let first; 
 
         time *= 0.001; // convert to seconds
         deltaTime = time - prev_time;
@@ -508,19 +503,10 @@ export default function BRDFViewport(spec) {
   }));
 
   //JQuery promise snippet from https://stackoverflow.com/a/10004137
-  //Wait for all async callback to return, then execute the code below.
+  //Wait for all async callbacks to return, then execute the code below.
   $.when.apply($, promises).then(function() {
-      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
-      // you can process it here
-    //console.log("Shader sources loaded!");
-    //console.log(lobeVertSrc);
-    //console.log("****************");
-    //console.log(lobeFragSrc);
-    //console.log("****************");
-    //console.log(lineVertSrc);
-    //console.log("****************");
-    //console.log(lineFragSrc);
-
+    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+    // you can process it here
     setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc); 
     setupGeometry();
     renderReady = true;
@@ -533,14 +519,9 @@ export default function BRDFViewport(spec) {
       console.log("Error loading shaders!");
   });
 
-  //$.ajax({url: "Shaders/color_only.vert", success: function(result){
-      //console.log(result);
-    //}
-  //});
-  
   //************* End "constructor" **************
 
-  //Put any methods / properties that we want to make pulic inside this object. 
+  //Put any methods / properties that we want to make public inside this object. 
   return Object.freeze({
     render,   
     updateTheta,

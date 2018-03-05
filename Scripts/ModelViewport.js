@@ -55,21 +55,9 @@ export default function ModelViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
 
-    initShaders = function() {
-      //var fragmentShader = getShader(gl, "shader-fs");
-      //var vertexShader = getShader(gl, "shader-vs");
-
-      //shaderProgram = gl.createProgram();
-      //gl.attachShader(shaderProgram, vertexShader);
-      //gl.attachShader(shaderProgram, fragmentShader);
-      //gl.linkProgram(shaderProgram);
-
-      //if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)){
-      //alert("Could not initialise shaders");
-      //}
-
-      const vsSource = document.getElementById("model-renderer.vert").text.trim();
-      const fsSource = document.getElementById("model-renderer.frag").text.trim();
+    initShaders = function(vsSource, fsSource) {
+      //const vsSource = document.getElementById("model-renderer.vert").text.trim();
+      //const fsSource = document.getElementById("model-renderer.frag").text.trim();
       shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
       gl.useProgram(shaderProgram);
 
@@ -281,8 +269,39 @@ export default function ModelViewport(spec) {
   canvas.width = width;
   canvas.height = height;
   setupWebGL2();
-  initShaders();
-  loadModels();
+
+  const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
+  let vertSrc;
+  let fragSrc;
+
+  let promises = [];
+  promises.push($.ajax({
+    url: shdrDir + "model-renderer.vert", 
+    success: function(result){
+      vertSrc = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + "model-renderer.frag", 
+    success: function(result){
+      fragSrc = result.trim();
+    }
+  }));
+
+  //JQuery promise snippet from https://stackoverflow.com/a/10004137
+  //Wait for all async callbacks to return, then execute the code below.
+  $.when.apply($, promises).then(function() {
+    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+    // you can process it here
+    
+    initShaders(vertSrc, fragSrc);
+    loadModels();
+
+  }, function() {
+      // error occurred
+      console.log("Error loading shaders!");
+  });
+
 
   document.getElementById(canvasName).onmousedown = (event) => {
     //console.log("detected!\n");
@@ -312,7 +331,7 @@ export default function ModelViewport(spec) {
   };
   //************* End "constructor" (not really a constructor) **************
 
-  //Put any methods / properties that we want to make pulic inside this object.
+  //Put any methods / properties that we want to make public inside this object.
   return Object.freeze({
     render,
     updateTheta,

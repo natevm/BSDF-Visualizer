@@ -38,7 +38,7 @@ vec3 get_reflected(vec3 L, vec3 N){
 //input is? 
 
 //L, V, N assumed to be unit vectors
-float BRDF(vec3 L, vec3 V, vec3 N){
+vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
   //TODO: These should actually be uniforms.
   const float k_d = 0.7;
   const float k_s = 0.3;
@@ -48,7 +48,7 @@ float BRDF(vec3 L, vec3 V, vec3 N){
   float spec_val = pow(max(dot(R,V),0.0), spec_power);
   float diffuse_val = max(0.0, dot(L,N)); 
 
-  return k_d*diffuse_val + k_s*spec_val;
+  return vec3(k_d*diffuse_val + k_s*spec_val);
 }
 
 void main() {
@@ -74,11 +74,13 @@ void main() {
 
     //Scale points by the BRDF
     //float shade = BRDF(u_l, normalize(p), u_n);
-    p *= BRDF(u_l, normalize(p), u_n);
-    p_U *= BRDF(u_l, normalize(p_U), u_n);
-    p_D *= BRDF(u_l, normalize(p_D), u_n);
-    p_L *= BRDF(u_l, normalize(p_L), u_n);
-    p_R *= BRDF(u_l, normalize(p_R), u_n);
+    const vec3 X = vec3(1,0,0); 
+    const vec3 Y = vec3(0,1,0); 
+    p *= length(BRDF(u_l, normalize(p), u_n, X, Y));
+    p_U *= length(BRDF(u_l, normalize(p_U), u_n, X, Y));
+    p_D *= length(BRDF(u_l, normalize(p_D), u_n, X, Y));
+    p_L *= length(BRDF(u_l, normalize(p_L), u_n, X, Y));
+    p_R *= length(BRDF(u_l, normalize(p_R), u_n, X, Y));
 
     vec3 v1 = p_R - p;
     vec3 v2 = p_U - p; 

@@ -116,21 +116,22 @@ export default function ControlsManager(){
 
       //File input snippet from:
       //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
-      var inputElement = document.getElementById("file_chooser");
-      //var handleFiles = function(event) {
-        //console.log(event); 
-      //};
-      inputElement.addEventListener("change",
+      document.getElementById("file_chooser").addEventListener("change",
         //in the below function, "this" appears to be bound to some object 
         //that addEventListener bind the function to.
         function(){
-          console.log("handling!");
-          var fileList = this.files; // now you can work with the file list
-          console.log(fileList);
+          loadBrdfFile(this.files);
         },  
         false);
-    };
+    },
 
+    loadBrdfFile = function(fileList){
+      let reader = new FileReader();
+      reader.onload = function() {
+        console.log(reader.result);
+      };
+      reader.readAsText(fileList[0]);
+    };
 
   //************* Start "constructor" **************
   setupUI();

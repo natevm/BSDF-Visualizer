@@ -16,6 +16,8 @@ uniform vec3 u_l;
 uniform float u_delTheta;
 uniform float u_delPhi;
 
+// <INLINE_UNIFORMS_HERE>
+
 out vec3 vColor;
 out vec4 world_normal;
 
@@ -31,23 +33,10 @@ vec3 get_reflected(vec3 L, vec3 N){
   return normalize(L_plus_R - L);
 }
 
-//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because 
-//that's not part of the BRDF, it's the "form factor" in the rendering equation.
-
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
-vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
-  //TODO: These should actually be uniforms.
-  const float k_d = 0.7;
-  const float k_s = 0.3;
-  const float spec_power = 20.0; 
-  
-  vec3 R = get_reflected(L, N);
-  float spec_val = pow(max(dot(R,V),0.0), spec_power);
-  float diffuse_val = max(0.0, dot(L,N)); 
 
-  return vec3(k_d*diffuse_val + k_s*spec_val);
-}
+// <INLINE_BRDF_HERE> 
 
 //See https://en.wikipedia.org/wiki/Relative_luminance
 float rgb_to_luminance(vec3 rgb_color){

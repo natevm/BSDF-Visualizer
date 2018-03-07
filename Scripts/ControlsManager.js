@@ -27,6 +27,7 @@ export default function ControlsManager(){
       //FIXME: ControlsManager should be writing to its
       //own div, not to #brdf-menu
       let menu = d3.select("#brdf-menu");
+      let fileChooser = d3.select("#file-chooser");
       let thetaInput;
       let thetaOutput;
       let phiInput;
@@ -63,6 +64,21 @@ export default function ControlsManager(){
       menu.append("output")
         .attr("id", "output_incidentPhi");
 
+      /* add camRot slider */
+      menu.append("input")
+        .attr("id", "slider_camRot")
+        .attr("type", "range")
+        .attr("min", -180)
+        .attr("max", 180)
+        .attr("step", 1)
+        .attr("value", 0);
+
+      fileChooser.html("");
+      fileChooser.append("input")
+        .attr("id", "file_chooser")
+        .attr("type","file");
+        //.attr("onchange", "ctrlManager.handleFiles(this.files)");
+        //.attr("onchange", "console.log(this.files[0])");
     },
 
     setupUICallbacks = function() {
@@ -88,7 +104,33 @@ export default function ControlsManager(){
           v.updatePhi(new_phi);
         });
       };
+
+      document.getElementById("slider_camRot").oninput = (event) => {
+        viewers.forEach(function(v) {
+          let new_camRot = event.target.value;
+          if( "updateCamRot" in v ){
+            v.updateCamRot(new_camRot);
+          }
+        });
+      };
+
+      //File input snippet from:
+      //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
+      var inputElement = document.getElementById("file_chooser");
+      //var handleFiles = function(event) {
+        //console.log(event); 
+      //};
+      inputElement.addEventListener("change",
+        //in the below function, "this" appears to be bound to some object 
+        //that addEventListener bind the function to.
+        function(){
+          console.log("handling!");
+          var fileList = this.files; // now you can work with the file list
+          console.log(fileList);
+        },  
+        false);
     };
+
 
   //************* Start "constructor" **************
   setupUI();
@@ -97,6 +139,6 @@ export default function ControlsManager(){
 
   //Put any methods / properties that we want to make pulic inside this object.
   return Object.freeze({
-    registerViewer    
+    registerViewer
   });
 }

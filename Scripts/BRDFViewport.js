@@ -344,35 +344,39 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS 
     /////////////////////
-    setupUI = function() {
-      const menu = d3.select("#brdf-menu");
-      let thetaInput;
-      let thetaOutput;
-      let phiInput;
-      let phiOutput;
-      let camRotInput;
+    //setupUI = function() {
+      //const menu = d3.select("#brdf-menu");
+      //let thetaInput;
+      //let thetaOutput;
+      //let phiInput;
+      //let phiOutput;
+      //let camRotInput;
 
-      /* add camRot slider */
-      menu.append("input")
-        .attr("id", "slider_camRot")
-        .attr("type", "range")
-        .attr("min", -180)
-        .attr("max", 180)
-        .attr("step", 1)
-        .attr("value", 0);
-    },
+      //[> add camRot slider <]
+      //menu.append("input")
+        //.attr("id", "slider_camRot")
+        //.attr("type", "range")
+        //.attr("min", -180)
+        //.attr("max", 180)
+        //.attr("step", 1)
+        //.attr("value", 0);
+    //},
 
-    setupUICallbacks = function() {
-      document.getElementById("slider_camRot").oninput = (event) => {
-        let rot_angle_deg = event.target.value;
-        let rot_angle = deg2rad(rot_angle_deg);
-        let rot_axis = vec3.create();
-        let rot = mat4.create();
+    //setupUICallbacks = function() {
+      //document.getElementById("slider_camRot").oninput = (event) => {
+        //updateCamRot(event.target.value);
+      //};
+    //},
 
-        vec3.set(rot_axis, 0, 0, 1);
-        mat4.fromRotation(rot, rot_angle, rot_axis);
-        mat4.multiply(V,initial_V,rot);
-      };
+    updateCamRot = function(newCamrotDeg){
+      let rot_angle_deg = newCamrotDeg; 
+      let rot_angle = deg2rad(rot_angle_deg);
+      let rot_axis = vec3.create();
+      let rot = mat4.create();
+
+      vec3.set(rot_axis, 0, 0, 1);
+      mat4.fromRotation(rot, rot_angle, rot_axis);
+      mat4.multiply(V,initial_V,rot);
     },
 
     updateTheta = function(newThetaDeg){
@@ -485,8 +489,8 @@ export default function BRDFViewport(spec) {
       setupGeometry();
       renderReady = true;
 
-      setupUI();
-      setupUICallbacks();
+      //setupUI();
+      //setupUICallbacks();
         
     }, function() {
         // error occurred
@@ -499,6 +503,7 @@ export default function BRDFViewport(spec) {
   return Object.freeze({
     render,   
     updateTheta,
-    updatePhi
+    updatePhi,
+    updateCamRot
   });
 }

@@ -1,4 +1,0 @@
-1) There is some sort of... seam when we set the color using polar_to_color. It's definitely not a mach band... does it appear near phi=0?
-2) Currently Firefox doesn't fully support ES6 modules. Therefore, our app works if dom.moduleScripts.enabled is set to "true" in about.config.
-3) Right now when our slider values are in the single digits, there is no formatted print so it changes the location of the next slider... causes jittering. Also, we need to label our sliders nicely.
-4) Our sliders shouldn't be in the BRDF-menu div to begin with.

@@ -128,7 +128,11 @@ export default function ControlsManager(){
     loadBrdfFile = function(fileList){
       let reader = new FileReader();
       reader.onload = function() {
-        console.log(reader.result);
+        viewers.forEach(function(v) {
+          if( "loadBRDF_disneyFormat" in v ){
+            v.loadBRDF_disneyFormat(reader.result);
+          }
+        });
       };
       reader.readAsText(fileList[0]);
     };

@@ -3,7 +3,8 @@
 import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian, 
     polar_to_color} from './math-utils.js';
 import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
-    compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
+    compute_L_hat, compute_N_hat, init_gl_context, 
+    brdfShaderFromTemplate} from './gl-wrangling-funcs.js';
 
 // Requires jquery
 // Requires gl-matrix.js
@@ -439,7 +440,31 @@ export default function BRDFViewport(spec) {
 
         prev_time = time;
       }
-    };
+    },
+
+  //input is our *.brdf file as a multiline string
+  loadBRDF_disneyFormat = function(brdfFileStr){
+    let templVertSrc; 
+    let promises = [];
+
+    promises.push($.ajax({
+      url: shdrDir + "lobe_template.vert", 
+      success: function(result){
+        templVertSrc = result.trim();
+      }
+    }));
+
+    $.when.apply($, promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      console.log("Loading BRDF in Disney format");
+      console.log(templVertSrc);
+
+    }, function() {
+        // error occurred
+        console.log("Error loading shaders!");
+    });
+  };
 
   //************* Start "constructor" **************
   {
@@ -503,6 +528,7 @@ export default function BRDFViewport(spec) {
     render,   
     updateTheta,
     updatePhi,
-    updateCamRot
+    updateCamRot,
+    loadBRDF_disneyFormat,
   });
 }

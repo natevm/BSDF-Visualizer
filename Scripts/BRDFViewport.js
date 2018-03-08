@@ -30,6 +30,7 @@ export default function BRDFViewport(spec) {
 
     // Programs are initialized in createShaders
     lobeProgram,
+    lobeFragSrc, //we cache this so we can use when loading Disney's *.brdf later 
     lobe_nUniformLoc,
     lobe_lUniformLoc,
     lobe_delThetaUniformLoc,
@@ -458,7 +459,15 @@ export default function BRDFViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       console.log("Loading BRDF in Disney format");
-      console.log(templVertSrc);
+      //console.log(templVertSrc);
+
+      if (lobeFragSrc === undefined || lobeFragSrc === null){
+        throw "lobeFragSrc has not been initialized!";
+      }
+
+      let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({ 
+        rawVtxShdr: templVertSrc, rawFragShdr: lobeFragSrc, 
+        disneyBrdf: brdfFileStr, whichTemplate: "vert"});
 
     }, function() {
         // error occurred
@@ -468,8 +477,8 @@ export default function BRDFViewport(spec) {
 
   //************* Start "constructor" **************
   {
-    let lobeVertSrc;
-    let lobeFragSrc;
+    let lobeVertSrc; 
+    //let lobeFragSrc; //now this has "whole object" scope.
     let lineVertSrc;
     let lineFragSrc;
 

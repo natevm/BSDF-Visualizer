@@ -1,5 +1,39 @@
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 
+//Consumes a template shader with:
+// 1) Analytical BRDF in Disney's .brdf format.
+// 2) A "template shader" that contains the strings:
+//   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
+//   b) <INLINE_BRDF_HERE> where the BRDF 
+function brdf_templ_subst(template_shdr, disney_brdf){
+
+}
+
+//which_template has a value of either "vert" or "frag".
+//If which_template === "vert", vtx_shdr is the template
+//If which_template === "frag", frag_shdr is the template
+//It is assumed that vtx_shdr and frag_shdr cannot both be templates.
+export function brdf_shader_from_template(spec){
+  let {raw_vtx_shdr, raw_frag_shdr, disney_brdf, which_template} = spec;
+  let uniforms_info;
+  let final_frag_src;
+  let final_vtx_src;
+
+  if(which_template === "vtx"){ 
+    let {u_info, subst_src} = brdf_templ_subst(vtx_shdr,disney_brdf);
+    uniforms_info = u_info;
+    final_vtx_src = subst_src;
+    final_frag_src = raw_frag_shdr;
+  } else if(which_template === "frag"){
+    let {u_info, subst_src} = brdf_templ_subst(frag_shdr,disney_brdf);
+    uniforms_info = u_info;
+    final_vtx_src = raw_vtx_shdr;
+    final_frag_src = subst_src;
+  } else {
+    throw "Value of which_template expected to be either 'vtx' or 'frag'";
+  }
+}
+
 export function init_gl_context(canvas){
   const gl = canvas.getContext("webgl2");
     if (gl === null) {

@@ -27,12 +27,6 @@ vec3 polar_to_cartesian(float theta_deg, float phi_deg){
   return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
 }
 
-//L and N are assumed to be unit vectors
-vec3 get_reflected(vec3 L, vec3 N){
-  vec3 L_plus_R = N * 2.0 * dot(L, N);
-  return normalize(L_plus_R - L);
-}
-
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 

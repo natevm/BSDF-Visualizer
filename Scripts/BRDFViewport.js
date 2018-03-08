@@ -275,7 +275,6 @@ export default function BRDFViewport(spec) {
       //normals at attribute 2 in lobe shader
       num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
       gl.useProgram(lobeProgram);
-      gl.useProgram(lobeProgram);
       gl.uniform3fv(lobe_nUniformLoc,N_hat);
       gl.uniform3fv(lobe_lUniformLoc,L_hat);
 

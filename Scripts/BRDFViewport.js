@@ -455,6 +455,8 @@ export default function BRDFViewport(spec) {
       }
     }));
 
+    //JQuery promises: https://stackoverflow.com/a/10004137
+    //Wait for all async callbacks to return, then execute the code below.
     $.when.apply($, promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
@@ -468,6 +470,9 @@ export default function BRDFViewport(spec) {
       let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({ 
         rawVtxShdr: templVertSrc, rawFragShdr: lobeFragSrc, 
         disneyBrdf: brdfFileStr, whichTemplate: "vert"});
+
+      console.log("Uniforms for the .brdf: ");
+      console.log(uniformsInfo);
 
     }, function() {
         // error occurred
@@ -513,7 +518,7 @@ export default function BRDFViewport(spec) {
       }
     }));
 
-    //JQuery promise snippet from https://stackoverflow.com/a/10004137
+    //JQuery promises: https://stackoverflow.com/a/10004137
     //Wait for all async callbacks to return, then execute the code below.
     $.when.apply($, promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]

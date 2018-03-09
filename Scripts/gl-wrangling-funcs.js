@@ -1,23 +1,73 @@
 "use strict";
 
 import {deg2rad, rotY, rotZ} from './math-utils.js';
+import {getNextLine_brdfFile} from './text-utils.js';
 
 //Consumes a template shader with:
 // 1) Analytical BRDF in Disney's .brdf format.
 // 2) A "template shader" that contains the strings:
 //   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
-function brdfTemplSubst(template_shdr, disney_brdf){
+function brdfTemplSubst(templShdr, disneyBrdf){
   let uniformsInfo = {};
   let substitutedSrc;
-  let templateShdrLines = template_shdr.split('/\r\n|\n/');
+  let brdfLines = disneyBrdf.split('\n');
+  //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
+  let brdfFile_it = brdfLines[Symbol.iterator]();
+  //let currLine = brdfFile_it.next().value;
+  let currLine = getNextLine_brdfFile(brdfFile_it);
 
-  //Parsing files line-by-line: https://stackoverflow.com/a/42316936 
+  //Parsing files line-by-line: https://stackoverflow.com/a/42316936
 
-  console.log("Printing line by line");
-  templateShdrLines.map((line) => {
-    console.log(line);
-  });
+  //console.log("Printing line by line");
+  //templateShdrLines.map((line) => {
+    //console.log(line);
+  //});
+
+  console.log("substituting...");
+
+  //Go until we reach the parameters
+  while (currLine.search("::begin parameters") === -1) {
+    //console.log(currLine);
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+  console.log("Found ::begin parameters");
+
+  //Ignoring whitespace, read each line into uniformsInfo
+  currLine = getNextLine_brdfFile(brdfFile_it);
+  while (currLine.search("::end parameters") === -1) {
+    if (/\S/.test(currLine)) { //at least one non-whitespace char
+      let tokens = currLine.split(" ");
+      let param_type = tokens[0];
+      let name = tokens[1];
+
+      if (param_type === "float") {
+        uniformsInfo[name] = {type: "float", min: tokens[2],
+          max: tokens[3], default: tokens[4]};
+      } else if (param_type === "bool") {
+        uniformsInfo[name] = {type: "bool", default: tokens[2]};
+      } else if (param_type === "color") {
+        uniformsInfo[name] = {type: "color", defaultR: tokens[2],
+          defaultG: tokens[3], defaultB: tokens[4]};
+      } else {
+        throw "Invalid parameter param_type for param '" + name +
+          "' in .brdf file!";
+      }
+    }
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+  console.log("Found ::end parameters");
+
+  //Go until we reach the BRDF function
+
+  //Copy the BRDF function verbatim
+
+  //Based on uniformsInfo, generate string that contains the GLSL uniforms
+
+  //Substitute our generated uniforms into template
+  //Use string.replace?
+
+  //Substitute BRDF function into template
 
   return {uInfo: uniformsInfo, substSrc: substitutedSrc};
 }
@@ -32,7 +82,7 @@ export function brdfShaderFromTemplate(spec){
   let finalFragSrc;
   let finalVtxSrc;
 
-  if(whichTemplate === "vert"){ 
+  if(whichTemplate === "vert"){
     let {uInfo, substSrc} = brdfTemplSubst(rawVtxShdr,disneyBrdf);
     uniformsInfo = uInfo;
     finalVtxSrc = substSrc;
@@ -92,7 +142,7 @@ export function get_initial_V(){
    */
 
   // BRDF is in tangent space. Tangent space is Z-up.
-  // Also, we need to move the camera so that it's not at the origin 
+  // Also, we need to move the camera so that it's not at the origin
   var cam_z = 1.5; // z-position of camera in camera space
   var cam_y = 0.5; // altitude of camera
   var V = [1,      0,     0, 0,
@@ -137,7 +187,7 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 export function get_reflected(L_hat,N_hat){
   var L_plus_R = vec3.create();
   vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create(); 
+  var R_hat = vec3.create();
   vec3.sub(R_hat, L_plus_R, L_hat);
   vec3.normalize(R_hat,R_hat); //I don't think this is needed?
   return R_hat;
@@ -147,7 +197,7 @@ export function get_reflected(L_hat,N_hat){
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);
-  var in_phi = deg2rad(in_phi_deg); 
+  var in_phi = deg2rad(in_phi_deg);
 
   var rot_Y = rotY(-in_theta);
   var rot_Z = rotZ(in_phi);

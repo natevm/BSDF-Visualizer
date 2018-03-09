@@ -4,7 +4,7 @@ import BRDFViewport from "./BRDFViewport.js";
 import ModelViewport from "./ModelViewport.js";
 import ControlsManager from "./ControlsManager.js";
 
-let brdfViewport;
+let brdfViewport;   
 let modelViewport;
 let ctrlManager;
 

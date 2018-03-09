@@ -34,10 +34,6 @@ export default function ControlsManager(){
       let phiOutput;
       let camRotInput;
 
-      //FIXME: this gets called before
-      //setupUI() gets called in BRDFViewport. 
-      //Necessary for now because both are writing 
-      //to the same div. 
       menu.html("");
 
       /* Add incident theta slider */

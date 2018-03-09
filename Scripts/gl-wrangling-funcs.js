@@ -10,6 +10,10 @@ export function loadBRDF_disneyFormat(spec){
   let vertStr; //vertex shader as string
   let fragStr; //fragment shader as string
 
+  //ES6 promises: https://stackoverflow.com/a/10004137
+  //jQuery AJAX requests return an ES6-compatible promise,
+  //because jQuery 3.0+ implements the
+  //Promise/A+ API (see https://stackoverflow.com/a/35135488)
   let promises = [];
 
   promises.push($.ajax({
@@ -31,31 +35,32 @@ export function loadBRDF_disneyFormat(spec){
     }
   }));
 
-  //JQuery promises: https://stackoverflow.com/a/10004137
-  //Wait for all async callbacks to return, then execute the code below.
-  $.when.apply($, promises).then(function() {
-    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
-    // you can process it here
-    console.log("Loading BRDF in Disney format");
-    //console.log(templVertStr);
+  //"Asynchronous return"
+  //see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+  return new Promise(resolve => {
+    Promise.all(promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      console.log("Loading BRDF in Disney format");
+      //console.log(templVertStr);
 
-    let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
-      rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
-      disneyBrdf: brdfFileStr, whichTemplate: templateType});
+      let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
+        rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
+        disneyBrdf: brdfFileStr, whichTemplate: templateType});
 
-    console.log("Uniforms for the .brdf: ");
-    console.log(uniformsInfo);
+      console.log("Uniforms for the .brdf: ");
+      console.log(uniformsInfo);
 
-    console.log("Final Vertex Shader source: ");
-    console.log(finalVtxSrc);
+      console.log("Final Vertex Shader source: ");
+      console.log(finalVtxSrc);
 
-    console.log("Final Fragment Shader source: ");
-    console.log(finalFragSrc);
+      console.log("Final Fragment Shader source: ");
+      console.log(finalFragSrc);
 
-    //return {uniformsInfo, finalVtxSrc, finalFragSrc};
-
-  }, function() {
-      throw "Error loading shaders!";
+      resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+    }, function(err) {
+        console.log("Shader Load Error: " + err);
+    });
   });
 
   //while(1);  //HACK: spin-wait until we are done loading shaders

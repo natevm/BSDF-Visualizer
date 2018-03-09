@@ -322,9 +322,8 @@ export default function ModelViewport(spec) {
       initShaders(vertSrc, fragSrc);
       loadModels();
 
-    }, function() {
-        // error occurred
-        console.log("Error loading shaders!");
+    }, function(err) {
+        console.log("Shader Load Error: " + err);
     });
 
     document.getElementById(canvasName).onmousedown = (event) => {

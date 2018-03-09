@@ -130,21 +130,31 @@ export default function ControlsManager(){
 
     loadBrdfFile = function(fileList){
       let reader = new FileReader();
+
       reader.onload = function() {
-        //loadBRDF_disneyFormat(reader.result);
         //FIXME: duplicate definition of shdrDir
-        loadBRDF_disneyFormat({brdfFileStr: reader.result,
+        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
           shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
           vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
-        console.log("Loading .brdf done!");
+        //TODO: use arrow notation
+        loadBRDFPromise.then(function(value){
+          console.log("Loading .brdf done!");
+          console.log(value); 
+        }, function(err){ 
+            throw "BRDF load error: " + err;
+        });
 
+        //TODO: Finish implementing this.
         //viewers.forEach(function(v) {
           //if( "loadBRDF_disneyFormat" in v ){
             ////v.add_uniforms_func( <insert params here> )
           //}
         //});
+
       };
+
+      //onload will be invoked when this is done
       reader.readAsText(fileList[0]);
     };
 

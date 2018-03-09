@@ -137,11 +137,10 @@ export default function ControlsManager(){
           shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
           vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
-        //TODO: use arrow notation
-        loadBRDFPromise.then(function(value){
+        loadBRDFPromise.then(value => {
           console.log("Loading .brdf done!");
           console.log(value); 
-        }, function(err){ 
+        }, err => { 
             throw "BRDF load error: " + err;
         });
 

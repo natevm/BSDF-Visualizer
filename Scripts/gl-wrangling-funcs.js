@@ -3,19 +3,36 @@
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 
+function uniformsInfo_toString(uniformsInfo){
+  let uniformsStr = "";
+  Object.keys(uniformsInfo).forEach(function(name){
+    let currUniform = uniformsInfo[name];
+    if (currUniform.type === "float"){
+      uniformsStr += "uniform float " + name + ";\n";
+    } else if (currUniform.type === "bool"){
+      uniformsStr += "uniform bool " + name + ";\n";
+    } else if (currUniform.type === "color"){
+      uniformsStr += "uniform vec3 " + name + ";\n";
+    } else {
+      throw "Invalid uniform type: " + currUniform.type;
+    }
+  });
+  return uniformsStr;
+}
+
 //Consumes a template shader with:
 // 1) Analytical BRDF in Disney's .brdf format.
 // 2) A "template shader" that contains the strings:
 //   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
-function brdfTemplSubst(templShdr, disneyBrdf){
+function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
   let uniformsInfo = {};
-  let substitutedSrc;
-  let brdfLines = disneyBrdf.split('\n');
+  let brdfLines = disneyBrdfSrc.split('\n');
   //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
   let brdfFile_it = brdfLines[Symbol.iterator]();
   //let currLine = brdfFile_it.next().value;
   let currLine = getNextLine_brdfFile(brdfFile_it);
+  let brdfFuncStr = "";
 
   //Parsing files line-by-line: https://stackoverflow.com/a/42316936
 
@@ -28,7 +45,6 @@ function brdfTemplSubst(templShdr, disneyBrdf){
 
   //Go until we reach the parameters
   while (currLine.search("::begin parameters") === -1) {
-    //console.log(currLine);
     currLine = getNextLine_brdfFile(brdfFile_it);
   }
   console.log("Found ::begin parameters");
@@ -59,17 +75,30 @@ function brdfTemplSubst(templShdr, disneyBrdf){
   console.log("Found ::end parameters");
 
   //Go until we reach the BRDF function
+  while (currLine.search("::begin shader") === -1) {
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
 
   //Copy the BRDF function verbatim
+  //We could use a string buffer if we need better performance
+  currLine = getNextLine_brdfFile(brdfFile_it);
+  while (currLine.search("::end shader") === -1) {
+    brdfFuncStr = brdfFuncStr + currLine + "\n";
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
 
-  //Based on uniformsInfo, generate string that contains the GLSL uniforms
+  {
+    //Based on uniformsInfo, generate string that contains the GLSL uniforms
+    let uniformsSrc = uniformsInfo_toString(uniformsInfo);
+    let uniformHook = /\/\/\s*<INLINE_UNIFORMS_HERE>/;
+    let brdfFuncHook = /\/\/\s*<INLINE_BRDF_HERE>/;
+    //Substitute our generated uniforms into template
+    //Substitute BRDF function into template
+    let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
+                                     .replace(brdfFuncHook, brdfFuncStr);
 
-  //Substitute our generated uniforms into template
-  //Use string.replace?
-
-  //Substitute BRDF function into template
-
-  return {uInfo: uniformsInfo, substSrc: substitutedSrc};
+    return {uInfo: uniformsInfo, substSrc: substitutedSrc};
+  }
 }
 
 //which_template has a value of either "vert" or "frag".

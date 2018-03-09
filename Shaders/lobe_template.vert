@@ -16,13 +16,15 @@ uniform vec3 u_l;
 uniform float u_delTheta;
 uniform float u_delPhi;
 
+//*************** START INLINED UNIFORMS ******************
 // <INLINE_UNIFORMS_HERE>
+//*************** END INLINED UNIFORMS ********************
 
 out vec3 vColor;
 out vec4 world_normal;
 
 vec3 polar_to_cartesian(float theta_deg, float phi_deg){
-  float theta = (M_PI/180.0) * theta_deg; 
+  float theta = (M_PI/180.0) * theta_deg;
   float phi = (M_PI/180.0) * phi_deg;
   return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
 }
@@ -30,11 +32,13 @@ vec3 polar_to_cartesian(float theta_deg, float phi_deg){
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 
-// <INLINE_BRDF_HERE> 
+//*************** START INLINED BRDF ******************
+// <INLINE_BRDF_HERE>
+//*************** END INLINED BRDF ********************
 
 //See https://en.wikipedia.org/wiki/Relative_luminance
 float rgb_to_luminance(vec3 rgb_color){
-  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b; 
+  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b;
 }
 
 void main() {
@@ -46,22 +50,22 @@ void main() {
     */
 
     vColor = color;
-    
+
     //TODO: should we be working with radians "natively"?
-    float theta_deg = polar_coords.x; 
-    float phi_deg = polar_coords.y; 
+    float theta_deg = polar_coords.x;
+    float phi_deg = polar_coords.y;
 
     //prior to scaling, p SHOULD BE the same as position as model_position
-    vec3 p = polar_to_cartesian(theta_deg,phi_deg); 
-    vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg); 
-    vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg); 
-    vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi); 
-    vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi); 
+    vec3 p = polar_to_cartesian(theta_deg,phi_deg);
+    vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg);
+    vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg);
+    vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi);
+    vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi);
 
     //Scale points by the BRDF
     //float shade = BRDF(u_l, normalize(p), u_n);
-    const vec3 X = vec3(1,0,0); 
-    const vec3 Y = vec3(0,1,0); 
+    const vec3 X = vec3(1,0,0);
+    const vec3 Y = vec3(0,1,0);
     p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));
     p_U *= rgb_to_luminance(BRDF(u_l, normalize(p_U), u_n, X, Y));
     p_D *= rgb_to_luminance(BRDF(u_l, normalize(p_D), u_n, X, Y));
@@ -69,7 +73,7 @@ void main() {
     p_R *= rgb_to_luminance(BRDF(u_l, normalize(p_R), u_n, X, Y));
 
     vec3 v1 = p_R - p;
-    vec3 v2 = p_U - p; 
+    vec3 v2 = p_U - p;
     vec3 v3 = p_L - p;
     vec3 v4 = p_D - p;
 
@@ -86,5 +90,5 @@ void main() {
     //world_normal = u_m * model_normal;
     //world_normal = model_normal; //DEBUG ONLY.
     //world_normal = vec4(avg_model_normal,1); //DEBUG ONLY
-    world_normal = u_m * vec4(avg_model_normal,1); 
+    world_normal = u_m * vec4(avg_model_normal,1);
 }

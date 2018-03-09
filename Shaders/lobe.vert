@@ -76,7 +76,6 @@ void main() {
     vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi); 
 
     //Scale points by the BRDF
-    //float shade = BRDF(u_l, normalize(p), u_n);
     const vec3 X = vec3(1,0,0); 
     const vec3 Y = vec3(0,1,0); 
     p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));

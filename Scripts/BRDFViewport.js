@@ -474,6 +474,12 @@ export default function BRDFViewport(spec) {
       console.log("Uniforms for the .brdf: ");
       console.log(uniformsInfo);
 
+      console.log("Final Vertex Shader source: ");
+      console.log(finalVtxSrc);
+
+      console.log("Final Fragment Shader source: ");
+      console.log(finalFragSrc);
+
     }, function() {
         // error occurred
         console.log("Error loading shaders!");

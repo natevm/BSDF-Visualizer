@@ -25,14 +25,23 @@ export default function ModelViewport(spec) {
     { canvasName, width, height } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
-    shaderProgram,
+	rttShaderProgram,
+    defaultShaderProgram,
     models = {},
     mvMatrix = mat4.create(),
     mvMatrixStack = [],
     pMatrix = mat4.create(),
     vMatrix = mat4.create(),
+	pickProjMatrix = mat4.create(),
+	pickModelViewMatrix = mat4.create(),	
     lightPhi = 0,
     lightTheta =  Math.PI/4,
+	normalPhi = 0,
+	normalTheta = 0,
+	normalDir = vec3.fromValues(0,1,0),
+	tangent = vec3.fromValues(1,0,0),
+	bitangent = vec3.fromValues(0,0,-1),
+	pickPointNDC = vec3.fromValues(0,0,0), //should be a vec3
     modelsLoaded = false,
 
     cameraXRotation = 0,
@@ -46,8 +55,16 @@ export default function ModelViewport(spec) {
     elapsed,
     time,
 
+	rttFramebuffer,
+	rttTexture,
+	
     setupWebGL2 = function(){
       gl = init_gl_context(canvas);
+	  const ext = gl.getExtension("EXT_color_buffer_float");
+		if (!ext) {
+		alert("need EXT_color_buffer_float");
+		return;
+	  }
       gl.clearColor(0, 0, 0, 1);
       gl.enable(gl.DEPTH_TEST);
       gl.viewportWidth = canvas.width;
@@ -56,6 +73,7 @@ export default function ModelViewport(spec) {
     },
 
     initShaders = function(vsSource, fsSource) {
+	  var shaderProgram;
       const attrs = {
         'aVertexPosition': OBJ.Layout.POSITION.key,
         'aVertexNormal': OBJ.Layout.NORMAL.key,
@@ -91,8 +109,11 @@ export default function ModelViewport(spec) {
       shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
       shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+      shaderProgram.pickProjMatrixUniform = gl.getUniformLocation(shaderProgram, "uPickProjMatrix");	
+      shaderProgram.pickModelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "uPickModelViewMatrix");		  
       shaderProgram.lightDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightDirection");
-
+      shaderProgram.pickPointNDCUniform = gl.getUniformLocation(shaderProgram, "uPickPointNDC");
+	  
       shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
 
@@ -116,6 +137,8 @@ export default function ModelViewport(spec) {
           }
         });
       };
+	  
+	  return shaderProgram;
     },
 
     initBuffers = function() {
@@ -165,18 +188,40 @@ export default function ModelViewport(spec) {
         //models[modelKey].mesh = models[modelKey];
       });
     },
+	
+	initRTTFramebuffer = function() {
+		rttFramebuffer = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+		rttFramebuffer.width = canvas.width;
+		rttFramebuffer.height = canvas.height;
+		rttTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, rttFramebuffer.width, rttFramebuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+		var renderbuffer = gl.createRenderbuffer();
+		gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+		gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, rttFramebuffer.width, rttFramebuffer.height);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
+		gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+		gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	},
 
-    setMatrixUniforms = function(){
+    setMatrixUniforms = function(shaderProgram){
       let normalMatrix = mat3.create();
       let lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
 
       gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
       gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-      gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
-
+      gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);	  
+      gl.uniformMatrix4fv(shaderProgram.pickProjMatrixUniform, false, pickProjMatrix);	  	  
+      gl.uniformMatrix4fv(shaderProgram.pickModelViewMatrixUniform, false, pickModelViewMatrix);	  	  
+	
       mat3.normalFromMat4(normalMatrix, mvMatrix);
       gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
       gl.uniform3fv(shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
+      gl.uniform3fv(shaderProgram.pickPointNDCUniform, pickPointNDC);	  
     },
 
     loadModels = function(){
@@ -233,28 +278,40 @@ export default function ModelViewport(spec) {
          */
       //    gl2.useProgram(shaderProgram);
 
+	  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
-      shaderProgram.applyAttributePointers(model);
-
+      defaultShaderProgram.applyAttributePointers(model);
+	  
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
-      setMatrixUniforms();
+	  gl.useProgram(defaultShaderProgram);
+      setMatrixUniforms(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     },
+	
+	drawNormalDepthTexture = function(model){
+	  gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+	  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      rttShaderProgram.applyAttributePointers(model);
+	  
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+	  gl.useProgram(rttShaderProgram);
+      setMatrixUniforms(rttShaderProgram);
+      gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	},
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.01, 1000.0);
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
       mat4.identity(mvMatrix);
       // move the camera
       mat4.translate(mvMatrix, mvMatrix, [0, -10, -40]);
       mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
       mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
       vMatrix = mat4.clone(mvMatrix);
-      mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);
-      // set up the scene
-      //mvPushMatrix();
+      mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);	  
+
+	  drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
-      //mvPopMatrix();
     },
 
     animate = function() {
@@ -284,14 +341,68 @@ export default function ModelViewport(spec) {
 
     updatePhi = function(newPhiDeg){
       lightPhi = deg2rad(newPhiDeg);
-    };
+    },
+
+    getNormalTheta = function(){
+      let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
+	  let dot = vec3.dot(lightDirection, normalDir);
+	  normalTheta = 180*Math.acos(dot)/Math.PI;		
+	  return normalTheta;
+    },
+	
+    getNormalPhi = function(){
+		let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
+		let dot = vec3.dot(lightDirection, normalDir);
+		let scaledNormal = vec3.create();
+		vec3.scale(scaledNormal, normalDir, dot);
+		let projLightDirection = vec3.create();
+		vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+		vec3.normalize(projLightDirection, projLightDirection);
+		let prjx = vec3.dot(projLightDirection, tangent);
+		let scaledTangent = vec3.create();
+		vec3.scale(scaledTangent, tangent, prjx);
+		let prjyvec = vec3.create();
+		vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+		if (vec3.dot(bitangent, prjyvec) >= 0) {
+			normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+		} else {
+			normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+		}		
+		//console.log(normalPhi);
+        return normalPhi;
+    },
+	
+	
+	// get mouse GL screen coordinates
+	//ref: https://stackoverflow.com/questions/42309715/how-to-correctly-pass-mouse-coordinates-to-webgl
+	getRelativeMousePosition = function(event, target) {
+	  target = target || event.target;
+	  var rect = target.getBoundingClientRect();
+
+	  return {
+		x: event.clientX - rect.left,
+		y: event.clientY - rect.top,
+	  };
+	},
+
+	getNoPaddingNoBorderCanvasRelativeMousePosition = function(event, target) {
+	  target = target || event.target;
+	  var pos = getRelativeMousePosition(event, target);
+
+	  pos.x = pos.x * target.width  / target.clientWidth;
+	  pos.y = pos.y * target.height / target.clientHeight;
+
+	  return pos;  
+	};
 
   //************* Start "constructor" **************
   {
     const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
 
-    let vertSrc;
-    let fragSrc;
+    let defaultVertSrc;
+    let defaultFragSrc;
+	let rttVertSrc;
+	let rttFragSrc;
     let promises = [];
 
     canvas.width = width;
@@ -301,13 +412,25 @@ export default function ModelViewport(spec) {
     promises.push($.ajax({
       url: shdrDir + "model-renderer.vert", 
       success: function(result){
-        vertSrc = result.trim();
+        defaultVertSrc = result.trim();
       }
     }));
     promises.push($.ajax({
       url: shdrDir + "model-renderer.frag", 
       success: function(result){
-        fragSrc = result.trim();
+        defaultFragSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "model-renderer.vert", 
+      success: function(result){
+        rttVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "model-renderer-rtt.frag", 
+      success: function(result){
+        rttFragSrc = result.trim();
       }
     }));
 
@@ -317,19 +440,100 @@ export default function ModelViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       
-      initShaders(vertSrc, fragSrc);
+      defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
+      rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);	  
+	  
+	  initRTTFramebuffer();
       loadModels();
 
     }, function() {
         // error occurred
         console.log("Error loading shaders!");
     });
-
+	
+	//mouse events
+	
     document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
-      mouseDown = true;
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
+	  mouseDown = true;
+	  if( event.which == 2 ) {
+		let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
+		pos.y = canvas.height - pos.y - 1;
+		let pixels = new Float32Array(4);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+		gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		//console.log([pos.x, pos.y]);
+		//console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
+		normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
+		pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
+		pickProjMatrix = pMatrix;
+		pickModelViewMatrix = mat4.clone(mvMatrix);
+		//normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
+		//normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
+		
+		let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
+		let dot = vec3.dot(lightDirection, normalDir);
+		
+		//compute normalPhi
+		let xdir;
+		let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
+		if (projNormal[2] == 0) {
+			if (projNormal[0] > 0) {
+				tangent = vec3.fromValues(0,0,-1);
+				bitangent = vec3.fromValues(0,1,0);
+			} else if (projNormal[0] < 0) {
+				tangent = vec3.fromValues(0,0,1);				
+				bitangent = vec3.fromValues(0,1,0);
+			} else {
+				tangent = vec3.fromValues(1,0,0);
+				bitangent = vec3.fromValues(0,0,-1);
+			}
+		} else {
+			if(projNormal[2] > 0) {
+				xdir = vec3.fromValues(1,0,0);
+			} else { // projNormal[2] < 0
+				xdir = vec3.fromValues(-1,0,0);
+			}
+			bitangent = vec3.create();
+			tangent = vec3.create();
+			vec3.cross(bitangent, projNormal, xdir);
+			vec3.normalize(bitangent, bitangent);
+			vec3.cross(tangent, bitangent, projNormal);	
+			vec3.normalize(tangent, tangent);
+		}
+		
+		let scaledNormal = vec3.create();
+		vec3.scale(scaledNormal, normalDir, dot);
+		let projLightDirection = vec3.create();
+		vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+		vec3.normalize(projLightDirection, projLightDirection);
+		let prjx = vec3.dot(projLightDirection, tangent);
+		let scaledTangent = vec3.create();
+		vec3.scale(scaledTangent, tangent, prjx);
+		let prjyvec = vec3.create();
+		vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+		if (vec3.dot(bitangent, prjyvec) >= 0) {
+			normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+		} else {
+			normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+		}
+		//compute normal theta
+		normalTheta = 180*Math.acos(dot)/Math.PI;
+		let normalThetaElement = document.getElementById("normalTheta");
+		let normalPhiElement = document.getElementById("normalPhi");
+		normalThetaElement.value = normalTheta;
+		normalPhiElement.value = normalPhi;
+		let evt = new Event('change');
+		normalThetaElement.dispatchEvent(evt);
+		normalPhiElement.dispatchEvent(evt);
+		//console.log([normalPhi, normalTheta]);
+		//alert("middle button!");
+	  }
+	  else {
+		lastMouseX = event.clientX;
+		lastMouseY = event.clientY;
+	  }
     };
 
     document.getElementById(canvasName).onmouseup = (event) => {
@@ -338,19 +542,93 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-        let newX = event.clientX;
-        let newY = event.clientY;
-        let deltaY = newY - lastMouseY;
-        let deltaX = newX - lastMouseX;
+		if( event.which == 2 ) {
+			let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
+			pos.y = canvas.height - pos.y - 1;
+			let pixels = new Float32Array(4);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+			gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			//console.log([pos.x, pos.y]);
+			//console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
+			normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
+			pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
+			pickProjMatrix = pMatrix;
+			pickModelViewMatrix = mat4.clone(mvMatrix);
+			//normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
+			//normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
+			
+			let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
+			let dot = vec3.dot(lightDirection, normalDir);
+			
+			//compute normalPhi
+			let xdir;
+			let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
+			if (projNormal[2] == 0) {
+				if (projNormal[0] > 0) {
+					tangent = vec3.fromValues(0,0,-1);
+					bitangent = vec3.fromValues(0,1,0);
+				} else if (projNormal[0] < 0) {
+					tangent = vec3.fromValues(0,0,1);				
+					bitangent = vec3.fromValues(0,1,0);
+				} else {
+					tangent = vec3.fromValues(1,0,0);
+					bitangent = vec3.fromValues(0,0,-1);
+				}
+			} else {
+				if(projNormal[2] > 0) {
+					xdir = vec3.fromValues(1,0,0);
+				} else { // projNormal[2] < 0
+					xdir = vec3.fromValues(-1,0,0);
+				}
+				bitangent = vec3.create();
+				tangent = vec3.create();
+				vec3.cross(bitangent, projNormal, xdir);
+				vec3.normalize(bitangent, bitangent);
+				vec3.cross(tangent, bitangent, projNormal);	
+				vec3.normalize(tangent, tangent);
+			}
+			
+			let scaledNormal = vec3.create();
+			vec3.scale(scaledNormal, normalDir, dot);
+			let projLightDirection = vec3.create();
+			vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+			vec3.normalize(projLightDirection, projLightDirection);
+			let prjx = vec3.dot(projLightDirection, tangent);
+			let scaledTangent = vec3.create();
+			vec3.scale(scaledTangent, tangent, prjx);
+			let prjyvec = vec3.create();
+			vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+			if (vec3.dot(bitangent, prjyvec) >= 0) {
+				normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+			} else {
+				normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+			}
+			normalTheta = 180*Math.acos(dot)/Math.PI;
+			let normalThetaElement = document.getElementById("normalTheta");
+			let normalPhiElement = document.getElementById("normalPhi");
+			normalThetaElement.value = normalTheta;
+			normalPhiElement.value = normalPhi;
+			let evt = new Event('change');
+			normalThetaElement.dispatchEvent(evt);
+			normalPhiElement.dispatchEvent(evt);
+			//console.log([pos.x, pos.y]);
+		}
+		else {
+			let newX = event.clientX;
+			let newY = event.clientY;
+			let deltaY = newY - lastMouseY;
+			let deltaX = newX - lastMouseX;
 
-        if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
-        else cameraYRotation += 0.01*deltaY;
-        //console.log(cameraXRotation);
+			if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
+			else cameraYRotation += 0.01*deltaY;
+			//console.log(cameraXRotation);
 
-        lastMouseX = newX;
-        lastMouseY = newY;
+			lastMouseX = newX;
+			lastMouseY = newY;
+		}
       }
-    };
+    };	
   }
   //************* End "constructor" (not really a constructor) **************
 
@@ -358,6 +636,8 @@ export default function ModelViewport(spec) {
   return Object.freeze({
     render,
     updateTheta,
-    updatePhi
+    updatePhi,
+	getNormalTheta,
+	getNormalPhi
   });
 }

@@ -62,6 +62,16 @@ export default function ControlsManager(){
 
       menu.append("output")
         .attr("id", "output_incidentPhi");
+		
+	  menu.append("input")
+		.attr("id", "normalTheta")
+		.attr("type", "hidden")
+		.attr("value", 0);
+		
+	  menu.append("input")
+		.attr("id", "normalPhi")
+		.attr("type", "hidden")
+		.attr("value", 0);
 
     },
 
@@ -73,21 +83,50 @@ export default function ControlsManager(){
       output_incidentTheta.innerHTML = starting_theta; 
       output_incidentPhi.innerHTML = starting_phi; 
 
+	  //now this slider only controls light theta and phi
       document.getElementById("slider_incidentTheta").oninput = (event) => {
-        viewers.forEach(function(v) {
-          let new_theta = event.target.value;
-          output_incidentTheta.innerHTML = new_theta; 
-          v.updateTheta(new_theta);
-        });
+		let new_theta = event.target.value; 
+        output_incidentTheta.innerHTML = new_theta;
+		//console.log(new_theta - viewers[1].getNormalTheta());
+		viewers[1].updateTheta(new_theta);
+		viewers[0].updateTheta(viewers[1].getNormalTheta());
+		viewers[0].updatePhi(viewers[1].getNormalPhi());
+		//sorry to comment out this: we need different values for the two viewports
+		//Any ideas of refactoring?  --Daqi
+        // viewers.forEach(function(v) {
+          // let new_theta = event.target.value;
+          // output_incidentTheta.innerHTML = new_theta; 
+          // v.updateTheta(new_theta);
+        // });
       };
 
-      document.getElementById("slider_incidentPhi").oninput = (event) => {
-        viewers.forEach(function(v) {
-          let new_phi = event.target.value;
-          output_incidentPhi.innerHTML = new_phi; 
-          v.updatePhi(new_phi);
-        });
+      document.getElementById("slider_incidentPhi").oninput = (event) => { 
+		let new_phi = event.target.value;
+		//console.log(new_phi - viewers[1].getNormalPhi());
+        output_incidentPhi.innerHTML = new_phi; 
+		viewers[1].updatePhi(new_phi);
+		viewers[0].updateTheta(viewers[1].getNormalTheta());		
+		viewers[0].updatePhi(viewers[1].getNormalPhi());		
+        // viewers.forEach(function(v) {
+          // let new_phi = event.target.value;
+          // output_incidentPhi.innerHTML = new_phi; 
+          // v.updatePhi(new_phi);
+        // });
       };
+	  
+      document.getElementById("normalTheta").onchange = (event) => {
+		//console.log("detect!");
+		let new_theta = event.target.value;
+		//console.log(parseFloat(output_incidentTheta.innerHTML) - new_theta);
+		viewers[0].updateTheta(new_theta);
+      };
+
+      document.getElementById("normalPhi").onchange = (event) => { 
+		let new_phi = event.target.value;
+		//console.log(parseFloat(output_incidentPhi.innerHTML) - new_phi);
+		viewers[0].updatePhi(new_phi);
+      };
+	  	  
     };
 
   //************* Start "constructor" **************

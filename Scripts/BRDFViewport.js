@@ -451,7 +451,10 @@ export default function BRDFViewport(spec) {
     let lobeFragSrc; //now this has "whole object" scope.
     let lineVertSrc;
     let lineFragSrc;
-
+    //ES6 promises: https://stackoverflow.com/a/10004137
+    //jQuery AJAX requests return an ES6-compatible promise, 
+    //because jQuery 3.0+ implements the
+    //Promise/A+ API (see https://stackoverflow.com/a/35135488)
     let promises = [];
 
     canvas.width = width;
@@ -482,8 +485,7 @@ export default function BRDFViewport(spec) {
         lobeFragSrc = result.trim();
       }
     }));
-
-    //ES6 promises: https://stackoverflow.com/a/10004137
+    
     //Wait for all async callbacks to return, then execute the code below.
     Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]

@@ -58,7 +58,8 @@ export function loadBRDF_disneyFormat(spec){
       throw "Error loading shaders!";
   });
 
-  //throw "Error loading shaders!";
+  //while(1);  //HACK: spin-wait until we are done loading shaders
+  //throw "Error loading shaders!"; //code should never reach here
 }
 
 function uniformsInfo_toString(uniformsInfo){

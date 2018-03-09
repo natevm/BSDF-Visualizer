@@ -483,9 +483,9 @@ export default function BRDFViewport(spec) {
       }
     }));
 
-    //JQuery promises: https://stackoverflow.com/a/10004137
+    //ES6 promises: https://stackoverflow.com/a/10004137
     //Wait for all async callbacks to return, then execute the code below.
-    $.when.apply($, promises).then(function() {
+    Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc);
@@ -495,9 +495,9 @@ export default function BRDFViewport(spec) {
       //setupUI();
       //setupUICallbacks();
 
-    }, function() {
+    }, function(err) {
         // error occurred
-        console.log("Error loading shaders!");
+        console.log("Shader Load Error: " + err);
     });
   }
   //************* End "constructor" **************

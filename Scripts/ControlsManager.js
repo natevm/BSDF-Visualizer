@@ -137,6 +137,8 @@ export default function ControlsManager(){
           shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
           vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
+        console.log("Loading .brdf done!");
+
         //viewers.forEach(function(v) {
           //if( "loadBRDF_disneyFormat" in v ){
             ////v.add_uniforms_func( <insert params here> )

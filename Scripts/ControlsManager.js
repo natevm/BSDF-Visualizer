@@ -89,6 +89,35 @@ export default function ControlsManager(){
         //.attr("onchange", "console.log(this.files[0])");
     },
 
+    loadBrdfFile = function(fileList){
+      let reader = new FileReader();
+
+      reader.onload = function() {
+        //FIXME: duplicate definition of shdrDir
+        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
+          shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
+          vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
+
+        loadBRDFPromise.then(value => {
+          console.log("Loading .brdf done!");
+          console.log(value); 
+        }, err => { 
+            throw "BRDF load error: " + err;
+        });
+
+        //TODO: Finish implementing this.
+        //viewers.forEach(function(v) {
+          //if( "loadBRDF_disneyFormat" in v ){
+            ////v.add_uniforms_func( <insert params here> )
+          //}
+        //});
+
+      };
+
+      //onload will be invoked when this is done
+      reader.readAsText(fileList[0]);
+    },
+	
     setupUICallbacks = function() {
       let output_incidentTheta = document.getElementById("output_incidentTheta");
       let output_incidentPhi = document.getElementById("output_incidentPhi");
@@ -168,34 +197,7 @@ export default function ControlsManager(){
     //Because this is still a small project we probably don't need a separate
     //"model" and "controller"...
 
-    loadBrdfFile = function(fileList){
-      let reader = new FileReader();
 
-      reader.onload = function() {
-        //FIXME: duplicate definition of shdrDir
-        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
-          shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
-          vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
-
-        loadBRDFPromise.then(value => {
-          console.log("Loading .brdf done!");
-          console.log(value); 
-        }, err => { 
-            throw "BRDF load error: " + err;
-        });
-
-        //TODO: Finish implementing this.
-        //viewers.forEach(function(v) {
-          //if( "loadBRDF_disneyFormat" in v ){
-            ////v.add_uniforms_func( <insert params here> )
-          //}
-        //});
-
-      };
-
-      //onload will be invoked when this is done
-      reader.readAsText(fileList[0]);
-    };
 
   //************* Start "constructor" **************
   setupUI();

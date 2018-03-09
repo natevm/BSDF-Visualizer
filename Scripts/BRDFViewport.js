@@ -266,7 +266,7 @@ export default function BRDFViewport(spec) {
     },
 
     setupGeometry = function() {
-      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg + 180);
       let N_hat = compute_N_hat();
 
       lobeVAO = gl.createVertexArray();

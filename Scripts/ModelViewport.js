@@ -42,6 +42,7 @@ export default function ModelViewport(spec) {
 	tangent = vec3.fromValues(1,0,0),
 	bitangent = vec3.fromValues(0,0,-1),
 	pickPointNDC = vec3.fromValues(0,0,0), //should be a vec3
+	pickPointNDCStored = vec3.fromValues(0,0,0), //should be a vec3
     modelsLoaded = false,
 
     cameraXRotation = 0,
@@ -369,7 +370,7 @@ export default function ModelViewport(spec) {
 			normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
 		}		
 		//console.log(normalPhi);
-        return normalPhi;
+        return normalPhi+180;
     },
 	
 	
@@ -452,8 +453,16 @@ export default function ModelViewport(spec) {
     });
 	
 	//mouse events
-	
-    document.getElementById(canvasName).onmousedown = (event) => {
+      document.getElementById(canvasName).ondblclick = (event) => {
+		  if (pickPointNDC[0] < 500){
+			  pickPointNDCStored = vec3.clone(pickPointNDC);
+			  pickPointNDC = vec3.fromValues(999,999,999);
+		  } else {
+			  pickPointNDC = pickPointNDCStored;
+		  }
+      };
+
+      document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
 	  mouseDown = true;
 	  if( event.which == 2 ) {
@@ -502,7 +511,8 @@ export default function ModelViewport(spec) {
 			vec3.cross(tangent, bitangent, projNormal);	
 			vec3.normalize(tangent, tangent);
 		}
-		
+
+		vec3.cross(bitangent, tangent, normalDir);
 		let scaledNormal = vec3.create();
 		vec3.scale(scaledNormal, normalDir, dot);
 		let projLightDirection = vec3.create();
@@ -523,7 +533,7 @@ export default function ModelViewport(spec) {
 		let normalThetaElement = document.getElementById("normalTheta");
 		let normalPhiElement = document.getElementById("normalPhi");
 		normalThetaElement.value = normalTheta;
-		normalPhiElement.value = normalPhi;
+		normalPhiElement.value = normalPhi + 180;
 		let evt = new Event('change');
 		normalThetaElement.dispatchEvent(evt);
 		normalPhiElement.dispatchEvent(evt);
@@ -588,8 +598,9 @@ export default function ModelViewport(spec) {
 				vec3.cross(tangent, bitangent, projNormal);	
 				vec3.normalize(tangent, tangent);
 			}
-			
-			let scaledNormal = vec3.create();
+
+            vec3.cross(bitangent, tangent, normalDir);
+            let scaledNormal = vec3.create();
 			vec3.scale(scaledNormal, normalDir, dot);
 			let projLightDirection = vec3.create();
 			vec3.subtract(projLightDirection, lightDirection, scaledNormal);
@@ -608,7 +619,7 @@ export default function ModelViewport(spec) {
 			let normalThetaElement = document.getElementById("normalTheta");
 			let normalPhiElement = document.getElementById("normalPhi");
 			normalThetaElement.value = normalTheta;
-			normalPhiElement.value = normalPhi;
+			normalPhiElement.value = normalPhi + 180;
 			let evt = new Event('change');
 			normalThetaElement.dispatchEvent(evt);
 			normalPhiElement.dispatchEvent(evt);

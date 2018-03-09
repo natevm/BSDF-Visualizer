@@ -106,7 +106,7 @@ export default function ControlsManager(){
         output_incidentPhi.innerHTML = new_phi; 
 		viewers[1].updatePhi(new_phi);
 		viewers[0].updateTheta(viewers[1].getNormalTheta());		
-		viewers[0].updatePhi(viewers[1].getNormalPhi());		
+		viewers[0].updatePhi(viewers[1].getNormalPhi());
         // viewers.forEach(function(v) {
           // let new_phi = event.target.value;
           // output_incidentPhi.innerHTML = new_phi; 

@@ -4,7 +4,7 @@ import BRDFViewport from "./BRDFViewport.js";
 import ModelViewport from "./ModelViewport.js";
 import ControlsManager from "./ControlsManager.js";
 
-let brdfViewport;   
+let brdfViewport;
 let modelViewport;
 let ctrlManager;
 
@@ -17,9 +17,9 @@ const render = function(time) {
 document.addEventListener('DOMContentLoaded', function () {
   const shdrPath = "./Shaders/";
   ctrlManager = ControlsManager();
-  brdfViewport = BRDFViewport({canvasName: "brdf-canvas", 
+  brdfViewport = BRDFViewport({canvasName: "brdf-canvas",
     width: 512, height: 512, shdrDir: shdrPath});
-  modelViewport = ModelViewport({canvasName: "model-canvas", 
+  modelViewport = ModelViewport({canvasName: "model-canvas",
     width: 512, height: 512, shdrDir: shdrPath});
 
   ctrlManager.registerViewer(brdfViewport);

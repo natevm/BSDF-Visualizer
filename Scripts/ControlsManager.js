@@ -1,12 +1,14 @@
 "use strict";
 
-//requires d3.js 
+import {loadBRDF_disneyFormat} from './gl-wrangling-funcs.js';
+
+//requires d3.js
 
 //************************
 //"Class" ControlsManager
 //
-// Using "Classless OOP": 
-// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+// Using "Classless OOP":
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
 //************************
 
 //Currently there are no "constructor" arguments
@@ -82,13 +84,13 @@ export default function ControlsManager(){
       let output_incidentPhi = document.getElementById("output_incidentPhi");
 
       //Set initial values
-      output_incidentTheta.innerHTML = starting_theta; 
-      output_incidentPhi.innerHTML = starting_phi; 
+      output_incidentTheta.innerHTML = starting_theta;
+      output_incidentPhi.innerHTML = starting_phi;
 
       document.getElementById("slider_incidentTheta").oninput = (event) => {
         viewers.forEach(function(v) {
           let new_theta = event.target.value;
-          output_incidentTheta.innerHTML = new_theta; 
+          output_incidentTheta.innerHTML = new_theta;
           v.updateTheta(new_theta);
         });
       };
@@ -96,7 +98,7 @@ export default function ControlsManager(){
       document.getElementById("slider_incidentPhi").oninput = (event) => {
         viewers.forEach(function(v) {
           let new_phi = event.target.value;
-          output_incidentPhi.innerHTML = new_phi; 
+          output_incidentPhi.innerHTML = new_phi;
           v.updatePhi(new_phi);
         });
       };
@@ -113,22 +115,33 @@ export default function ControlsManager(){
       //File input snippet from:
       //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
       document.getElementById("file_chooser").addEventListener("change",
-        //in the below function, "this" appears to be bound to some object 
+        //in the below function, "this" appears to be bound to some object
         //that addEventListener bind the function to.
         function(){
           loadBrdfFile(this.files);
-        },  
+        },
         false);
     },
+
+    //TODO: should the "controller" really be processing the BRDF file?
+    //This sounds more like the job of the "model".
+    //Because this is still a small project we probably don't need a separate
+    //"model" and "controller"...
 
     loadBrdfFile = function(fileList){
       let reader = new FileReader();
       reader.onload = function() {
-        viewers.forEach(function(v) {
-          if( "loadBRDF_disneyFormat" in v ){
-            v.loadBRDF_disneyFormat(reader.result);
-          }
-        });
+        //loadBRDF_disneyFormat(reader.result);
+        //FIXME: duplicate definition of shdrDir
+        loadBRDF_disneyFormat({brdfFileStr: reader.result,
+          shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
+          vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
+
+        //viewers.forEach(function(v) {
+          //if( "loadBRDF_disneyFormat" in v ){
+            ////v.add_uniforms_func( <insert params here> )
+          //}
+        //});
       };
       reader.readAsText(fileList[0]);
     };

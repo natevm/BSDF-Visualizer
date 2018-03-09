@@ -3,6 +3,64 @@
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 
+export function loadBRDF_disneyFormat(spec){
+  let { brdfFileStr, shdrDir, templatePath, vertPath, fragPath,
+        templateType } = spec;
+  let templStr; //template shader as string
+  let vertStr; //vertex shader as string
+  let fragStr; //fragment shader as string
+
+  let promises = [];
+
+  promises.push($.ajax({
+    url: shdrDir + templatePath,
+    success: function(result){
+      templStr = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + vertPath,
+    success: function(result){
+      vertStr = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + fragPath,
+    success: function(result){
+      fragStr = result.trim();
+    }
+  }));
+
+  //JQuery promises: https://stackoverflow.com/a/10004137
+  //Wait for all async callbacks to return, then execute the code below.
+  $.when.apply($, promises).then(function() {
+    // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+    // you can process it here
+    console.log("Loading BRDF in Disney format");
+    //console.log(templVertStr);
+
+    let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
+      rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
+      disneyBrdf: brdfFileStr, whichTemplate: templateType});
+
+    console.log("Uniforms for the .brdf: ");
+    console.log(uniformsInfo);
+
+    console.log("Final Vertex Shader source: ");
+    console.log(finalVtxSrc);
+
+    console.log("Final Fragment Shader source: ");
+    console.log(finalFragSrc);
+
+    //return {uniformsInfo, finalVtxSrc, finalFragSrc};
+
+  }, function() {
+      throw "Error loading shaders!";
+  });
+
+  //throw "Error loading shaders!";
+}
+
 function uniformsInfo_toString(uniformsInfo){
   let uniformsStr = "";
   Object.keys(uniformsInfo).forEach(function(name){
@@ -106,19 +164,18 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
 //If which_template === "frag", frag_shdr is the template
 //It is assumed that vtx_shdr and frag_shdr cannot both be templates.
 export function brdfShaderFromTemplate(spec){
-  let {rawVtxShdr, rawFragShdr, disneyBrdf, whichTemplate} = spec;
-  let uniformsInfo;
+  let {rawVtxShdr, rawFragShdr, templShdr, disneyBrdf, whichTemplate} = spec;
   let finalFragSrc;
   let finalVtxSrc;
+  let {uInfo, substSrc} = brdfTemplSubst(templShdr,disneyBrdf);
+  let uniformsInfo = uInfo;
 
   if(whichTemplate === "vert"){
-    let {uInfo, substSrc} = brdfTemplSubst(rawVtxShdr,disneyBrdf);
-    uniformsInfo = uInfo;
+    //uniformsInfo = uInfo;
     finalVtxSrc = substSrc;
     finalFragSrc = rawFragShdr;
   } else if(whichTemplate === "frag"){
-    let {uInfo, substSrc} = brdfTemplSubst(rawFragShdr,disneyBrdf);
-    uniformsInfo = uInfo;
+    //uniformsInfo = uInfo;
     finalVtxSrc = rawVtxShdr;
     finalFragSrc = substSrc;
   } else {

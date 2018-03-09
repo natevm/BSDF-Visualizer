@@ -22,7 +22,7 @@ export default function ModelViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height } = spec,
+    { canvasName, width, height, shdrDir } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
 	rttShaderProgram,
@@ -84,14 +84,14 @@ export default function ModelViewport(spec) {
         'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
       };
 
-      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);  
+      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
       gl.useProgram(shaderProgram);
 
 
       shaderProgram.attrIndices = {};
 
       //NathanX: if we use Object.keys(object).forEach we don't have
-      //to check for attrs.hasOwnProperty() 
+      //to check for attrs.hasOwnProperty()
       //
       //for (const attrName in attrs) {
         //if (!attrs.hasOwnProperty(attrName)) {
@@ -119,10 +119,10 @@ export default function ModelViewport(spec) {
         const layout = model.vertexBuffer.layout;
 
         //NathanX: if we use Object.keys(object).forEach we don't have
-        //to check for attrs.hasOwnProperty() 
+        //to check for attrs.hasOwnProperty()
         //
         //for (const attrName in attrs) {
-          //if (!attrs.hasOwnProperty(attrName) || 
+          //if (!attrs.hasOwnProperty(attrName) ||
             //shaderProgram.attrIndices[attrName] === -1) {
          Object.keys(attrs).forEach(function(attrName) {
           const layoutKey = attrs[attrName];
@@ -154,9 +154,9 @@ export default function ModelViewport(spec) {
       // initialize the mesh's buffers
 
       //NathanX: if we use Object.keys(object).forEach we don't have
-      //to check for attrs.hasOwnProperty() 
+      //to check for attrs.hasOwnProperty()
       //
-      //While there was never a check for hasOwnProperty() here, it's still 
+      //While there was never a check for hasOwnProperty() here, it's still
       //safer to not have to check for it at all.
       //
       //for (let modelKey in models){
@@ -479,6 +479,10 @@ export default function ModelViewport(spec) {
     let defaultFragSrc;
 	let rttVertSrc;
 	let rttFragSrc;
+    //ES6 promises: https://stackoverflow.com/a/10004137
+    //jQuery AJAX requests return an ES6-compatible promise, 
+    //because jQuery 3.0+ implements the
+    //Promise/A+ API (see https://stackoverflow.com/a/35135488)
     let promises = [];
 
     canvas.width = width;
@@ -486,13 +490,13 @@ export default function ModelViewport(spec) {
     setupWebGL2();
 
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.vert", 
+      url: shdrDir + "model-renderer.vert",
       success: function(result){
         defaultVertSrc = result.trim();
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.frag", 
+      url: shdrDir + "model-renderer.frag",
       success: function(result){
         defaultFragSrc = result.trim();
       }
@@ -510,21 +514,20 @@ export default function ModelViewport(spec) {
       }
     }));
 
-    //JQuery promise snippet from https://stackoverflow.com/a/10004137
     //Wait for all async callbacks to return, then execute the code below.
-    $.when.apply($, promises).then(function() {
+    //$.when.apply($, promises).then(function() {
+    Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       
-      defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
-      rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);	  
-	  
-	  initRTTFramebuffer();
-      loadModels();
+	defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
+	rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);	  
 
-    }, function() {
-        // error occurred
-        console.log("Error loading shaders!");
+	initRTTFramebuffer();
+	loadModels();
+
+    }, function(err) {
+        console.log("Shader Load Error: " + err);
     });
 
 	//mouse events

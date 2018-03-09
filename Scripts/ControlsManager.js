@@ -1,12 +1,14 @@
 "use strict";
 
-//requires d3.js 
+import {loadBRDF_disneyFormat} from './gl-wrangling-funcs.js';
+
+//requires d3.js
 
 //************************
 //"Class" ControlsManager
 //
-// Using "Classless OOP": 
-// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+// Using "Classless OOP":
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
 //************************
 
 //Currently there are no "constructor" arguments
@@ -27,16 +29,13 @@ export default function ControlsManager(){
       //FIXME: ControlsManager should be writing to its
       //own div, not to #brdf-menu
       let menu = d3.select("#brdf-menu");
+      let fileChooser = d3.select("#file-chooser");
       let thetaInput;
       let thetaOutput;
       let phiInput;
       let phiOutput;
       let camRotInput;
 
-      //FIXME: this gets called before
-      //setupUI() gets called in BRDFViewport. 
-      //Necessary for now because both are writing 
-      //to the same div. 
       menu.html("");
 
       /* Add incident theta slider */
@@ -73,6 +72,21 @@ export default function ControlsManager(){
 		.attr("type", "hidden")
 		.attr("value", 0);
 
+      /* add camRot slider */
+      menu.append("input")
+        .attr("id", "slider_camRot")
+        .attr("type", "range")
+        .attr("min", -180)
+        .attr("max", 180)
+        .attr("step", 1)
+        .attr("value", 0);
+
+      fileChooser.html("");
+      fileChooser.append("input")
+        .attr("id", "file_chooser")
+        .attr("type","file");
+        //.attr("onchange", "ctrlManager.handleFiles(this.files)");
+        //.attr("onchange", "console.log(this.files[0])");
     },
 
     setupUICallbacks = function() {
@@ -80,8 +94,8 @@ export default function ControlsManager(){
       let output_incidentPhi = document.getElementById("output_incidentPhi");
 
       //Set initial values
-      output_incidentTheta.innerHTML = starting_theta; 
-      output_incidentPhi.innerHTML = starting_phi; 
+      output_incidentTheta.innerHTML = starting_theta;
+      output_incidentPhi.innerHTML = starting_phi;
 
 	  //now this slider only controls light theta and phi
       document.getElementById("slider_incidentTheta").oninput = (event) => {
@@ -127,6 +141,60 @@ export default function ControlsManager(){
 		viewers[0].updatePhi(new_phi);
       };
 	  	  
+		  
+      document.getElementById("slider_camRot").oninput = (event) => {
+        viewers.forEach(function(v) {
+          let new_camRot = event.target.value;
+          if( "updateCamRot" in v ){
+            v.updateCamRot(new_camRot);
+          }
+        });
+      };
+
+      //File input snippet from:
+      //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
+      document.getElementById("file_chooser").addEventListener("change",
+        //in the below function, "this" appears to be bound to some object
+        //that addEventListener bind the function to.
+        function(){
+          loadBrdfFile(this.files);
+        },
+        false);	  	  
+	};
+
+
+    //TODO: should the "controller" really be processing the BRDF file?
+    //This sounds more like the job of the "model".
+    //Because this is still a small project we probably don't need a separate
+    //"model" and "controller"...
+
+    loadBrdfFile = function(fileList){
+      let reader = new FileReader();
+
+      reader.onload = function() {
+        //FIXME: duplicate definition of shdrDir
+        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
+          shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
+          vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
+
+        loadBRDFPromise.then(value => {
+          console.log("Loading .brdf done!");
+          console.log(value); 
+        }, err => { 
+            throw "BRDF load error: " + err;
+        });
+
+        //TODO: Finish implementing this.
+        //viewers.forEach(function(v) {
+          //if( "loadBRDF_disneyFormat" in v ){
+            ////v.add_uniforms_func( <insert params here> )
+          //}
+        //});
+
+      };
+
+      //onload will be invoked when this is done
+      reader.readAsText(fileList[0]);
     };
 
   //************* Start "constructor" **************
@@ -136,6 +204,6 @@ export default function ControlsManager(){
 
   //Put any methods / properties that we want to make pulic inside this object.
   return Object.freeze({
-    registerViewer    
+    registerViewer
   });
 }

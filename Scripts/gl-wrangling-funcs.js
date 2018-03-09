@@ -1,4 +1,195 @@
+"use strict";
+
 import {deg2rad, rotY, rotZ} from './math-utils.js';
+import {getNextLine_brdfFile} from './text-utils.js';
+
+export function loadBRDF_disneyFormat(spec){
+  let { brdfFileStr, shdrDir, templatePath, vertPath, fragPath,
+        templateType } = spec;
+  let templStr; //template shader as string
+  let vertStr; //vertex shader as string
+  let fragStr; //fragment shader as string
+
+  //ES6 promises: https://stackoverflow.com/a/10004137
+  //jQuery AJAX requests return an ES6-compatible promise,
+  //because jQuery 3.0+ implements the
+  //Promise/A+ API (see https://stackoverflow.com/a/35135488)
+  let promises = [];
+
+  promises.push($.ajax({
+    url: shdrDir + templatePath,
+    success: function(result){
+      templStr = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + vertPath,
+    success: function(result){
+      vertStr = result.trim();
+    }
+  }));
+  promises.push($.ajax({
+    url: shdrDir + fragPath,
+    success: function(result){
+      fragStr = result.trim();
+    }
+  }));
+
+  //"Asynchronous return"
+  //see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+  return new Promise(resolve => {
+    Promise.all(promises).then(function() {
+      // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      // you can process it here
+      console.log("Loading BRDF in Disney format");
+      //console.log(templVertStr);
+
+      let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
+        rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
+        disneyBrdf: brdfFileStr, whichTemplate: templateType});
+
+      console.log("Uniforms for the .brdf: ");
+      console.log(uniformsInfo);
+
+      console.log("Final Vertex Shader source: ");
+      console.log(finalVtxSrc);
+
+      console.log("Final Fragment Shader source: ");
+      console.log(finalFragSrc);
+
+      resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+    }, function(err) {
+        console.log("Shader Load Error: " + err);
+    });
+  });
+
+  //while(1);  //HACK: spin-wait until we are done loading shaders
+  //throw "Error loading shaders!"; //code should never reach here
+}
+
+function uniformsInfo_toString(uniformsInfo){
+  let uniformsStr = "";
+  Object.keys(uniformsInfo).forEach(function(name){
+    let currUniform = uniformsInfo[name];
+    if (currUniform.type === "float"){
+      uniformsStr += "uniform float " + name + ";\n";
+    } else if (currUniform.type === "bool"){
+      uniformsStr += "uniform bool " + name + ";\n";
+    } else if (currUniform.type === "color"){
+      uniformsStr += "uniform vec3 " + name + ";\n";
+    } else {
+      throw "Invalid uniform type: " + currUniform.type;
+    }
+  });
+  return uniformsStr;
+}
+
+//Consumes a template shader with:
+// 1) Analytical BRDF in Disney's .brdf format.
+// 2) A "template shader" that contains the strings:
+//   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
+//   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
+function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
+  let uniformsInfo = {};
+  let brdfLines = disneyBrdfSrc.split('\n');
+  //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
+  let brdfFile_it = brdfLines[Symbol.iterator]();
+  //let currLine = brdfFile_it.next().value;
+  let currLine = getNextLine_brdfFile(brdfFile_it);
+  let brdfFuncStr = "";
+
+  //Parsing files line-by-line: https://stackoverflow.com/a/42316936
+
+  //console.log("Printing line by line");
+  //templateShdrLines.map((line) => {
+    //console.log(line);
+  //});
+
+  console.log("substituting...");
+
+  //Go until we reach the parameters
+  while (currLine.search("::begin parameters") === -1) {
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+  console.log("Found ::begin parameters");
+
+  //Ignoring whitespace, read each line into uniformsInfo
+  currLine = getNextLine_brdfFile(brdfFile_it);
+  while (currLine.search("::end parameters") === -1) {
+    if (/\S/.test(currLine)) { //at least one non-whitespace char
+      let tokens = currLine.split(" ");
+      let param_type = tokens[0];
+      let name = tokens[1];
+
+      if (param_type === "float") {
+        uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
+          max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
+      } else if (param_type === "bool") {
+        uniformsInfo[name] = {type: "bool", default: parseFloat(tokens[2])};
+      } else if (param_type === "color") {
+        uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
+          defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};
+      } else {
+        throw "Invalid parameter param_type for param '" + name +
+          "' in .brdf file!";
+      }
+    }
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+  console.log("Found ::end parameters");
+
+  //Go until we reach the BRDF function
+  while (currLine.search("::begin shader") === -1) {
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+
+  //Copy the BRDF function verbatim
+  //We could use a string buffer if we need better performance
+  currLine = getNextLine_brdfFile(brdfFile_it);
+  while (currLine.search("::end shader") === -1) {
+    brdfFuncStr = brdfFuncStr + currLine + "\n";
+    currLine = getNextLine_brdfFile(brdfFile_it);
+  }
+
+  {
+    //Based on uniformsInfo, generate string that contains the GLSL uniforms
+    let uniformsSrc = uniformsInfo_toString(uniformsInfo);
+    let uniformHook = /\/\/\s*<INLINE_UNIFORMS_HERE>/;
+    let brdfFuncHook = /\/\/\s*<INLINE_BRDF_HERE>/;
+    //Substitute our generated uniforms into template
+    //Substitute BRDF function into template
+    let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
+                                     .replace(brdfFuncHook, brdfFuncStr);
+
+    return {uInfo: uniformsInfo, substSrc: substitutedSrc};
+  }
+}
+
+//which_template has a value of either "vert" or "frag".
+//If which_template === "vert", vtx_shdr is the template
+//If which_template === "frag", frag_shdr is the template
+//It is assumed that vtx_shdr and frag_shdr cannot both be templates.
+export function brdfShaderFromTemplate(spec){
+  let {rawVtxShdr, rawFragShdr, templShdr, disneyBrdf, whichTemplate} = spec;
+  let finalFragSrc;
+  let finalVtxSrc;
+  let {uInfo, substSrc} = brdfTemplSubst(templShdr,disneyBrdf);
+  let uniformsInfo = uInfo;
+
+  if(whichTemplate === "vert"){
+    //uniformsInfo = uInfo;
+    finalVtxSrc = substSrc;
+    finalFragSrc = rawFragShdr;
+  } else if(whichTemplate === "frag"){
+    //uniformsInfo = uInfo;
+    finalVtxSrc = rawVtxShdr;
+    finalFragSrc = substSrc;
+  } else {
+    throw "Value of whichTemplate expected to be either 'vtx' or 'frag'";
+  }
+
+  return { uniformsInfo, finalFragSrc, finalVtxSrc };
+}
 
 export function init_gl_context(canvas){
   const gl = canvas.getContext("webgl2");
@@ -43,7 +234,7 @@ export function get_initial_V(){
    */
 
   // BRDF is in tangent space. Tangent space is Z-up.
-  // Also, we need to move the camera so that it's not at the origin 
+  // Also, we need to move the camera so that it's not at the origin
   var cam_z = 1.5; // z-position of camera in camera space
   var cam_y = 0.5; // altitude of camera
   var V = [1,      0,     0, 0,
@@ -88,7 +279,7 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 export function get_reflected(L_hat,N_hat){
   var L_plus_R = vec3.create();
   vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create(); 
+  var R_hat = vec3.create();
   vec3.sub(R_hat, L_plus_R, L_hat);
   vec3.normalize(R_hat,R_hat); //I don't think this is needed?
   return R_hat;
@@ -98,7 +289,7 @@ export function get_reflected(L_hat,N_hat){
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);
-  var in_phi = deg2rad(in_phi_deg); 
+  var in_phi = deg2rad(in_phi_deg);
 
   var rot_Y = rotY(-in_theta);
   var rot_Z = rotZ(in_phi);

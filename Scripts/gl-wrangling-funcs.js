@@ -42,13 +42,13 @@ function brdfTemplSubst(templShdr, disneyBrdf){
       let name = tokens[1];
 
       if (param_type === "float") {
-        uniformsInfo[name] = {type: "float", min: tokens[2],
-          max: tokens[3], default: tokens[4]};
+        uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
+          max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
       } else if (param_type === "bool") {
-        uniformsInfo[name] = {type: "bool", default: tokens[2]};
+        uniformsInfo[name] = {type: "bool", default: parseFloat(tokens[2])};
       } else if (param_type === "color") {
-        uniformsInfo[name] = {type: "color", defaultR: tokens[2],
-          defaultG: tokens[3], defaultB: tokens[4]};
+        uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
+          defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};
       } else {
         throw "Invalid parameter param_type for param '" + name +
           "' in .brdf file!";

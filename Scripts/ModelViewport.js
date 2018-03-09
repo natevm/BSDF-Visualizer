@@ -394,7 +394,82 @@ export default function ModelViewport(spec) {
 	  pos.y = pos.y * target.height / target.clientHeight;
 
 	  return pos;  
-	};
+	},
+
+    selectPointEventFunction = function(event) {
+        let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
+        pos.y = canvas.height - pos.y - 1;
+        let pixels = new Float32Array(4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+        gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //console.log([pos.x, pos.y]);
+        //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
+        normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
+        pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
+        pickProjMatrix = pMatrix;
+        pickModelViewMatrix = mat4.clone(mvMatrix);
+        //normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
+        //normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
+
+        let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi),
+			Math.cos(lightTheta),
+			Math.sin(lightTheta)*Math.sin(lightPhi));
+        let dot = vec3.dot(lightDirection, normalDir);
+
+        //compute normalPhi
+        let xdir;
+        let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
+        if (projNormal[2] == 0) {
+            if (projNormal[0] > 0) {
+                tangent = vec3.fromValues(0,0,-1);
+                bitangent = vec3.fromValues(0,1,0);
+            } else if (projNormal[0] < 0) {
+                tangent = vec3.fromValues(0,0,1);
+                bitangent = vec3.fromValues(0,1,0);
+            } else {
+                tangent = vec3.fromValues(1,0,0);
+                bitangent = vec3.fromValues(0,0,-1);
+            }
+        } else {
+            if(projNormal[2] > 0) {
+                xdir = vec3.fromValues(1,0,0);
+            } else { // projNormal[2] < 0
+                xdir = vec3.fromValues(-1,0,0);
+            }
+            bitangent = vec3.create();
+            tangent = vec3.create();
+            vec3.cross(bitangent, projNormal, xdir);
+            vec3.normalize(bitangent, bitangent);
+            vec3.cross(tangent, bitangent, projNormal);
+            vec3.normalize(tangent, tangent);
+        }
+
+        vec3.cross(bitangent, tangent, normalDir);
+        let scaledNormal = vec3.create();
+        vec3.scale(scaledNormal, normalDir, dot);
+        let projLightDirection = vec3.create();
+        vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+        vec3.normalize(projLightDirection, projLightDirection);
+        let prjx = vec3.dot(projLightDirection, tangent);
+        let scaledTangent = vec3.create();
+        vec3.scale(scaledTangent, tangent, prjx);
+        let prjyvec = vec3.create();
+        vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+        if (vec3.dot(bitangent, prjyvec) >= 0) {
+            normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+        } else {
+            normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+        }
+        normalTheta = 180*Math.acos(dot)/Math.PI;
+        let normalThetaElement = document.getElementById("normalTheta");
+        let normalPhiElement = document.getElementById("normalPhi");
+        normalThetaElement.value = normalTheta;
+        normalPhiElement.value = normalPhi + 180;
+        let evt = new Event('change');
+        normalThetaElement.dispatchEvent(evt);
+        normalPhiElement.dispatchEvent(evt);
+    };
 
   //************* Start "constructor" **************
   {
@@ -451,7 +526,7 @@ export default function ModelViewport(spec) {
         // error occurred
         console.log("Error loading shaders!");
     });
-	
+
 	//mouse events
       document.getElementById(canvasName).ondblclick = (event) => {
 		  if (pickPointNDC[0] < 500){
@@ -466,80 +541,8 @@ export default function ModelViewport(spec) {
       //console.log("detected!\n");
 	  mouseDown = true;
 	  if( event.which == 2 ) {
-		let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
-		pos.y = canvas.height - pos.y - 1;
-		let pixels = new Float32Array(4);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
-		gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		//console.log([pos.x, pos.y]);
-		//console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
-		normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
-		pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
-		pickProjMatrix = pMatrix;
-		pickModelViewMatrix = mat4.clone(mvMatrix);
-		//normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
-		//normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
-		
-		let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
-		let dot = vec3.dot(lightDirection, normalDir);
-		
-		//compute normalPhi
-		let xdir;
-		let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
-		if (projNormal[2] == 0) {
-			if (projNormal[0] > 0) {
-				tangent = vec3.fromValues(0,0,-1);
-				bitangent = vec3.fromValues(0,1,0);
-			} else if (projNormal[0] < 0) {
-				tangent = vec3.fromValues(0,0,1);				
-				bitangent = vec3.fromValues(0,1,0);
-			} else {
-				tangent = vec3.fromValues(1,0,0);
-				bitangent = vec3.fromValues(0,0,-1);
-			}
-		} else {
-			if(projNormal[2] > 0) {
-				xdir = vec3.fromValues(1,0,0);
-			} else { // projNormal[2] < 0
-				xdir = vec3.fromValues(-1,0,0);
-			}
-			bitangent = vec3.create();
-			tangent = vec3.create();
-			vec3.cross(bitangent, projNormal, xdir);
-			vec3.normalize(bitangent, bitangent);
-			vec3.cross(tangent, bitangent, projNormal);	
-			vec3.normalize(tangent, tangent);
-		}
-
-		vec3.cross(bitangent, tangent, normalDir);
-		let scaledNormal = vec3.create();
-		vec3.scale(scaledNormal, normalDir, dot);
-		let projLightDirection = vec3.create();
-		vec3.subtract(projLightDirection, lightDirection, scaledNormal);
-		vec3.normalize(projLightDirection, projLightDirection);
-		let prjx = vec3.dot(projLightDirection, tangent);
-		let scaledTangent = vec3.create();
-		vec3.scale(scaledTangent, tangent, prjx);
-		let prjyvec = vec3.create();
-		vec3.subtract(prjyvec, projLightDirection, scaledTangent);
-		if (vec3.dot(bitangent, prjyvec) >= 0) {
-			normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
-		} else {
-			normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
-		}
-		//compute normal theta
-		normalTheta = 180*Math.acos(dot)/Math.PI;
-		let normalThetaElement = document.getElementById("normalTheta");
-		let normalPhiElement = document.getElementById("normalPhi");
-		normalThetaElement.value = normalTheta;
-		normalPhiElement.value = normalPhi + 180;
-		let evt = new Event('change');
-		normalThetaElement.dispatchEvent(evt);
-		normalPhiElement.dispatchEvent(evt);
-		//console.log([normalPhi, normalTheta]);
-		//alert("middle button!");
-	  }
+          selectPointEventFunction(event);
+      }
 	  else {
 		lastMouseX = event.clientX;
 		lastMouseY = event.clientY;
@@ -553,77 +556,7 @@ export default function ModelViewport(spec) {
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
 		if( event.which == 2 ) {
-			let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
-			pos.y = canvas.height - pos.y - 1;
-			let pixels = new Float32Array(4);
-			gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
-			gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-			//console.log([pos.x, pos.y]);
-			//console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
-			normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
-			pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
-			pickProjMatrix = pMatrix;
-			pickModelViewMatrix = mat4.clone(mvMatrix);
-			//normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
-			//normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
-			
-			let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi), Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi));
-			let dot = vec3.dot(lightDirection, normalDir);
-			
-			//compute normalPhi
-			let xdir;
-			let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
-			if (projNormal[2] == 0) {
-				if (projNormal[0] > 0) {
-					tangent = vec3.fromValues(0,0,-1);
-					bitangent = vec3.fromValues(0,1,0);
-				} else if (projNormal[0] < 0) {
-					tangent = vec3.fromValues(0,0,1);				
-					bitangent = vec3.fromValues(0,1,0);
-				} else {
-					tangent = vec3.fromValues(1,0,0);
-					bitangent = vec3.fromValues(0,0,-1);
-				}
-			} else {
-				if(projNormal[2] > 0) {
-					xdir = vec3.fromValues(1,0,0);
-				} else { // projNormal[2] < 0
-					xdir = vec3.fromValues(-1,0,0);
-				}
-				bitangent = vec3.create();
-				tangent = vec3.create();
-				vec3.cross(bitangent, projNormal, xdir);
-				vec3.normalize(bitangent, bitangent);
-				vec3.cross(tangent, bitangent, projNormal);	
-				vec3.normalize(tangent, tangent);
-			}
-
-            vec3.cross(bitangent, tangent, normalDir);
-            let scaledNormal = vec3.create();
-			vec3.scale(scaledNormal, normalDir, dot);
-			let projLightDirection = vec3.create();
-			vec3.subtract(projLightDirection, lightDirection, scaledNormal);
-			vec3.normalize(projLightDirection, projLightDirection);
-			let prjx = vec3.dot(projLightDirection, tangent);
-			let scaledTangent = vec3.create();
-			vec3.scale(scaledTangent, tangent, prjx);
-			let prjyvec = vec3.create();
-			vec3.subtract(prjyvec, projLightDirection, scaledTangent);
-			if (vec3.dot(bitangent, prjyvec) >= 0) {
-				normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
-			} else {
-				normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
-			}
-			normalTheta = 180*Math.acos(dot)/Math.PI;
-			let normalThetaElement = document.getElementById("normalTheta");
-			let normalPhiElement = document.getElementById("normalPhi");
-			normalThetaElement.value = normalTheta;
-			normalPhiElement.value = normalPhi + 180;
-			let evt = new Event('change');
-			normalThetaElement.dispatchEvent(evt);
-			normalPhiElement.dispatchEvent(evt);
-			//console.log([pos.x, pos.y]);
+            selectPointEventFunction(event);
 		}
 		else {
 			let newX = event.clientX;

@@ -48,15 +48,6 @@ export function loadBRDF_disneyFormat(spec){
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
         disneyBrdf: brdfFileStr, whichTemplate: templateType});
 
-      console.log("Uniforms for the .brdf: ");
-      console.log(uniformsInfo);
-
-      console.log("Final Vertex Shader source: ");
-      console.log(finalVtxSrc);
-
-      console.log("Final Fragment Shader source: ");
-      console.log(finalFragSrc);
-
       resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
     }, function(err) {
         console.log("Shader Load Error: " + err);

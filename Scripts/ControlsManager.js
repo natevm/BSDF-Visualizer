@@ -1,6 +1,7 @@
 "use strict";
 
 import {loadBRDF_disneyFormat} from './gl-wrangling-funcs.js';
+import {map_insert_chain} from './collections-wranglers.js';
 
 //requires d3.js
 
@@ -130,6 +131,10 @@ export default function ControlsManager(){
 
     loadBrdfFile = function(fileList){
       let reader = new FileReader();
+      let uniform_update_funcs = new Map();
+      let uniforms;
+      let vertSrc;
+      let fragSrc;
 
       reader.onload = function() {
         //FIXME: duplicate definition of shdrDir
@@ -138,19 +143,24 @@ export default function ControlsManager(){
           vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
         loadBRDFPromise.then(value => {
+          uniforms = value.uniformsInfo;
+          vertSrc = value.finalVtxSrc;
+          fragSrc = value.finalFragSrc;
           console.log("Loading .brdf done!");
-          console.log(value); 
         }, err => { 
             throw "BRDF load error: " + err;
+        }).then( () => {
+          console.log(uniforms);
+          console.log(vertSrc);
+          console.log(fragSrc);
+
+          //viewers.forEach(function(v) {
+            //if( "loadBRDF_disneyFormat" in v ){
+              //v.add_uniforms_func( gl => { 
+              //});
+            //}
+          //});
         });
-
-        //TODO: Finish implementing this.
-        //viewers.forEach(function(v) {
-          //if( "loadBRDF_disneyFormat" in v ){
-            ////v.add_uniforms_func( <insert params here> )
-          //}
-        //});
-
       };
 
       //onload will be invoked when this is done

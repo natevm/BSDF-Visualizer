@@ -113,17 +113,17 @@
 }
 @media screen and (orientation:portrait) {
   .fl-studio-envelope__label{
-    padding: 10px 0;
-    width: 7vw;
+/*    padding: 10px 0;*/
+    width: 5vw;
   }
   .fl-studio-envelope__knob.envelope-knob {
-    width: 7vw;
-    height: 7vw;
+    width: 5vw;
+    height: 5vw;
   }
   .fl-studio-envelope__knob.tension-knob{
-    padding: 10px;
-    width: 7vw;
-    height: 7vw;
+    /*padding: 10px;*/
+    width: 5vw;
+    height: 5vw;
   }
 }
 

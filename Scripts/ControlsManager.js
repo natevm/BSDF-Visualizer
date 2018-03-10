@@ -85,6 +85,8 @@ export default function ControlsManager(){
     },
 
     addEnvelopeControl = function(menu, name, rangeId, minimum, maximum, initial_value) {
+      let scale = 1.0;
+
       let control = menu.append("div")
         .attr("class", "fl-studio-envelope__control");
 
@@ -93,12 +95,12 @@ export default function ControlsManager(){
 
       let visual = knob.append("svg")
         .attr("class", "knob-input__visual")
-        .attr("viewBox", "0 0 40 40");
+        .attr("viewBox", "0 0 " + 40 * (1.0/scale) + " " + 40 * (1.0/scale) );
 
       let focus_indicator = visual.append("circle")
         .attr("class", "focus-indicator")
         .attr("cx", 20).attr("cy", 20).attr("r", 18)
-        .attr("fill", "#4eccff")
+        .attr("fill", "#ffffff")
         .attr("filter", "url(#glow)");
 
       let indicator_ring_bg = visual.append("circle")
@@ -109,7 +111,7 @@ export default function ControlsManager(){
       let indicator_ring = visual.append("path")
         .attr("class", "indicator-ring")
         .attr("d", "M20,20Z")
-        .attr("fill", "#4eccff");
+        .attr("fill", "#ffffff");
 
       let dial = visual.append("g").attr("class", "dial");
 
@@ -141,7 +143,7 @@ export default function ControlsManager(){
       let indicator_dot = dial.append("circle")
         .attr("class", "indicator-dot")
         .attr("cx", 20).attr("cy", 30).attr("r", 1.5)
-        .attr("fill", "#4eccff");
+        .attr("fill", "#ffffff");
 
       let label = control.append("div")
         .attr("class", "fl-studio-envelope__label")

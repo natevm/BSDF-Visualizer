@@ -13,7 +13,7 @@ html, body {
   ------------------------------ */
 @media screen and (orientation:portrait) {
 	html, body {
-		height: 220vw;
+		height: 250vw;
 	}
 	#main-container {
 		flex-direction: column;
@@ -22,13 +22,13 @@ html, body {
 	#brdf-column {
 		/*flex-basis: 50%;*/
 		width: 80vw;
-		height: 100vw;
+		height: 120vw;
 	}
 
 	#model-column{
 		/*flex-basis: 50%;*/
 		width: 80vw;
-		height: 100vw;
+		height: 120vw;
 	}
 }
 
@@ -45,15 +45,15 @@ html, body {
 
 	#brdf-column {
 		/*flex-basis: 50%;*/
-		width: 36vw;
-		height: 45vw;
+		width: 50vw;
+		height: 50vw;
 		padding-right: 2vw;
 	}
 
 	#model-column{
 		/*flex-basis: 50%;*/
-		width: 36vw;
-		height: 45vw;
+		width: 50vw;
+		height: 50vw;
 	}
 }
 
@@ -62,22 +62,31 @@ html, body {
   ------------------------------ */
 @media screen and (orientation:portrait) {
 	#brdf-column {
+		padding-top: 10vw;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
   	}
 	#brdf-menu {
-		flex-basis: 10vw;
+		height: 20vw;
 		width: 80vw;
 
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
-	#brdf-viewport {	
+	#brdf-canvas {	
 		width: 80vw;
 		height: 80vw;
 		
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#brdf-header {
+		height: 10vw;
+		width: 80vw;
+
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -87,28 +96,28 @@ html, body {
 	#brdf-column {
 		display: flex;
 		flex-direction: column;
-		height: 45vw;
-		width: 36vw;
+		height: 50vw;
+		width: 35vw;
 	}
 	#brdf-menu {
-		height: 7vw;
-		width: 36vw;
+		height: 10vw;
+		width: 35vw;
 
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 	#brdf-canvas {
-		height: 36vw;
-		width: 36vw;
+		height: 35vw;
+		width: 35vw;
 		
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
-	#brdf-footer {
+	#brdf-header {
 		height: 4vw;
-		width: 36vw;
+		width: 35vw;
 
 		display: flex;
 		justify-content: center;
@@ -123,21 +132,60 @@ html, body {
 	#model-column {
 		display: flex;
 		flex-direction: column;
-		height: 45vw;
-		width: 36vw;
+		height: 50vw;
+		width: 35vw;
 	}
 	#model-menu {
-		height: 7vw;
-		width: 36vw;
+		height: 10vw;
+		width: 35vw;
 
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 	#model-canvas {
-		height: 36vw;
-		width: 36vw;
+		height: 35vw;
+		width: 35vw;
 		
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#model-header {
+		height: 4vw;
+		width: 35vw;
+
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+}
+@media screen and (orientation:portrait) {
+	#model-column {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+  	}
+	#model-menu {
+		height: 20vw;
+		width: 80vw;
+
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#model-canvas {	
+		width: 80vw;
+		height: 80vw;
+		
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	#model-header {
+		height: 10vw;
+		width: 80vw;
+
 		display: flex;
 		justify-content: center;
 		align-items: center;

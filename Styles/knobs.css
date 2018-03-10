@@ -77,14 +77,11 @@
       -ms-flex-align: center;
           align-items: center;
 }
-
 .fl-studio-envelope__label {
   -webkit-box-flex: 0;
       -ms-flex: 0 0 auto;
           flex: 0 0 auto;
   display: inline-block;
-  padding: 10px 0;
-  width: 80px;
   color: #c1c5c5;
   font-size: 10px;
   font-family: 'Helvetica', sans-serif;
@@ -99,15 +96,37 @@
       -ms-flex: 0 0 auto;
           flex: 0 0 auto;
 }
-.fl-studio-envelope__knob.envelope-knob {
-  width: 80px;
-  height: 80px;
+@media screen and (orientation:landscape) {
+  .fl-studio-envelope__label{
+    /*padding: 1vw 0;*/
+    width: 6vw;
+  }
+  .fl-studio-envelope__knob.envelope-knob {
+    width: 6vw;
+    height: 6vw;
+  }
+  .fl-studio-envelope__knob.tension-knob{
+    /*padding: 1vw;*/
+    width: 6vw;
+    height: 6vw;
+  }
 }
-.fl-studio-envelope__knob.tension-knob {
-  padding: 10px;
-  width: 80px;
-  height: 80px;
+@media screen and (orientation:portrait) {
+  .fl-studio-envelope__label{
+    padding: 10px 0;
+    width: 7vw;
+  }
+  .fl-studio-envelope__knob.envelope-knob {
+    width: 7vw;
+    height: 7vw;
+  }
+  .fl-studio-envelope__knob.tension-knob{
+    padding: 10px;
+    width: 7vw;
+    height: 7vw;
+  }
 }
+
 .fl-studio-envelope__knob .knob-input__visual {
   overflow: visible;
 }

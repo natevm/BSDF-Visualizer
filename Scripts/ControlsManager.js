@@ -27,7 +27,6 @@ export default function ControlsManager(){
     registerViewer = function(new_viewer){
       viewers.push(new_viewer);
     },
-
     setupUI = function() {
       //FIXME: ControlsManager should be writing to its
       //own div, not to #brdf-menu
@@ -193,10 +192,10 @@ export default function ControlsManager(){
           let new_phi = phiEnvelope.value;
           //output_incidentPhi.innerHTML = Math.round(new_phi); 
           v.updatePhi(new_phi);
-        });
+	});
       });
     };
-
+	      
   //************* Start "constructor" **************
   setupUI();
   setupUICallbacks();
@@ -207,61 +206,3 @@ export default function ControlsManager(){
     registerViewer    
   });
 }
-
-
-
-
-
-
-// // Utils
-
-
-
-
-
-
-// // Demo Setup - Knobs
-
-// 
-
-// var envelopeKnobStartPositions = [0, 40, 75, 85, 20, 55];
-// var envelopeKnobs = [...document.querySelectorAll('.fl-studio-envelope__knob.envelope-knob')];
-// var envelopeKnobs = envelopeKnobs.map((el, idx) => new KnobInput(el, {
-//   visualContext: function() {
-//     this.indicatorRing = this.element.querySelector('.indicator-ring');
-//     var ringStyle = getComputedStyle(this.element.querySelector('.indicator-ring-bg'));
-//     this.r = parseFloat(ringStyle.r) - (parseFloat(ringStyle.strokeWidth) / 2);
-//     this.indicatorDot = this.element.querySelector('.indicator-dot');
-//     this.indicatorDot.style[`${transformProp}Origin`] = '20px 20px';
-//   },
-//   updateVisuals: function(norm) {
-//     var theta = Math.PI*2*norm + 0.5*Math.PI;
-//     var endX = this.r*Math.cos(theta) + 20;
-//     var endY = this.r*Math.sin(theta) + 20;
-//     // using 2 arcs rather than flags since one arc collapses if it gets near 360deg
-//     this.indicatorRing.setAttribute('d',`M20,20l0,${this.r}${norm> 0.5?`A${this.r},${this.r},0,0,1,20,${20-this.r}`:''}A-${this.r},${this.r},0,0,1,${endX},${endY}Z`);
-//     this.indicatorDot.style[transformProp] = `rotate(${360*norm}deg)`;
-//   },
-//   min: 0,
-//   max: 100,
-//   initial: envelopeKnobStartPositions[idx],
-// }));
-
-// var tensionKnobStartPositions = [0, 0, -80];
-// var tensionKnobs = [...document.querySelectorAll('.fl-studio-envelope__knob.tension-knob')];
-// var tensionKnobs = tensionKnobs.map((el, idx) => new KnobInput(el, {
-//   visualContext: function() {
-//     this.indicatorRing = this.element.querySelector('.indicator-ring');
-//     var ringStyle = getComputedStyle(this.element.querySelector('.indicator-ring-bg'));
-//     this.r = parseFloat(ringStyle.r) - (parseFloat(ringStyle.strokeWidth) / 2);
-//   },
-//   updateVisuals: function(norm) {
-//     var theta = Math.PI*2*norm + 0.5*Math.PI;
-//     var endX = this.r*Math.cos(theta) + 20;
-//     var endY = this.r*Math.sin(theta) + 20;
-//     this.indicatorRing.setAttribute('d',`M20,20l0,-${this.r}A${this.r},${this.r},0,0,${norm<0.5?0:1},${endX},${endY}Z`);
-//   },
-//   min: -100,
-//   max: 100,
-//   initial: tensionKnobStartPositions[idx],
-// }));

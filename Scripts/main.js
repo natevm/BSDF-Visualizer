@@ -24,16 +24,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
   requestAnimationFrame(render);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-

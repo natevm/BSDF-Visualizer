@@ -5,61 +5,61 @@
 		<title>BSDF Visualizer</title>
 		<link rel="stylesheet" href="./Styles/flexbox.css">
 		<link rel="stylesheet" href="./Styles/fonts.css">
-    <link rel="stylesheet" href="./Styles/colors.css">
-    <link rel="stylesheet" href="./Styles/rangesliders.css">
+		<link rel="stylesheet" href="./Styles/colors.css">
+		<link rel="stylesheet" href="./Styles/rangesliders.css">
 		<link rel="stylesheet" href="./Styles/knobs.css">
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta charset="utf-8"/>
+		<meta charset="utf-8"/>
 	</header>
 
-  <svg class="defs">
-      <defs>
-        <radialGradient id="grad-dial-soft-shadow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="85%" stop-color="#242a2e" stop-opacity="0.4"></stop>
-          <stop offset="100%" stop-color="#242a2e" stop-opacity="0"></stop>
-        </radialGradient>
-        <linearGradient id="grad-dial-base" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#52595f"></stop>
-          <stop offset="100%" stop-color="#2b3238"></stop>
-        </linearGradient>
-        <linearGradient id="grad-dial-highlight" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#70777d" stop-opacity="1"></stop>
-          <stop offset="40%" stop-color="#70777d" stop-opacity="0"></stop>
-          <stop offset="55%" stop-color="#70777d" stop-opacity="0"></stop>
-          <stop offset="100%" stop-color="#70777d" stop-opacity="0.3"></stop>
-        </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="2"></feGaussianBlur>
-          <feComposite in="blur" in2="SourceGraphic" operator="over"></feComposite>
-        </filter>
-      </defs>
-  </svg>
-
+	<!-- svg styling for envelope sliders -->
+	<svg class="defs">
+		<defs>
+			<radialGradient id="grad-dial-soft-shadow" cx="0.5" cy="0.5" r="0.5">
+				<stop offset="85%" stop-color="#242a2e" stop-opacity="0.4"></stop>
+				<stop offset="100%" stop-color="#242a2e" stop-opacity="0"></stop>
+			</radialGradient>
+			<linearGradient id="grad-dial-base" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#52595f"></stop>
+				<stop offset="100%" stop-color="#2b3238"></stop>
+			</linearGradient>
+			<linearGradient id="grad-dial-highlight" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stop-color="#70777d" stop-opacity="1"></stop>
+				<stop offset="40%" stop-color="#70777d" stop-opacity="0"></stop>
+				<stop offset="55%" stop-color="#70777d" stop-opacity="0"></stop>
+				<stop offset="100%" stop-color="#70777d" stop-opacity="0.3"></stop>
+			</linearGradient>
+			<filter id="glow">
+				<feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="2"></feGaussianBlur>
+				<feComposite in="blur" in2="SourceGraphic" operator="over"></feComposite>
+			</filter>
+		</defs>
+	</svg>
 
 	<body id="main-container">
-    <div id="brdf-column">
-      <div id="brdf-menu">BRDF menu</div>
-      <canvas id="brdf-canvas">BRDF canvas</canvas>
-      <div id="brdf-footer">
-        <input class="niceSlider" id="brdf-camera-slider" type='range'/>
-      </div>
-    </div>
+		<div id="brdf-column">
+			<div id="brdf-menu">BRDF menu</div>
+			<canvas id="brdf-canvas">BRDF canvas</canvas>
+			<div id="brdf-footer">
+				<input class="niceSlider" id="brdf-camera-slider" type='range'/>
+			</div>
+		</div>
 
-    <div id="model-column">
-      <div id="model-menu">
-        Model Menu
-      </div>
-      <canvas id="model-canvas">Model canvas</canvas>
-      <div id="brdf-footer">
-        <input class="niceSlider" id="model-camera-slider" type='range'/>
-      </div>
-    </div>
+		<div id="model-column">
+			<div id="model-menu">
+				Model Menu
+			</div>
+			<canvas id="model-canvas">Model canvas</canvas>
+			<div id="brdf-footer">
+				<input class="niceSlider" id="model-camera-slider" type='range'/>
+			</div>
+		</div>
 	</body>
 
-  <script src="Scripts/gl-matrix.js"></script>
-  <script src='Scripts/webgl-obj-loader.js'></script>
-  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script type="text/javascript" src="Scripts/jquery-3.3.1.js"></script>
-  <script type="module" src="Scripts/main.js"></script>
+	<script src="Scripts/gl-matrix.js"></script>
+	<script src='Scripts/webgl-obj-loader.js'></script>
+	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="Scripts/jquery-3.3.1.js"></script>
+	<script type="module" src="Scripts/main.js"></script>
 
 </html>

@@ -369,6 +369,16 @@ export default function BRDFViewport(spec) {
       //};
     //},
 
+
+    updateLinkedCamRot = function(lvm){
+       let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
+       console.log(linkedViewMatrix4);
+       initial_V[12] = 0.0;
+        initial_V[13] = 0.0;
+        initial_V[14] = 0.0;
+       mat4.multiply(V,linkedViewMatrix4, initial_V);
+    },
+
     updateCamRot = function(newCamrotDeg){
       let rot_angle_deg = newCamrotDeg;
       let rot_angle = deg2rad(rot_angle_deg);
@@ -509,5 +519,6 @@ export default function BRDFViewport(spec) {
     updateTheta,
     updatePhi,
     updateCamRot,
+    updateLinkedCamRot,
   });
 }

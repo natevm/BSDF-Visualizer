@@ -29,9 +29,10 @@ export default function ModelViewport(spec) {
     defaultShaderProgram,
     models = {},
     mvMatrix = mat4.create(),
-    mvMatrixStack = [],
     pMatrix = mat4.create(),
     vMatrix = mat4.create(),
+    camRotMatrix = mat3.create(),
+    normalRotMatrix = mat3.create(),
 	pickProjMatrix = mat4.create(),
 	pickModelViewMatrix = mat4.create(),	
     lightPhi = 0,
@@ -258,19 +259,6 @@ export default function ModelViewport(spec) {
       });
     },
 
-    mvPushMatrix = function(){
-      let copy = mat4.create();
-      mat4.copy(copy, mvMatrix);
-      mvMatrixStack.push(copy);
-    },
-
-    mvPopMatrix = function(){
-      if (mvMatrixStack.length === 0){
-        throw "Invalid popMatrix!";
-      }
-      mvMatrix = mvMatrixStack.pop();
-    },
-
     drawObject = function(model){
       /*
          Takes in a model that points to a mesh and draws the object on the scene.
@@ -302,14 +290,21 @@ export default function ModelViewport(spec) {
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      //these values are hardcoded now for demo purpose, will change later
       mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
       mat4.identity(mvMatrix);
       // move the camera
+      //view matrix
       mat4.translate(mvMatrix, mvMatrix, [0, -10, -40]);
       mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
       mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
       vMatrix = mat4.clone(mvMatrix);
-      mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);	  
+      let tempMatrix = mat4.create();
+      mat4.rotate(tempMatrix, tempMatrix, cameraYRotation, [1, 0, 0]);
+      mat4.rotate(tempMatrix, tempMatrix, cameraXRotation, [0, 1, 0]);
+      mat3.fromMat4(camRotMatrix, tempMatrix);
+      //model matrix (rotate our z-up teapot to y-up) -- need to change later
+      mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);
 
 	  drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
@@ -372,6 +367,14 @@ export default function ModelViewport(spec) {
 		//console.log(normalPhi);
         return normalPhi+180;
     },
+
+    getLinkedCamRotMatrix = function(){
+       let res = mat3.create();
+       console.log(camRotMatrix);
+        console.log(normalRotMatrix);
+       return mat3.multiply(res, camRotMatrix, normalRotMatrix);
+        //return normalRotMatrix;
+    },
 	
 	
 	// get mouse GL screen coordinates
@@ -420,7 +423,7 @@ export default function ModelViewport(spec) {
         //compute normalPhi
         let xdir;
         let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
-        if (projNormal[2] == 0) {
+        if (projNormal[2] === 0) {
             if (projNormal[0] > 0) {
                 tangent = vec3.fromValues(0,0,-1);
                 bitangent = vec3.fromValues(0,1,0);
@@ -446,6 +449,14 @@ export default function ModelViewport(spec) {
         }
 
         vec3.cross(bitangent, tangent, normalDir);
+        normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
+            bitangent[0], bitangent[1], bitangent[2]);
+
+
+        //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
+          //  0, 0,0,1);
+
+        //normalRotMatrix = mat3.creat
         let scaledNormal = vec3.create();
         vec3.scale(scaledNormal, normalDir, dot);
         let projLightDirection = vec3.create();
@@ -469,6 +480,8 @@ export default function ModelViewport(spec) {
         let evt = new Event('change');
         normalThetaElement.dispatchEvent(evt);
         normalPhiElement.dispatchEvent(evt);
+        let linkedCamRotElement = document.getElementById("linkedCamRot");
+        linkedCamRotElement.dispatchEvent(evt);
     };
 
   //************* Start "constructor" **************
@@ -543,7 +556,7 @@ export default function ModelViewport(spec) {
       document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
 	  mouseDown = true;
-	  if( event.which == 2 ) {
+	  if( event.which === 2 ) {
           selectPointEventFunction(event);
       }
 	  else {
@@ -558,7 +571,7 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-		if( event.which == 2 ) {
+		if( event.which === 2 ) {
             selectPointEventFunction(event);
 		}
 		else {
@@ -570,6 +583,9 @@ export default function ModelViewport(spec) {
 			if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
 			else cameraYRotation += 0.01*deltaY;
 			//console.log(cameraXRotation);
+            let evt = new Event('change');
+            let linkedCamRotElement = document.getElementById("linkedCamRot");
+            linkedCamRotElement.dispatchEvent(evt);
 
 			lastMouseX = newX;
 			lastMouseY = newY;
@@ -585,6 +601,7 @@ export default function ModelViewport(spec) {
     updateTheta,
     updatePhi,
 	getNormalTheta,
-	getNormalPhi
+	getNormalPhi,
+    getLinkedCamRotMatrix,
   });
 }

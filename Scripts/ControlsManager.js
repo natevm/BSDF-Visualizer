@@ -72,6 +72,11 @@ export default function ControlsManager(){
 		.attr("type", "hidden")
 		.attr("value", 0);
 
+	  menu.append("input")
+        .attr("id", "linkedCamRot")
+        .attr("type", "hidden")
+        .attr("value", 0);
+
       /* add camRot slider */
       menu.append("input")
         .attr("id", "slider_camRot")
@@ -169,8 +174,11 @@ export default function ControlsManager(){
 		//console.log(parseFloat(output_incidentPhi.innerHTML) - new_phi);
 		viewers[0].updatePhi(new_phi);
       };
-	  	  
-		  
+
+      document.getElementById("linkedCamRot").onchange = (event) => {
+        viewers[0].updateLinkedCamRot(viewers[1].getLinkedCamRotMatrix());
+      };
+
       document.getElementById("slider_camRot").oninput = (event) => {
         viewers.forEach(function(v) {
           let new_camRot = event.target.value;

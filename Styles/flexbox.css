@@ -45,14 +45,14 @@ html, body {
 
 	#brdf-column {
 		/*flex-basis: 50%;*/
-		width: 38vw;
+		width: 36vw;
 		height: 45vw;
 		padding-right: 2vw;
 	}
 
 	#model-column{
 		/*flex-basis: 50%;*/
-		width: 38vw;
+		width: 36vw;
 		height: 45vw;
 	}
 }
@@ -88,42 +88,55 @@ html, body {
 		display: flex;
 		flex-direction: column;
 		height: 45vw;
-		width: 38vw;
+		width: 36vw;
 	}
 	#brdf-menu {
 		height: 7vw;
-		width: 38vw;
+		width: 36vw;
 
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 	#brdf-canvas {
-		height: 38vw;
-		width: 38vw;
+		height: 36vw;
+		width: 36vw;
 		
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
+	#brdf-footer {
+		height: 4vw;
+		width: 36vw;
 
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+}
+
+/* ------------------------------
+	Model Items
+  ------------------------------ */
+@media screen and (orientation:landscape) {
 	#model-column {
 		display: flex;
 		flex-direction: column;
 		height: 45vw;
-		width: 38vw;
+		width: 36vw;
 	}
 	#model-menu {
 		height: 7vw;
-		width: 38vw;
+		width: 36vw;
 
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 	#model-canvas {
-		height: 38vw;
-		width: 38vw;
+		height: 36vw;
+		width: 36vw;
 		
 		display: flex;
 		justify-content: center;

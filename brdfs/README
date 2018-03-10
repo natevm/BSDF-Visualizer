@@ -1,0 +1,3 @@
+These are .brdf files from Disney's BRDF Explorer repository, 
+but they have been ported to OpenGL ES. See LICENSE in this
+directory for Disney's license.

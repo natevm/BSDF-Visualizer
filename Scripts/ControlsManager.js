@@ -148,6 +148,8 @@ export default function ControlsManager(){
           vertSrc = value.finalVtxSrc;
           fragSrc = value.finalFragSrc;
           console.log("Loading .brdf done!");
+          console.log(vertSrc);
+          console.log(fragSrc);
         }, err => { 
             throw "BRDF load error: " + err;
         }).then( () => { //call the below asynchronously, AFTER the above is done loading

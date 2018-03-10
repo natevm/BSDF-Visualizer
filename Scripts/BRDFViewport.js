@@ -422,6 +422,7 @@ export default function BRDFViewport(spec) {
       //we need to set up our uniforms again because
       //the above function returned a new lobeProgram.
       setupUniformsLobe(); 
+      setupGeometry();
     },
 
     /////////////////////
@@ -488,6 +489,7 @@ export default function BRDFViewport(spec) {
     }));
     promises.push($.ajax({
       url: shdrDir + "lobe.vert",
+      //url: shdrDir + "lobe_lambert.vert", //DEBUG ONLY!
       success: function(result){
         lobeVertSrc = result.trim();
       }
@@ -503,7 +505,21 @@ export default function BRDFViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc);
+
+      //***************DEBUG ONLY*****************
+      //let loc = gl.getUniformLocation(lobeProgram, "reflectance");  
+      //gl.useProgram(lobeProgram);
+      //gl.uniform1f(loc,1.0);
+      //************END DEBUG ONLY*****************
+
       setupGeometry();
+
+      //***************DEBUG ONLY*****************
+      //gl.useProgram(lobeProgram);
+      //gl.uniform1f(loc,1.0);
+      //setupUniformsLobe();
+      //************END DEBUG ONLY*****************
+
       renderReady = true;
 
       //setupUI();

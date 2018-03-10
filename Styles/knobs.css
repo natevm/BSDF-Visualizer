@@ -1,0 +1,190 @@
+/** {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}*/
+
+/*html, body {
+  width: 100%;
+  height: 100%;
+}*/
+
+/*body {
+  padding: 1px;
+  background: radial-gradient(#1a1d22, #121318);
+}*/
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.fl-studio-envelope {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 600px;
+  padding: 20px;
+  overflow: hidden;
+  background: #363c40;
+  border: 2px solid #272d31;
+  -webkit-box-shadow: 0 10px 70px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 10px 70px rgba(0, 0, 0, 0.6);
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+}
+
+.fl-studio-envelope__visualizer {
+  height: 200px;
+  background: #21272b;
+  border: 2px solid #191f23;
+}
+.fl-studio-envelope__visualizer .envelope-visualizer {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fl-studio-envelope__controls, .fl-studio-envelope__tension {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+.fl-studio-envelope__controls {
+  padding: 30px 0 0;
+}
+
+.fl-studio-envelope__control {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 auto;
+          flex: 1 0 auto;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.fl-studio-envelope__label {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+  display: inline-block;
+  color: #c1c5c5;
+  font-size: 10px;
+  font-family: 'Helvetica', sans-serif;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.fl-studio-envelope__knob {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+}
+@media screen and (orientation:landscape) {
+  .fl-studio-envelope__label{
+    /*padding: 1vw 0;*/
+    width: 6vw;
+  }
+  .fl-studio-envelope__knob.envelope-knob {
+    width: 6vw;
+    height: 6vw;
+  }
+  .fl-studio-envelope__knob.tension-knob{
+    /*padding: 1vw;*/
+    width: 6vw;
+    height: 6vw;
+  }
+}
+@media screen and (orientation:portrait) {
+  .fl-studio-envelope__label{
+/*    padding: 10px 0;*/
+    width: 5vw;
+  }
+  .fl-studio-envelope__knob.envelope-knob {
+    width: 5vw;
+    height: 5vw;
+  }
+  .fl-studio-envelope__knob.tension-knob{
+    /*padding: 10px;*/
+    width: 5vw;
+    height: 5vw;
+  }
+}
+
+.fl-studio-envelope__knob .knob-input__visual {
+  overflow: visible;
+}
+.fl-studio-envelope__knob .dial {
+  -webkit-transform-origin: 20px 20px;
+          transform-origin: 20px 20px;
+  -webkit-transition: all 600ms cubic-bezier(0.39, 0.575, 0.565, 1);
+  transition: all 600ms cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+/*.fl-studio-envelope__knob .dial-highlight {
+  opacity: 0;
+  -webkit-transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+  transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+}*/
+.fl-studio-envelope__knob:hover .dial, .fl-studio-envelope__knob.drag-active .dial {
+  -webkit-transform: scale(0.9);
+          transform: scale(0.9);
+ /* -webkit-filter: brightness(10.2);
+          filter: brightness(10.2);*/
+  -webkit-transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+  transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+/*.fl-studio-envelope__knob:hover .dial-highlight, .fl-studio-envelope__knob.drag-active .dial-highlight {
+  opacity: 0.05;
+}*/
+.fl-studio-envelope__knob .focus-indicator {
+  opacity: 0;
+  -webkit-transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+  transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+.fl-studio-envelope__knob.focus-active .focus-indicator {
+  opacity: 0.8;
+}
+
+.knob-input {
+  position: relative;
+}
+
+.knob-input__visual {
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+.knob-input__input {
+  cursor: -webkit-grab;
+  cursor: grab;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  -webkit-transform: rotate(-90deg);
+          transform: rotate(-90deg);
+}
+
+body.knob-input__drag-active, body.knob-input__drag-active * {
+  cursor: -webkit-grabbing !important;
+  cursor: grabbing !important;
+}

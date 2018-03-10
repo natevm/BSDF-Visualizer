@@ -353,18 +353,20 @@ export default function BRDFViewport(spec) {
       let camRotInput;
 
       /* add camRot slider */
-      menu.append("input")
-        .attr("id", "slider_camRot")
-        .attr("type", "range")
+      // menu.append("input")
+      //   .attr("id", "slider_camRot")
+      //   .attr("type", "range")
+
+      d3.select("#brdf-camera-slider")
         .attr("min", -180)
         .attr("max", 180)
         .attr("step", 1)
-        .attr("value", 0);
+        .attr("value", 180);
     },
 
     setupUICallbacks = function() {
-      document.getElementById("slider_camRot").oninput = (event) => {
-        let rot_angle_deg = event.target.value;
+      document.getElementById("brdf-camera-slider").oninput = (event) => {
+        let rot_angle_deg = 180 - event.target.value;
         let rot_angle = deg2rad(rot_angle_deg);
         let rot_axis = vec3.create();
         let rot = mat4.create();

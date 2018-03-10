@@ -76,28 +76,53 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP PROGRAM
     /////////////////////
-    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
-      lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
-      lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
-
+    setupUniformsLobe = function() {
       lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
       lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
       lobe_delThetaUniformLoc =
           gl.getUniformLocation(lobeProgram, "u_delTheta");
       lobe_delPhiUniformLoc =
           gl.getUniformLocation(lobeProgram, "u_delPhi");
-
-      // model, view, and projection matrices, respectively.
       lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
       lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
       lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
 
+      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+    },
+
+    setupUniformsLine = function() {
       line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
       line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
       line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 
-      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
       setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+    },
+
+    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
+      lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
+      lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
+
+      setupUniformsLobe();
+      setupUniformsLine();
+
+      //lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
+      //lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
+      //lobe_delThetaUniformLoc =
+          //gl.getUniformLocation(lobeProgram, "u_delTheta");
+      //lobe_delPhiUniformLoc =
+          //gl.getUniformLocation(lobeProgram, "u_delPhi");
+
+      // model, view, and projection matrices, respectively.
+      //lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
+      //lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
+      //lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
+
+      //line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
+      //line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
+      //line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
+
+      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
     /////////////////////
@@ -345,30 +370,6 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
-    //setupUI = function() {
-      //const menu = d3.select("#brdf-menu");
-      //let thetaInput;
-      //let thetaOutput;
-      //let phiInput;
-      //let phiOutput;
-      //let camRotInput;
-
-      //[> add camRot slider <]
-      //menu.append("input")
-        //.attr("id", "slider_camRot")
-        //.attr("type", "range")
-        //.attr("min", -180)
-        //.attr("max", 180)
-        //.attr("step", 1)
-        //.attr("value", 0);
-    //},
-
-    //setupUICallbacks = function() {
-      //document.getElementById("slider_camRot").oninput = (event) => {
-        //updateCamRot(event.target.value);
-      //};
-    //},
-
     updateCamRot = function(newCamrotDeg){
       let rot_angle_deg = newCamrotDeg;
       let rot_angle = deg2rad(rot_angle_deg);
@@ -410,6 +411,17 @@ export default function BRDFViewport(spec) {
       //TODO: we should just be modifying uniforms, not setting up
       //the geometry again.
       num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+    },
+
+    /////////////////////
+    // ADD UNIFORMS AT RUNTIME 
+    // (called when we load a Disney .brdf)
+    /////////////////////
+    addUniformsFunc = function(addUniformsHelper){
+      lobeProgram = addUniformsHelper(gl);  
+      //we need to set up our uniforms again because
+      //the above function returned a new lobeProgram.
+      setupUniformsLobe(); 
     },
 
     /////////////////////
@@ -509,5 +521,6 @@ export default function BRDFViewport(spec) {
     updateTheta,
     updatePhi,
     updateCamRot,
+    addUniformsFunc
   });
 }

@@ -116,7 +116,8 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
         uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
           max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
       } else if (param_type === "bool") {
-        uniformsInfo[name] = {type: "bool", default: parseFloat(tokens[2])};
+        uniformsInfo[name] = {type: "bool", 
+          default: (parseInt(tokens[2]) ? true : false)};
       } else if (param_type === "color") {
         uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
           defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};

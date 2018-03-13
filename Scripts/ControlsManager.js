@@ -63,10 +63,10 @@ export default function ControlsManager(){
 		incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ", "slider_incidentPhi", -180, 180, starting_phi);
 		
 		/* Add normal theta slider */
-		normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 100, 0);
+		normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 360, 0);
 
 		/* Add normal phi slider */
-		normalPhiEnvelope = addEnvelopeControl(sliderDiv, "Norm φ", "normalPhi", 0, 100, 0);
+		normalPhiEnvelope = addEnvelopeControl(sliderDiv, "Norm φ", "normalPhi", 0, 360, 0);
 
 		menu.append("input")
 		.attr("id", "linkedCamRot")

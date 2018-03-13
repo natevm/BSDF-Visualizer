@@ -409,7 +409,7 @@ export default function ModelViewport(spec) {
 				//console.log([pos.x, pos.y]);
 				//console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
 				normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
-				pickPointNDC = vec3.fromValues(2*(pos.x/512.0)-1, 2*(pos.y/512.0)-1, 2*pixels[3]-1);
+				pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
 				pickProjMatrix = pMatrix;
 				pickModelViewMatrix = mat4.clone(mvMatrix);
 				//normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;

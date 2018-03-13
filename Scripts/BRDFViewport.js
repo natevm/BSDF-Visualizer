@@ -57,6 +57,8 @@ export default function BRDFViewport(spec) {
     delTheta = 90 / numThetaDivisions,
     delPhi = 360 / numPhiDivisions,
 
+    oldCamrotDeg = 0.0,
+
     prev_time = 0,
     //M = mat4.create(), //Right now we are keeping M as identity
     initial_V = get_initial_V(),
@@ -374,20 +376,33 @@ export default function BRDFViewport(spec) {
        let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
        console.log(linkedViewMatrix4);
        initial_V[12] = 0.0;
-        initial_V[13] = 0.0;
-        initial_V[14] = 0.0;
+       initial_V[13] = 0.0;
+       initial_V[14] = 0.0;
        mat4.multiply(V,linkedViewMatrix4, initial_V);
+
+       let rot_angle_deg = oldCamrotDeg;
+       let rot_angle = deg2rad(rot_angle_deg);
+       let rot_axis = vec3.create();
+       let rot = mat4.create();
+
+       initial_V[13] = -0.5;
+       initial_V[14] = -1.5;
+
+       let slider = document.getElementById("slider_camRot");
+       slider.value = 0;
     },
 
     updateCamRot = function(newCamrotDeg){
-      let rot_angle_deg = newCamrotDeg;
+      let rot_angle_deg = newCamrotDeg - oldCamrotDeg;
+      oldCamrotDeg = newCamrotDeg;
       let rot_angle = deg2rad(rot_angle_deg);
       let rot_axis = vec3.create();
       let rot = mat4.create();
 
       vec3.set(rot_axis, 0, 0, 1);
       mat4.fromRotation(rot, rot_angle, rot_axis);
-      mat4.multiply(V,initial_V,rot);
+      mat4.multiply(V,V,rot);
+      console.log(V);
     },
 
     updateTheta = function(newThetaDeg){

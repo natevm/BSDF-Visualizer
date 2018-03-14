@@ -17,8 +17,6 @@
 # Uninstall:
 # rm $HOME/.githooks/pre-commit
 
-# Install in current Git repo only:
-# curl -fL https://gist.githubusercontent.com/stefansundin/9059706/raw/install-pre-commit.sh | sh -s ${FILE:-pre-commit}
 # Uninstall:
 # rm .git/hooks/pre-commit
 
@@ -42,10 +40,10 @@ fi
 
 FILE=${1:-pre-commit-4}
 
-echo "Downloading $FILE hook from https://gist.github.com/stefansundin/9059706"
+echo "Downloading $FILE hook from https://gist.githubusercontent.com/n8vm/6214bf973613e70eac6e379eb75d77d4/raw/56e69ad75760e2b30ea06856c939b48ab7d2f518/pre-commit"
 echo
 
-curl -fL -o "$GIT_DIR/hooks/pre-commit" "https://gist.githubusercontent.com/stefansundin/9059706/raw/$FILE"
+curl -fL -o "$GIT_DIR/hooks/pre-commit" "https://gist.githubusercontent.com/n8vm/6214bf973613e70eac6e379eb75d77d4/raw/56e69ad75760e2b30ea06856c939b48ab7d2f518/pre-commit"
 if [ ! -f "$GIT_DIR/hooks/pre-commit" ]; then
   echo "Error downloading pre-commit script!"
   exit 3

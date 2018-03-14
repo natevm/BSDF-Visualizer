@@ -3,7 +3,7 @@
   "esversion" : 6,
   "devel" : true,
   "node" : true,
-  "globals" : { 
+  "globals" : {
     "mat3" : true,
     "mat4" : true,
     "vec3" : true,

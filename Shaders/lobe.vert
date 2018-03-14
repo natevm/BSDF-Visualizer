@@ -20,7 +20,7 @@ out vec3 vColor;
 out vec4 world_normal;
 
 vec3 polar_to_cartesian(float theta_deg, float phi_deg){
-  float theta = (M_PI/180.0) * theta_deg; 
+  float theta = (M_PI/180.0) * theta_deg;
   float phi = (M_PI/180.0) * phi_deg;
   return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
 }
@@ -31,22 +31,22 @@ vec3 get_reflected(vec3 L, vec3 N){
   return normalize(L_plus_R - L);
 }
 
-//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because 
+//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because
 //that's not part of the BRDF, it's the "form factor" in the rendering equation.
 
 //TODO: Disney's tool assumes BRDF returns a vec3? But I don't see where the color
-//input is? 
+//input is?
 
 //L, V, N assumed to be unit vectors
 float BRDF(vec3 L, vec3 V, vec3 N){
   //TODO: These should actually be uniforms.
   const float k_d = 0.7;
   const float k_s = 0.3;
-  const float spec_power = 20.0; 
-  
+  const float spec_power = 20.0;
+
   vec3 R = get_reflected(L, N);
   float spec_val = pow(max(dot(R,V),0.0), spec_power);
-  float diffuse_val = max(0.0, dot(L,N)); 
+  float diffuse_val = max(0.0, dot(L,N));
 
   return k_d*diffuse_val + k_s*spec_val;
 }
@@ -60,17 +60,17 @@ void main() {
     */
 
     vColor = color;
-    
+
     //TODO: should we be working with radians "natively"?
-    float theta_deg = polar_coords.x; 
-    float phi_deg = polar_coords.y; 
+    float theta_deg = polar_coords.x;
+    float phi_deg = polar_coords.y;
 
     //prior to scaling, p SHOULD BE the same as position as model_position
-    vec3 p = polar_to_cartesian(theta_deg,phi_deg); 
-    vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg); 
-    vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg); 
-    vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi); 
-    vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi); 
+    vec3 p = polar_to_cartesian(theta_deg,phi_deg);
+    vec3 p_U = polar_to_cartesian(theta_deg - u_delTheta,phi_deg);
+    vec3 p_D = polar_to_cartesian(theta_deg + u_delTheta,phi_deg);
+    vec3 p_L = polar_to_cartesian(theta_deg,phi_deg + u_delPhi);
+    vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi);
 
     //Scale points by the BRDF
     //float shade = BRDF(u_l, normalize(p), u_n);
@@ -81,7 +81,7 @@ void main() {
     p_R *= BRDF(u_l, normalize(p_R), u_n);
 
     vec3 v1 = p_R - p;
-    vec3 v2 = p_U - p; 
+    vec3 v2 = p_U - p;
     vec3 v3 = p_L - p;
     vec3 v4 = p_D - p;
 
@@ -98,5 +98,5 @@ void main() {
     //world_normal = u_m * model_normal;
     //world_normal = model_normal; //DEBUG ONLY.
     //world_normal = vec4(avg_model_normal,1); //DEBUG ONLY
-    world_normal = u_m * vec4(avg_model_normal,1); 
+    world_normal = u_m * vec4(avg_model_normal,1);
 }

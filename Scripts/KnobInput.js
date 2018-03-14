@@ -5,7 +5,7 @@ export default class KnobInput {
     if (!options) {
       options = {};
     }
-    
+
     // settings
     var step = options.step || 'any';
     var min = typeof options.min === 'number' ? options.min : 0;
@@ -18,7 +18,7 @@ export default class KnobInput {
     this.wheelResistance /= max-min;
     this.setupVisualContext = typeof options.visualContext === 'function' ? options.visualContext : KnobInput.setupRotationContext(0, 360);
     this.updateVisuals = typeof options.updateVisuals === 'function' ? options.updateVisuals : KnobInput.rotationUpdateFunction;
-    
+
     // setup input
     var rangeInput = document.createElement('input');
     rangeInput.setAttribute("id", rangeId);
@@ -28,7 +28,7 @@ export default class KnobInput {
     rangeInput.max = max;
     rangeInput.value = this.initial;
     containerElement.appendChild(rangeInput);
-    
+
     // elements
     this._container = containerElement;
     this._container.classList.add('knob-input');
@@ -36,15 +36,15 @@ export default class KnobInput {
     this._input.classList.add('knob-input__input');
     this._visualElement = this._container.querySelector(`.${this.visualElementClass}`);
     this._visualElement.classList.add('knob-input__visual');
-    
+
     // visual context
     this._visualContext = { element: this._visualElement };
     this.setupVisualContext.apply(this._visualContext);
     this.updateVisuals = this.updateVisuals.bind(this._visualContext);
-    
+
     // internals
     this._activeDrag = false;
-    
+
     // define event listeners
     // have to store bound versions of handlers so they can be removed later
     this._handlers = {
@@ -72,24 +72,24 @@ export default class KnobInput {
     // init
     this.updateToInputValue();
   }
-  
+
   static setupRotationContext(minRotation, maxRotation) {
     return function() {
       this.minRotation = minRotation;
       this.maxRotation = maxRotation;
     };
   }
-  
+
   static rotationUpdateFunction(norm) {
     this.element.style[transformProp] = `rotate(${this.maxRotation*norm-this.minRotation*(norm-1)}deg)`;
   }
-  
+
   // handlers
-  handleInputChange(evt) {    
+  handleInputChange(evt) {
     //console.log('input change');
     this.updateToInputValue();
   }
-  
+
   handleTouchStart(evt) {
     // console.log('touch start');
     this.clearDrag();
@@ -102,7 +102,7 @@ export default class KnobInput {
     document.body.addEventListener('touchend', this._handlers.touchEnd);
     document.body.addEventListener('touchcancel', this._handlers.touchCancel);
   }
-  
+
   handleTouchMove(evt) {
     // console.log('touch move');
     var activeTouch = this.findActiveTouch(evt.changedTouches);
@@ -112,7 +112,7 @@ export default class KnobInput {
       this.clearDrag();
     }
   }
-  
+
   handleTouchEnd(evt) {
     // console.log('touch end');
     var activeTouch = this.findActiveTouch(evt.changedTouches);
@@ -120,14 +120,14 @@ export default class KnobInput {
       this.finalizeDrag(activeTouch.clientY);
     }
   }
-  
+
   handleTouchCancel(evt) {
     // console.log('touch cancel');
     if (this.findActiveTouch(evt.changedTouches)) {
       this.clearDrag();
     }
   }
-  
+
   handleMouseDown(evt) {
     // console.log('mouse down');
     this.clearDrag();
@@ -138,7 +138,7 @@ export default class KnobInput {
     document.body.addEventListener('mousemove', this._handlers.mouseMove);
     document.body.addEventListener('mouseup', this._handlers.mouseUp);
   }
-  
+
   handleMouseMove(evt) {
     // console.log('mouse move');
     if (evt.buttons&1) {
@@ -147,12 +147,12 @@ export default class KnobInput {
       this.finalizeDrag(evt.clientY);
     }
   }
-  
+
   handleMouseUp(evt) {
     // console.log('mouse up');
     this.finalizeDrag(evt.clientY);
   }
-  
+
   handleMouseWheel(evt) {
     // console.log('mouse wheel');
     this._input.focus();
@@ -160,47 +160,47 @@ export default class KnobInput {
     this._prevValue = parseFloat(this._input.value);
     this.updateFromDrag(evt.deltaY, this.wheelResistance);
   }
-  
+
   handleDoubleClick(evt) {
     // console.log('double click');
     this.clearDrag();
     this._input.value = this.initial;
     this.updateToInputValue();
   }
-  
+
   handleFocus(evt) {
     // console.log('focus on');
     this._container.classList.add('focus-active');
   }
-  
+
   handleBlur(evt) {
     // console.log('focus off');
     this._container.classList.remove('focus-active');
   }
-  
+
   // dragging
   startDrag(yPosition) {
     this._dragStartPosition = yPosition;
     this._prevValue = parseFloat(this._input.value);
-    
+
     this._input.focus();
     document.body.classList.add('knob-input__drag-active');
     this._container.classList.add('drag-active');
   }
-  
+
   updateDrag(yPosition) {
     var diff = yPosition - this._dragStartPosition;
     this.updateFromDrag(diff, this.dragResistance);
     this._input.dispatchEvent(new InputEvent('change'));
   }
-  
+
   finalizeDrag(yPosition) {
     var diff = yPosition - this._dragStartPosition;
     this.updateFromDrag(diff, this.dragResistance);
     this.clearDrag();
     this._input.dispatchEvent(new InputEvent('change'));
   }
-  
+
   clearDrag() {
     document.body.classList.remove('knob-input__drag-active');
     this._container.classList.remove('drag-active');
@@ -213,25 +213,25 @@ export default class KnobInput {
     document.body.removeEventListener('touchend', this._handlers.touchEnd);
     document.body.removeEventListener('touchcancel', this._handlers.touchCancel);
   }
-  
+
   updateToInputValue() {
     var normVal = this.normalizeValue(parseFloat(this._input.value));
     this.updateVisuals(normVal);
   }
-  
+
   updateFromDrag(dragAmount, resistance) {
     var newVal = this.clampValue(this._prevValue - (dragAmount/resistance));
     this._input.value = newVal;
     this.updateVisuals(this.normalizeValue(newVal));
   }
-  
+
   // utils
   clampValue(val) {
     var min = parseFloat(this._input.min);
     var max = parseFloat(this._input.max);
     return Math.min(Math.max(val, min), max);
   }
-  
+
   normalizeValue(val) {
     var min = parseFloat(this._input.min);
     var max = parseFloat(this._input.max);
@@ -245,13 +245,13 @@ export default class KnobInput {
         return touchList.item(i);
     return null;
   }
-  
+
   // public passthrough methods
   addEventListener() { this._input.addEventListener.apply(this._input, arguments); }
   removeEventListener() { this._input.removeEventListener.apply(this._input, arguments); }
   focus() { this._input.focus.apply(this._input, arguments); }
   blur() { this._input.blur.apply(this._input, arguments); }
-  
+
   // getters/setters
   get value() {
     return parseFloat(this._input.value);

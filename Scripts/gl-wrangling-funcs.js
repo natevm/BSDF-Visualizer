@@ -43,7 +43,7 @@ export function get_initial_V(){
    */
 
   // BRDF is in tangent space. Tangent space is Z-up.
-  // Also, we need to move the camera so that it's not at the origin 
+  // Also, we need to move the camera so that it's not at the origin
   var cam_z = 1.5; // z-position of camera in camera space
   var cam_y = 0.5; // altitude of camera
   var V = [1,      0,     0, 0,
@@ -88,7 +88,7 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 export function get_reflected(L_hat,N_hat){
   var L_plus_R = vec3.create();
   vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create(); 
+  var R_hat = vec3.create();
   vec3.sub(R_hat, L_plus_R, L_hat);
   vec3.normalize(R_hat,R_hat); //I don't think this is needed?
   return R_hat;
@@ -98,7 +98,7 @@ export function get_reflected(L_hat,N_hat){
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);
-  var in_phi = deg2rad(in_phi_deg); 
+  var in_phi = deg2rad(in_phi_deg);
 
   var rot_Y = rotY(-in_theta);
   var rot_Z = rotZ(in_phi);

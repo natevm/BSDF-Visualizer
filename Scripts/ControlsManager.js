@@ -2,13 +2,13 @@
 
 import KnobInput from "./KnobInput.js";
 
-//requires d3.js 
+//requires d3.js
 
 //************************
 //"Class" ControlsManager
 //
-// Using "Classless OOP": 
-// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference 
+// Using "Classless OOP":
+// https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
 //************************
 
 //Currently there are no "constructor" arguments
@@ -22,7 +22,7 @@ export default function ControlsManager(){
   //in the "frozen" object that gets returned at the end.
   let
     viewers = [],
-    thetaEnvelope, 
+    thetaEnvelope,
     phiEnvelope,
     registerViewer = function(new_viewer){
       viewers.push(new_viewer);
@@ -38,9 +38,9 @@ export default function ControlsManager(){
       let camRotInput;
 
       //FIXME: this gets called before
-      //setupUI() gets called in BRDFViewport. 
-      //Necessary for now because both are writing 
-      //to the same div. 
+      //setupUI() gets called in BRDFViewport.
+      //Necessary for now because both are writing
+      //to the same div.
       menu.html("");
 
       /* Add incident theta slider */
@@ -178,13 +178,13 @@ export default function ControlsManager(){
       let output_incidentPhi = document.getElementById("output_incidentPhi");
 
       //Set initial values
-      //output_incidentTheta.innerHTML = starting_theta; 
-      //output_incidentPhi.innerHTML = starting_phi; 
+      //output_incidentTheta.innerHTML = starting_theta;
+      //output_incidentPhi.innerHTML = starting_phi;
 
       thetaEnvelope.addEventListener('change', (event) => {
         viewers.forEach(function(v) {
           let new_theta = thetaEnvelope.value;
-          //output_incidentTheta.innerHTML = Math.round(new_theta); 
+          //output_incidentTheta.innerHTML = Math.round(new_theta);
           v.updateTheta(new_theta);
         });
       });
@@ -192,12 +192,12 @@ export default function ControlsManager(){
       phiEnvelope.addEventListener('change', (event) => {
         viewers.forEach(function(v) {
           let new_phi = phiEnvelope.value;
-          //output_incidentPhi.innerHTML = Math.round(new_phi); 
+          //output_incidentPhi.innerHTML = Math.round(new_phi);
           v.updatePhi(new_phi);
 	});
       });
     };
-	      
+
   //************* Start "constructor" **************
   setupUI();
   setupUICallbacks();
@@ -205,6 +205,6 @@ export default function ControlsManager(){
 
   //Put any methods / properties that we want to make pulic inside this object.
   return Object.freeze({
-    registerViewer    
+    registerViewer
   });
 }

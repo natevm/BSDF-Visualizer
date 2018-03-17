@@ -37,11 +37,19 @@
 	</svg>
 
 	<body id="main-container">
+<<<<<<< HEAD
+    <div id="brdf-column">
+      <div id="brdf-menu">BRDF menu</div>
+      <div id="file-chooser">File Chooser</div>
+      <canvas id="brdf-canvas">BRDF canvas</canvas>
+    </div>
+=======
 		<div id="brdf-column">
 			<div id="brdf-header">BRDF Header</div>
 			<canvas id="brdf-canvas">BRDF canvas</canvas>
 			<div id="brdf-menu">BRDF menu</div>
 		</div>
+>>>>>>> master
 
 		<div id="model-column">
 			<div id="brdf-header">

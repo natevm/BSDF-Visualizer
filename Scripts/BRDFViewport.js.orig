@@ -30,6 +30,7 @@ export default function BRDFViewport(spec) {
 
     // Programs are initialized in createShaders
     lobeProgram,
+    //lobeFragSrc, //we cache this so we can use when loading Disney's *.brdf later
     lobe_nUniformLoc,
     lobe_lUniformLoc,
     lobe_delThetaUniformLoc,
@@ -103,6 +104,7 @@ export default function BRDFViewport(spec) {
       lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
       lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
 
+<<<<<<< HEAD
       setupUniformsLobe();
       setupUniformsLine();
 
@@ -121,6 +123,23 @@ export default function BRDFViewport(spec) {
       //line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
       //line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
       //line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
+=======
+      lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
+      lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
+      lobe_delThetaUniformLoc =
+          gl.getUniformLocation(lobeProgram, "u_delTheta");
+      lobe_delPhiUniformLoc =
+          gl.getUniformLocation(lobeProgram, "u_delPhi");
+
+      // model, view, and projection matrices, respectively.
+      lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
+      lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
+      lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
+
+      line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
+      line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
+      line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
+>>>>>>> master
 
       //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
       //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
@@ -371,6 +390,10 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
+<<<<<<< HEAD
+    updateCamRot = function(newCamrotDeg){
+      let rot_angle_deg = newCamrotDeg;
+=======
     //setupUI = function() {
       //const menu = d3.select("#brdf-menu");
       //let thetaInput;
@@ -398,7 +421,7 @@ export default function BRDFViewport(spec) {
 
     updateLinkedCamRot = function(lvm){
        let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
-       //console.log(linkedViewMatrix4);
+       console.log(linkedViewMatrix4);
        initial_V[12] = 0.0;
        initial_V[13] = 0.0;
        initial_V[14] = 0.0;
@@ -419,14 +442,19 @@ export default function BRDFViewport(spec) {
     updateCamRot = function(newCamrotDeg){
       let rot_angle_deg = newCamrotDeg - oldCamrotDeg;
       oldCamrotDeg = newCamrotDeg;
+>>>>>>> master
       let rot_angle = deg2rad(rot_angle_deg);
       let rot_axis = vec3.create();
       let rot = mat4.create();
 
       vec3.set(rot_axis, 0, 0, 1);
       mat4.fromRotation(rot, rot_angle, rot_axis);
+<<<<<<< HEAD
+      mat4.multiply(V,initial_V,rot);
+=======
       mat4.multiply(V,V,rot);
       console.log(V);
+>>>>>>> master
     },
 
     updateTheta = function(newThetaDeg){
@@ -462,6 +490,7 @@ export default function BRDFViewport(spec) {
     },
 
     /////////////////////
+<<<<<<< HEAD
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a Disney .brdf)
     /////////////////////
@@ -474,6 +503,8 @@ export default function BRDFViewport(spec) {
     },
 
     /////////////////////
+=======
+>>>>>>> master
     // DRAW
     /////////////////////
     render = function(time){
@@ -503,6 +534,8 @@ export default function BRDFViewport(spec) {
         prev_time = time;
       }
     };
+
+  //input is our *.brdf file as a multiline string
 
   //************* Start "constructor" **************
   {
@@ -535,6 +568,10 @@ export default function BRDFViewport(spec) {
     }));
     promises.push($.ajax({
       url: shdrDir + "lobe.vert",
+<<<<<<< HEAD
+      //url: shdrDir + "lobe_lambert.vert", //DEBUG ONLY!
+=======
+>>>>>>> master
       success: function(result){
         lobeVertSrc = result.trim();
       }
@@ -550,7 +587,24 @@ export default function BRDFViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc);
+<<<<<<< HEAD
+
+      //***************DEBUG ONLY*****************
+      //let loc = gl.getUniformLocation(lobeProgram, "reflectance");
+      //gl.useProgram(lobeProgram);
+      //gl.uniform1f(loc,1.0);
+      //************END DEBUG ONLY*****************
+
+=======
+>>>>>>> master
       setupGeometry();
+
+      //***************DEBUG ONLY*****************
+      //gl.useProgram(lobeProgram);
+      //gl.uniform1f(loc,1.0);
+      //setupUniformsLobe();
+      //************END DEBUG ONLY*****************
+
       renderReady = true;
 
       //setupUI();
@@ -568,7 +622,10 @@ export default function BRDFViewport(spec) {
     updateTheta,
     updatePhi,
     updateCamRot,
-    updateLinkedCamRot,
+<<<<<<< HEAD
     addUniformsFunc
+=======
+    updateLinkedCamRot,
+>>>>>>> master
   });
 }

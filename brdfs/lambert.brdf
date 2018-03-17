@@ -11,7 +11,7 @@ float reflectance 0.0 1.0 1.0
 
 # Then comes the shader. This should be GLSL code
 # that defines a function called BRDF (although you can
-# add whatever other functions you want too). 
+# add whatever other functions you want too).
 
 ::begin shader
 

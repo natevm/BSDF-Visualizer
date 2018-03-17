@@ -1,7 +1,14 @@
+"use strict";
+
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
+<<<<<<< HEAD
 import {map_insert_chain} from './collections-wranglers.js';
 
+//TODO: We probably shouldn't be dealing with "viewers" in here... that should stay inside
+//ControlsManager.js
+
+//loadBrdfFile = function(fileList){
 export function loadBrdfFile(fileList, viewers){
   let reader = new FileReader();
   //key: uniform name. value: function for updating the uniform.
@@ -105,6 +112,8 @@ export function loadBrdfFile(fileList, viewers){
   //onload will be invoked when this is done
   reader.readAsText(fileList[0]);
 }
+=======
+>>>>>>> master
 
 export function loadBRDF_disneyFormat(spec){
   let { brdfFileStr, shdrDir, templatePath, vertPath, fragPath,
@@ -151,15 +160,18 @@ export function loadBRDF_disneyFormat(spec){
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
         disneyBrdf: brdfFileStr, whichTemplate: templateType});
 
-      //console.log("Uniforms for the .brdf: ");
-      //console.log(uniformsInfo);
+<<<<<<< HEAD
+=======
+      console.log("Uniforms for the .brdf: ");
+      console.log(uniformsInfo);
 
-      //console.log("Final Vertex Shader source: ");
-      //console.log(finalVtxSrc);
+      console.log("Final Vertex Shader source: ");
+      console.log(finalVtxSrc);
 
-      //console.log("Final Fragment Shader source: ");
-      //console.log(finalFragSrc);
+      console.log("Final Fragment Shader source: ");
+      console.log(finalFragSrc);
 
+>>>>>>> master
       resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
     }, function(err) {
         console.log("Shader Load Error: " + err);
@@ -228,8 +240,12 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
         uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
           max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
       } else if (param_type === "bool") {
+<<<<<<< HEAD
         uniformsInfo[name] = {type: "bool",
           default: (parseInt(tokens[2]) ? true : false)};
+=======
+        uniformsInfo[name] = {type: "bool", default: parseFloat(tokens[2])};
+>>>>>>> master
       } else if (param_type === "color") {
         uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
           defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};

@@ -25,7 +25,7 @@ bool divide_by_NdotL 1
  *
  */
 
-//Disney uses different convention, assumes incoming ray  
+//Disney uses different convention, assumes incoming ray
 //comes in the opposite direction
 vec3 refl_ray(vec3 I, vec3 N)
 {

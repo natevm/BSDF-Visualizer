@@ -3,7 +3,8 @@
 import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian,
     polar_to_color} from './math-utils.js';
 import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
-    compute_L_hat, compute_N_hat, init_gl_context} from './gl-wrangling-funcs.js';
+    compute_L_hat, compute_N_hat, init_gl_context,
+    brdfShaderFromTemplate} from './gl-wrangling-funcs.js';
 
 // Requires jquery
 // Requires gl-matrix.js
@@ -23,12 +24,13 @@ export default function BRDFViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height } = spec,
+    { canvasName, width, height, shdrDir } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance
     gl, //GL context is initialized in "setupWebGL2"
 
     // Programs are initialized in createShaders
     lobeProgram,
+    //lobeFragSrc, //we cache this so we can use when loading Disney's *.brdf later
     lobe_nUniformLoc,
     lobe_lUniformLoc,
     lobe_delThetaUniformLoc,
@@ -54,6 +56,8 @@ export default function BRDFViewport(spec) {
     numThetaDivisions = 100,
     delTheta = 90 / numThetaDivisions,
     delPhi = 360 / numPhiDivisions,
+
+    oldCamrotDeg = 0.0,
 
     prev_time = 0,
     //M = mat4.create(), //Right now we are keeping M as identity
@@ -266,7 +270,7 @@ export default function BRDFViewport(spec) {
     },
 
     setupGeometry = function() {
-      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
+      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg + 180);
       let N_hat = compute_N_hat();
 
       lobeVAO = gl.createVertexArray();
@@ -274,7 +278,6 @@ export default function BRDFViewport(spec) {
       //Assumes positions at attribute 0, colors at attribute 1,
       //normals at attribute 2 in lobe shader
       num_lobe_verts = lobe_setupGeometry(lobeVAO, L_hat, N_hat);
-      gl.useProgram(lobeProgram);
       gl.useProgram(lobeProgram);
       gl.uniform3fv(lobe_nUniformLoc,N_hat);
       gl.uniform3fv(lobe_lUniformLoc,L_hat);
@@ -344,37 +347,62 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
-    setupUI = function() {
-      const menu = d3.select("#brdf-menu");
-      let thetaInput;
-      let thetaOutput;
-      let phiInput;
-      let phiOutput;
-      let camRotInput;
+    //setupUI = function() {
+      //const menu = d3.select("#brdf-menu");
+      //let thetaInput;
+      //let thetaOutput;
+      //let phiInput;
+      //let phiOutput;
+      //let camRotInput;
 
-      /* add camRot slider */
-      // menu.append("input")
-      //   .attr("id", "slider_camRot")
-      //   .attr("type", "range")
+      //[> add camRot slider <]
+      //menu.append("input")
+        //.attr("id", "slider_camRot")
+        //.attr("type", "range")
+        //.attr("min", -180)
+        //.attr("max", 180)
+        //.attr("step", 1)
+        //.attr("value", 0);
+    //},
 
-      d3.select("#brdf-camera-slider")
-        .attr("min", -180)
-        .attr("max", 180)
-        .attr("step", 1)
-        .attr("value", 180);
+    //setupUICallbacks = function() {
+      //document.getElementById("slider_camRot").oninput = (event) => {
+        //updateCamRot(event.target.value);
+      //};
+    //},
+
+
+    updateLinkedCamRot = function(lvm){
+       let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
+       console.log(linkedViewMatrix4);
+       initial_V[12] = 0.0;
+       initial_V[13] = 0.0;
+       initial_V[14] = 0.0;
+       mat4.multiply(V,linkedViewMatrix4, initial_V);
+
+       let rot_angle_deg = oldCamrotDeg;
+       let rot_angle = deg2rad(rot_angle_deg);
+       let rot_axis = vec3.create();
+       let rot = mat4.create();
+
+       initial_V[13] = -0.5;
+       initial_V[14] = -1.5;
+
+       let slider = document.getElementById("slider_camRot");
+       slider.value = 0;
     },
 
-    setupUICallbacks = function() {
-      document.getElementById("brdf-camera-slider").oninput = (event) => {
-        let rot_angle_deg = 180 - event.target.value;
-        let rot_angle = deg2rad(rot_angle_deg);
-        let rot_axis = vec3.create();
-        let rot = mat4.create();
+    updateCamRot = function(newCamrotDeg){
+      let rot_angle_deg = newCamrotDeg - oldCamrotDeg;
+      oldCamrotDeg = newCamrotDeg;
+      let rot_angle = deg2rad(rot_angle_deg);
+      let rot_axis = vec3.create();
+      let rot = mat4.create();
 
-        vec3.set(rot_axis, 0, 0, 1);
-        mat4.fromRotation(rot, rot_angle, rot_axis);
-        mat4.multiply(V,initial_V,rot);
-      };
+      vec3.set(rot_axis, 0, 0, 1);
+      mat4.fromRotation(rot, rot_angle, rot_axis);
+      mat4.multiply(V,V,rot);
+      console.log(V);
     },
 
     updateTheta = function(newThetaDeg){
@@ -440,15 +468,19 @@ export default function BRDFViewport(spec) {
       }
     };
 
+  //input is our *.brdf file as a multiline string
+
   //************* Start "constructor" **************
   {
-    const shdrDir = "Shaders/";
-
     let lobeVertSrc;
-    let lobeFragSrc;
+    let lobeFragSrc; //now this has "whole object" scope.
     let lineVertSrc;
     let lineFragSrc;
 
+    //ES6 promises: https://stackoverflow.com/a/10004137
+    //jQuery AJAX requests return an ES6-compatible promise,
+    //because jQuery 3.0+ implements the
+    //Promise/A+ API (see https://stackoverflow.com/a/35135488)
     let promises = [];
 
     canvas.width = width;
@@ -480,21 +512,18 @@ export default function BRDFViewport(spec) {
       }
     }));
 
-    //JQuery promise snippet from https://stackoverflow.com/a/10004137
-    //Wait for all async callbacks to return, then execute the code below.
-    $.when.apply($, promises).then(function() {
+    Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc);
       setupGeometry();
       renderReady = true;
 
-      setupUI();
-      setupUICallbacks();
+      //setupUI();
+      //setupUICallbacks();
 
-    }, function() {
-        // error occurred
-        console.log("Error loading shaders!");
+    }, function(err) {
+        throw "Shader load error: " + err;
     });
   }
   //************* End "constructor" **************
@@ -503,6 +532,8 @@ export default function BRDFViewport(spec) {
   return Object.freeze({
     render,
     updateTheta,
-    updatePhi
+    updatePhi,
+    updateCamRot,
+    updateLinkedCamRot,
   });
 }

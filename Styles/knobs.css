@@ -99,16 +99,16 @@
 @media screen and (orientation:landscape) {
   .fl-studio-envelope__label{
     /*padding: 1vw 0;*/
-    width: 6vw;
+    width: 3vw;
   }
   .fl-studio-envelope__knob.envelope-knob {
-    width: 6vw;
-    height: 6vw;
+    width: 3vw;
+    height: 3vw;
   }
   .fl-studio-envelope__knob.tension-knob{
     /*padding: 1vw;*/
-    width: 6vw;
-    height: 6vw;
+    width: 3vw;
+    height: 3vw;
   }
 }
 @media screen and (orientation:portrait) {

@@ -16,6 +16,10 @@ uniform vec3 u_l;
 uniform float u_delTheta;
 uniform float u_delPhi;
 
+//*************** START INLINED UNIFORMS ******************
+// <INLINE_UNIFORMS_HERE>
+//*************** END INLINED UNIFORMS ********************
+
 out vec3 vColor;
 out vec4 world_normal;
 
@@ -25,33 +29,16 @@ vec3 polar_to_cartesian(float theta_deg, float phi_deg){
   return vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta));
 }
 
-//L and N are assumed to be unit vectors
-vec3 get_reflected(vec3 L, vec3 N){
-  vec3 L_plus_R = N * 2.0 * dot(L, N);
-  return normalize(L_plus_R - L);
-}
-
-//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because
-//that's not part of the BRDF, it's the "form factor" in the rendering equation.
-
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
-vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
-  //TODO: These should actually be uniforms.
-  const float k_d = 0.7;
-  const float k_s = 0.3;
-  const float spec_power = 20.0;
 
-  vec3 R = get_reflected(L, N);
-  float spec_val = pow(max(dot(R,V),0.0), spec_power);
-  float diffuse_val = max(0.0, dot(L,N));
-
-  return vec3(k_d*diffuse_val + k_s*spec_val);
-}
+//*************** START INLINED BRDF ******************
+// <INLINE_BRDF_HERE>
+//*************** END INLINED BRDF ********************
 
 //See https://en.wikipedia.org/wiki/Relative_luminance
 float rgb_to_luminance(vec3 rgb_color){
-  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b; 
+  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b;
 }
 
 void main() {
@@ -76,8 +63,9 @@ void main() {
     vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi);
 
     //Scale points by the BRDF
-    const vec3 X = vec3(1,0,0); 
-    const vec3 Y = vec3(0,1,0); 
+    //float shade = BRDF(u_l, normalize(p), u_n);
+    const vec3 X = vec3(1,0,0);
+    const vec3 Y = vec3(0,1,0);
     p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));
     p_U *= rgb_to_luminance(BRDF(u_l, normalize(p_U), u_n, X, Y));
     p_D *= rgb_to_luminance(BRDF(u_l, normalize(p_D), u_n, X, Y));

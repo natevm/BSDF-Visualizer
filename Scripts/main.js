@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	ctrlManager = ControlsManager();
 	let canvas = document.getElementById('brdf-canvas');
 
-
 	brdfViewport = BRDFViewport({canvasName: "brdf-canvas",
 		width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
 	modelViewport = ModelViewport({canvasName: "model-canvas",

@@ -15,17 +15,17 @@ const render = function(time) {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
-	const shdrPath = "./Shaders/";
-	ctrlManager = ControlsManager();
-	let canvas = document.getElementById('brdf-canvas');
+  const shdrPath = "./Shaders/";
+  ctrlManager = ControlsManager();
+  let canvas = document.getElementById('brdf-canvas');
 
-	brdfViewport = BRDFViewport({canvasName: "brdf-canvas",
-		width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
-	modelViewport = ModelViewport({canvasName: "model-canvas",
-		width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
+  brdfViewport = BRDFViewport({canvasName: "brdf-canvas",
+    width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
+  modelViewport = ModelViewport({canvasName: "model-canvas",
+    width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
 
-	ctrlManager.registerViewer(brdfViewport);
-	ctrlManager.registerViewer(modelViewport);
+  ctrlManager.registerViewer(brdfViewport);
+  ctrlManager.registerViewer(modelViewport);
 
-	requestAnimationFrame(render);
+  requestAnimationFrame(render);
 });

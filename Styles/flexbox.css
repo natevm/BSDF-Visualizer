@@ -33,7 +33,7 @@ html, body {
 }
 
 /* For landscape screens */
-@media screen and (orientation:landscape) { 
+@media screen and (orientation:landscape) {
 	html, body {
 		height: 100%;
 	}
@@ -75,10 +75,9 @@ html, body {
 		justify-content: center;
 		align-items: center;
 	}
-	#brdf-canvas {	
+	#brdf-canvas {
 		width: 80vw;
 		height: 68.5714286vw;
-		
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -111,7 +110,7 @@ html, body {
 	#brdf-canvas {
 		height: 30vw;
 		width: 35vw;
-		
+
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -147,7 +146,7 @@ html, body {
 	#model-canvas {
 		height: 30vw;
 		width: 35vw;
-		
+
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -175,10 +174,9 @@ html, body {
 		justify-content: center;
 		align-items: center;
 	}
-	#model-canvas {	
+	#model-canvas {
 		width: 80vw;
 		height: 68.5714286vw;
-		
 		display: flex;
 		justify-content: center;
 		align-items: center;

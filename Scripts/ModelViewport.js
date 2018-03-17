@@ -11,13 +11,12 @@ import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 //************************
 //"Class" ModelViewport
 //
-// Using "Classless OOP": 
+// Using "Classless OOP":
 // https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
 //************************
 
 //put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function ModelViewport(spec) {
-
 	//Declare our object's properties and methods below.
 	//They are private by default, unless we put them
 	//in the "frozen" object that gets returned at the end.

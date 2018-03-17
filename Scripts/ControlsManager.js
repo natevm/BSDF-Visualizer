@@ -3,6 +3,8 @@
 import {loadBRDF_disneyFormat} from './gl-wrangling-funcs.js';
 import KnobInput from "./KnobInput.js";
 
+//requires d3.js
+
 //************************
 //"Class" ControlsManager
 //

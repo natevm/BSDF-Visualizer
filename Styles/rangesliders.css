@@ -20,7 +20,7 @@ input[type='range'].niceSlider {
   border-radius: .25em;
   /*transform: translate(-50%, -50%);*/
   background: transparent;
-  /* Firefox & Chrome/ Opera need this, 
+  /* Firefox & Chrome/ Opera need this,
      otherwise font-size is smaller */
   font-size: 1em;
   cursor: pointer;

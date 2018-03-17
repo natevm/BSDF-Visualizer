@@ -45,14 +45,14 @@ body, input, select, textarea {
 	}
 }
 
-@media screen and (orientation:landscape) { 
+@media screen and (orientation:landscape) {
 	.label {
 		font-size: 1.0vw
 	}
 
 	.sidebar-item {
 		font-size: 3.0vh;
- 		white-space: nowrap; 
+ 		white-space: nowrap;
 	}
 
 	.h {

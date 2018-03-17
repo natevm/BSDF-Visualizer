@@ -1504,9 +1504,9 @@ MaterialLibrary = exports.MaterialLibrary = function () {
 
     /**
        * Parses the MTL file.
-       * 
+       *
        * Iterates line by line parsing each MTL directive.
-       * 
+       *
        * This function expects the first token in the line
        * to be a valid MTL directive. That token is then used
        * to try and run a method on this class. parse_[directive]

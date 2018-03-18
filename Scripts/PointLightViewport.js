@@ -498,10 +498,8 @@ export default function PointLightViewport(spec) {
         if (linkedViewport !== undefined) {
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
+          linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
         }
-
-        let linkedCamRotElement = document.getElementById("linkedCamRot");
-        linkedCamRotElement.dispatchEvent(evt);
     };
 
   //************* Start "constructor" **************
@@ -602,10 +600,9 @@ export default function PointLightViewport(spec) {
 
             if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
             else cameraYRotation += 0.01*deltaY;
-            //console.log(cameraXRotation);
-            let evt = new Event('change');
-            let linkedCamRotElement = document.getElementById("linkedCamRot");
-            linkedCamRotElement.dispatchEvent(evt);
+            if (linkedViewport !== undefined) {
+              linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+            }
 
             lastMouseX = newX;
             lastMouseY = newY;

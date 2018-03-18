@@ -47,7 +47,6 @@ export default function Model(){
     .attr("id", "file-chooser")
     .style("display", "flex");
 
-
     menu.append("br");
 
     fileChooser.html("");
@@ -66,17 +65,6 @@ export default function Model(){
     /* Add incident phi slider */
     incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ",
       "slider_incidentPhi", -180, 180, starting_phi);
-
-    /* Add normal theta slider */
-    //normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 360, 0);
-
-    /* Add normal phi slider */
-    //normalPhiEnvelope = addEnvelopeControl(sliderDiv, "Norm φ", "normalPhi", 0, 360, 0);
-
-    menu.append("input")
-    .attr("id", "linkedCamRot")
-    .attr("type", "hidden")
-    .attr("value", 0);
 
     /* add camRot slider */
     d3.select("#brdf-header").html("");
@@ -213,12 +201,6 @@ export default function Model(){
     incidentThetaEnvelope.addEventListener('change', (event) => {
       viewers.forEach(function(v) {
         let new_theta = incidentThetaEnvelope.value;
-        //output_incidentTheta.innerHTML = Math.round(new_theta);
-        //console.log(new_theta - viewers[1].getNormalTheta());
-
-        //viewers[1].updateTheta(new_theta);
-        //viewers[0].updateTheta(viewers[1].getNormalTheta());
-        //viewers[0].updatePhi(viewers[1].getNormalPhi());
 
          viewers.forEach(function(v) {
            let new_theta = event.target.value;
@@ -231,12 +213,6 @@ export default function Model(){
 
     incidentPhiEnvelope.addEventListener('change', (event) => {
       let new_phi = incidentPhiEnvelope.value;
-      //console.log(new_phi - viewers[1].getNormalPhi());
-      //output_incidentPhi.innerHTML = new_phi;
-
-      //viewers[1].updatePhi(new_phi);
-      //viewers[0].updateTheta(viewers[1].getNormalTheta());
-      //viewers[0].updatePhi(viewers[1].getNormalPhi());
 
        viewers.forEach(function(v) {
          let new_phi = event.target.value;
@@ -245,20 +221,6 @@ export default function Model(){
          }
        });
     });
-
-    //normalThetaEnvelope.addEventListener('change', (event) => {
-      //let new_theta = normalThetaEnvelope.value;
-      //viewers[0].updateTheta(new_theta);
-    //});
-
-    //normalPhiEnvelope.addEventListener('change', (event) => {
-      //let new_phi = normalPhiEnvelope.value;
-      //viewers[0].updatePhi(new_phi);
-    //});
-
-    document.getElementById("linkedCamRot").onchange = (event) => {
-      viewers[0].updateLinkedCamRot(viewers[1].getLinkedCamRotMatrix());
-    };
 
     document.getElementById("slider_camRot").oninput = (event) => {
       viewers.forEach(function(v) {

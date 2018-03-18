@@ -19,12 +19,11 @@ import {perspectiveMatrix, compile_and_link_shdr, get_reflected,
 
 //put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function BRDFViewport(spec) {
-
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height, shdrDir } = spec,
+    { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance
     gl, //GL context is initialized in "setupWebGL2"
 
@@ -601,6 +600,7 @@ export default function BRDFViewport(spec) {
     updatePhi,
     updateCamRot,
     updateLinkedCamRot,
-    addUniformsFunc
+    addUniformsFunc,
+    inputByModel
   });
 }

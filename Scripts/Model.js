@@ -60,10 +60,12 @@ export default function Model(){
     .style("width", "100%");
 
     /* Add incident theta slider */
-    incidentThetaEnvelope = addEnvelopeControl(sliderDiv, "θ", "slider_incidentTheta", 0, 90, starting_theta);
+    incidentThetaEnvelope = addEnvelopeControl(sliderDiv, "θ",
+      "slider_incidentTheta", 0, 90, starting_theta);
 
     /* Add incident phi slider */
-    incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ", "slider_incidentPhi", -180, 180, starting_phi);
+    incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ",
+      "slider_incidentPhi", -180, 180, starting_phi);
 
     /* Add normal theta slider */
     //normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 360, 0);
@@ -213,16 +215,17 @@ export default function Model(){
         let new_theta = incidentThetaEnvelope.value;
         //output_incidentTheta.innerHTML = Math.round(new_theta);
         //console.log(new_theta - viewers[1].getNormalTheta());
-        viewers[1].updateTheta(new_theta);
-        viewers[0].updateTheta(viewers[1].getNormalTheta());
-        viewers[0].updatePhi(viewers[1].getNormalPhi());
-        //sorry to comment out this: we need different values for the two viewports
-        //Any ideas of refactoring?  --Daqi
-        // viewers.forEach(function(v) {
-          // let new_theta = event.target.value;
-          // output_incidentTheta.innerHTML = new_theta;
-          // v.updateTheta(new_theta);
-        // });
+
+        //viewers[1].updateTheta(new_theta);
+        //viewers[0].updateTheta(viewers[1].getNormalTheta());
+        //viewers[0].updatePhi(viewers[1].getNormalPhi());
+
+         viewers.forEach(function(v) {
+           let new_theta = event.target.value;
+           if (v.inputByModel === true) {
+             v.updateTheta(new_theta);
+           }
+         });
       });
     });
 
@@ -230,14 +233,17 @@ export default function Model(){
       let new_phi = incidentPhiEnvelope.value;
       //console.log(new_phi - viewers[1].getNormalPhi());
       //output_incidentPhi.innerHTML = new_phi;
-      viewers[1].updatePhi(new_phi);
-      viewers[0].updateTheta(viewers[1].getNormalTheta());
-      viewers[0].updatePhi(viewers[1].getNormalPhi());
-      // viewers.forEach(function(v) {
-        // let new_phi = event.target.value;
-        // output_incidentPhi.innerHTML = new_phi;
-        // v.updatePhi(new_phi);
-      // });
+
+      //viewers[1].updatePhi(new_phi);
+      //viewers[0].updateTheta(viewers[1].getNormalTheta());
+      //viewers[0].updatePhi(viewers[1].getNormalPhi());
+
+       viewers.forEach(function(v) {
+         let new_phi = event.target.value;
+         if (v.inputByModel === true) {
+           v.updatePhi(new_phi);
+         }
+       });
     });
 
     //normalThetaEnvelope.addEventListener('change', (event) => {

@@ -21,7 +21,7 @@ export default function PointLightViewport(spec) {
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height, shdrDir } = spec,
+    { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
     rttShaderProgram,
@@ -338,10 +338,18 @@ export default function PointLightViewport(spec) {
 
     updateTheta = function(newThetaDeg){
       lightTheta = deg2rad(newThetaDeg);
+      if (linkedViewport !== undefined) {
+        linkedViewport.updateTheta(getNormalTheta());
+        linkedViewport.updatePhi(getNormalPhi());
+      }
     },
 
     updatePhi = function(newPhiDeg){
       lightPhi = deg2rad(newPhiDeg);
+      if (linkedViewport !== undefined) {
+        linkedViewport.updateTheta(getNormalTheta());
+        linkedViewport.updatePhi(getNormalPhi());
+      }
     },
 
     getNormalTheta = function(){
@@ -615,6 +623,7 @@ export default function PointLightViewport(spec) {
     getNormalTheta,
     getNormalPhi,
     getLinkedCamRotMatrix,
-    registerLinkedViewport
+    registerLinkedViewport,
+    inputByModel
   });
 }

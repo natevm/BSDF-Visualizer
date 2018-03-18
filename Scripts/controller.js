@@ -1,16 +1,16 @@
 "use strict";
 
 import BRDFViewport from "./BRDFViewport.js";
-import ModelViewport from "./ModelViewport.js";
+import PointLightViewport from "./PointLightViewport.js";
 import Model from "./Model.js";
 
 let brdfViewport;
-let modelViewport;
+let pointLightViewport;
 let model;
 
 const render = function(time) {
   brdfViewport.render(time);
-  modelViewport.render(time);
+  pointLightViewport.render(time);
   requestAnimationFrame(render);
 };
 
@@ -21,13 +21,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   brdfViewport = BRDFViewport({canvasName: "brdf-canvas",
     width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
-  modelViewport = ModelViewport({canvasName: "model-canvas",
+  pointLightViewport = PointLightViewport({canvasName: "model-canvas",
     width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
 
-  modelViewport.registerLinkedViewport(brdfViewport);
+  pointLightViewport.registerLinkedViewport(brdfViewport);
 
   model.registerViewer(brdfViewport);
-  model.registerViewer(modelViewport);
+  model.registerViewer(pointLightViewport);
 
   requestAnimationFrame(render);
 });

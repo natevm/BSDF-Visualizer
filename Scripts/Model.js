@@ -15,7 +15,7 @@ import KnobInput from "./KnobInput.js";
 
 //Currently there are no "constructor" arguments
 //See BRDFViewport.js for an example of one with arguments
-export default function ControlsManager(){
+export default function Model(){
   const starting_theta = 45;
   const starting_phi = 0;
 

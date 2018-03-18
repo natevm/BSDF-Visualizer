@@ -2,7 +2,7 @@
 
 import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian,
     polar_to_color} from './math-utils.js';
-import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
+import {perspectiveMatrix, compile_and_link_shdr, get_reflected,
     compute_L_hat, compute_N_hat, init_gl_context,
     brdfShaderFromTemplate} from './gl-wrangling-funcs.js';
 
@@ -60,6 +60,34 @@ export default function BRDFViewport(spec) {
 
     prev_time = 0,
     //M = mat4.create(), //Right now we are keeping M as identity
+    get_initial_V = function(){
+      /*
+       * gl-matrix stores matrices in column-major order
+       * Therefore, the following matrix:
+       *
+       * [1, 0, 0, 0,
+       * 0, 1, 0, 0,
+       * 0, 0, 1, 0,
+       * x, y, z, 0]
+       *
+       * Is equivalent to this in the OpenGL docs:
+       *
+       * 1 0 0 x
+       * 0 1 0 y
+       * 0 0 1 z
+       * 0 0 0 0
+       */
+
+      // BRDF is in tangent space. Tangent space is Z-up.
+      // Also, we need to move the camera so that it's not at the origin
+      var cam_z = 1.5; // z-position of camera in camera space
+      var cam_y = 0.5; // altitude of camera
+      var init_V = [1,      0,     0, 0,
+                    0,      0,     1, 0,
+                    0,     -1,     0, 0,
+                    0, -cam_y,-cam_z, 1];
+      return init_V;
+    },
     initial_V = get_initial_V(),
     V = mat4.clone(initial_V),
     num_lobe_verts = 0,
@@ -426,7 +454,7 @@ export default function BRDFViewport(spec) {
       vec3.set(rot_axis, 0, 0, 1);
       mat4.fromRotation(rot, rot_angle, rot_axis);
       mat4.multiply(V,V,rot);
-      console.log(V);
+      //console.log(V);
     },
 
     updateTheta = function(newThetaDeg){

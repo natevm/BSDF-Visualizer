@@ -82,9 +82,9 @@ export default function BRDFViewport(spec) {
       // Also, we need to move the camera so that it's not at the origin
       var cam_z = 1.5; // z-position of camera in camera space
       var cam_y = 0.5; // altitude of camera
-      var init_V = [1,      0,     0, 0,
-                    0,      0,     1, 0,
-                    0,     -1,     0, 0,
+      var init_V = [0,      0,     1, 0,
+                    1,      0,     0, 0,
+                    0,      1,     0, 0,
                     0, -cam_y,-cam_z, 1];
       return init_V;
     },
@@ -382,7 +382,11 @@ export default function BRDFViewport(spec) {
       let nearClip = 0.5;
       let farClip  = 50;
       let P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
-      let M = mat4.create();
+      //let M = mat4.create();
+      let M = mat4.fromValues(0, 1, 0, 0,
+                              1, 0, 0, 0,
+                              0, 0, 1, 0,
+                              0, 0, 0, 1);
 
       gl.useProgram(program);
 

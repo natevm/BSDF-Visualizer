@@ -26,8 +26,8 @@ export default function ControlsManager(){
   viewers = [],
   incidentThetaEnvelope,
   incidentPhiEnvelope,
-  normalThetaEnvelope,
-  normalPhiEnvelope,
+  //normalThetaEnvelope,
+  //normalPhiEnvelope,
   registerViewer = function(new_viewer){
     viewers.push(new_viewer);
   },
@@ -66,10 +66,10 @@ export default function ControlsManager(){
     incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ", "slider_incidentPhi", -180, 180, starting_phi);
 
     /* Add normal theta slider */
-    normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 360, 0);
+    //normalThetaEnvelope = addEnvelopeControl(sliderDiv, "Norm θ", "normalTheta", 0, 360, 0);
 
     /* Add normal phi slider */
-    normalPhiEnvelope = addEnvelopeControl(sliderDiv, "Norm φ", "normalPhi", 0, 360, 0);
+    //normalPhiEnvelope = addEnvelopeControl(sliderDiv, "Norm φ", "normalPhi", 0, 360, 0);
 
     menu.append("input")
     .attr("id", "linkedCamRot")
@@ -240,15 +240,15 @@ export default function ControlsManager(){
       // });
     });
 
-    normalThetaEnvelope.addEventListener('change', (event) => {
-      let new_theta = normalThetaEnvelope.value;
-      viewers[0].updateTheta(new_theta);
-    });
+    //normalThetaEnvelope.addEventListener('change', (event) => {
+      //let new_theta = normalThetaEnvelope.value;
+      //viewers[0].updateTheta(new_theta);
+    //});
 
-    normalPhiEnvelope.addEventListener('change', (event) => {
-      let new_phi = normalPhiEnvelope.value;
-      viewers[0].updatePhi(new_phi);
-    });
+    //normalPhiEnvelope.addEventListener('change', (event) => {
+      //let new_phi = normalPhiEnvelope.value;
+      //viewers[0].updatePhi(new_phi);
+    //});
 
     document.getElementById("linkedCamRot").onchange = (event) => {
       viewers[0].updateLinkedCamRot(viewers[1].getLinkedCamRotMatrix());

@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
   modelViewport = ModelViewport({canvasName: "model-canvas",
     width: canvas.clientWidth, height: canvas.clientHeight, shdrDir: shdrPath});
 
+  modelViewport.registerLinkedViewport(brdfViewport);
+
   model.registerViewer(brdfViewport);
   model.registerViewer(modelViewport);
 

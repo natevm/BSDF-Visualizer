@@ -59,6 +59,12 @@ export default function ModelViewport(spec) {
     rttFramebuffer,
     rttTexture,
 
+    linkedViewport,
+
+    registerLinkedViewport = viewportPtr => {
+      linkedViewport = viewportPtr;
+    },
+
     setupWebGL2 = function(){
       gl = init_gl_context(canvas);
       const ext = gl.getExtension("EXT_color_buffer_float");
@@ -472,13 +478,20 @@ export default function ModelViewport(spec) {
             normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
         }
         normalTheta = 180*Math.acos(dot)/Math.PI;
-        let normalThetaElement = document.getElementById("normalTheta");
-        let normalPhiElement = document.getElementById("normalPhi");
-        normalThetaElement.value = normalTheta;
-        normalPhiElement.value = normalPhi + 180;
+        //let normalThetaElement = document.getElementById("normalTheta");
+        //let normalPhiElement = document.getElementById("normalPhi");
+        //normalThetaElement.value = normalTheta;
+        //normalPhiElement.value = normalPhi + 180;
+
         let evt = new Event('change');
-        normalThetaElement.dispatchEvent(evt);
-        normalPhiElement.dispatchEvent(evt);
+
+        //normalThetaElement.dispatchEvent(evt);
+        //normalPhiElement.dispatchEvent(evt);
+        if (linkedViewport !== undefined) {
+          linkedViewport.updateTheta(normalTheta);
+          linkedViewport.updatePhi(normalPhi + 180);
+        }
+
         let linkedCamRotElement = document.getElementById("linkedCamRot");
         linkedCamRotElement.dispatchEvent(evt);
     };
@@ -602,5 +615,6 @@ export default function ModelViewport(spec) {
     getNormalTheta,
     getNormalPhi,
     getLinkedCamRotMatrix,
+    registerLinkedViewport
   });
 }

@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   brdfViewport = BRDFViewport({canvasName: "brdf-canvas", shdrDir: shdrPath,
     width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: false});
-  pointLightViewport = PointLightViewport({canvasName: "model-canvas", shdrDir: shdrPath,
+  pointLightViewport = PointLightViewport({canvasName: "pointlight-canvas", shdrDir: shdrPath,
     width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: true});
 
   pointLightViewport.registerLinkedViewport(brdfViewport);

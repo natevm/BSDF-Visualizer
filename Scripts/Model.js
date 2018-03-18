@@ -3,10 +3,8 @@
 import {loadBRDF_disneyFormat, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 import {loadAnalytical_getUniforms} from './gl-wrangling-funcs.js';
 
-//requires d3.js
-
 //************************
-//"Class" ControlsManager
+//"Class" Model
 //
 // Using "Classless OOP":
 // https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
@@ -18,39 +16,39 @@ export default function Model(){
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
-  let
-  viewers = [],
-  registerViewer = function(new_viewer){
-    viewers.push(new_viewer);
-  },
+  let //TODO: change to "const"?
+    viewers = [],
+    registerViewer = function(new_viewer){
+      viewers.push(new_viewer);
+    },
 
-  setTheta = function(newTheta){
-    viewers.forEach(function(v) {
-      if (v.inputByModel === true) {
-        v.updateTheta(newTheta);
-      }
-    });
-  },
+    setTheta = function(newTheta){
+      viewers.forEach(function(v) {
+        if (v.inputByModel === true) {
+          v.updateTheta(newTheta);
+        }
+      });
+    },
 
-  setPhi = function(newPhi){
-    viewers.forEach(function(v) {
-      if (v.inputByModel === true) {
-        v.updatePhi(newPhi);
-      }
-    });
-  },
+    setPhi = function(newPhi){
+      viewers.forEach(function(v) {
+        if (v.inputByModel === true) {
+          v.updatePhi(newPhi);
+        }
+      });
+    },
 
-  setCamRot = function(newCamRot){
-    viewers.forEach(function(v) {
-      if (v.inputByModel === true && "updateCamRot" in v) {
-        v.updateCamRot(newCamRot);
-      }
-    });
-  },
+    setCamRot = function(newCamRot){
+      viewers.forEach(function(v) {
+        if (v.inputByModel === true && "updateCamRot" in v) {
+          v.updateCamRot(newCamRot);
+        }
+      });
+    },
 
-  loadAnalyticalBRDF = function(in_fileList){
-    loadAnalytical_getUniforms(in_fileList, viewers);
-  };
+    loadAnalyticalBRDF = function(in_fileList){
+      loadAnalytical_getUniforms(in_fileList, viewers);
+    };
 
   //NathanX: What exactly does "debounce" do? Do we need it?
   //debounce = function(func, wait, immediate) {
@@ -69,6 +67,7 @@ export default function Model(){
   //};
 
   //************* Start "constructor" **************
+  //Do stuff here...
   //************* End "constructor" **************
 
   //Put any methods / properties that we want to make pulic inside this object.

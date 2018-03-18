@@ -1,5 +1,6 @@
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
+import {map_insert_chain} from './collections-wranglers.js';
 
 export function loadAnalytical_getUniforms(fileList, viewers){
   let reader = new FileReader();

@@ -1,6 +1,6 @@
 import BRDFViewport from "./BRDFViewport.js";
 import PointLightViewport from "./PointLightViewport.js";
-import Controller from "./Controller.js";
+import GUI from "./GUI.js";
 import Model from "./Model.js";
 
 let brdfViewport;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
   model.registerViewer(brdfViewport);
   model.registerViewer(pointLightViewport);
 
-  Controller(model); //construct a Controller.
+  GUI(model); //construct a GUI.
 
   requestAnimationFrame(render);
 });

@@ -12,7 +12,7 @@ import {addEnvelopeControl} from "./ui-wranglers.js";
 //************************
 
 //Constructor with one argument - the Model that we hook this controller to.
-export default function Controller(inModel){
+export default function GUI(inModel){
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.

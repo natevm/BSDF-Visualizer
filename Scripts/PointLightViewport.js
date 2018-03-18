@@ -16,12 +16,12 @@ import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 //************************
 
 //put "constructor" arguments inside "spec" (see main.js for usage example)
-export default function ModelViewport(spec) {
+export default function PointLightViewport(spec) {
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
-    { canvasName, width, height, shdrDir } = spec,
+    { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName),
     gl, // WebGL context
     rttShaderProgram,
@@ -58,6 +58,12 @@ export default function ModelViewport(spec) {
 
     rttFramebuffer,
     rttTexture,
+
+    linkedViewport,
+
+    registerLinkedViewport = viewportPtr => {
+      linkedViewport = viewportPtr;
+    },
 
     setupWebGL2 = function(){
       gl = init_gl_context(canvas);
@@ -332,10 +338,18 @@ export default function ModelViewport(spec) {
 
     updateTheta = function(newThetaDeg){
       lightTheta = deg2rad(newThetaDeg);
+      if (linkedViewport !== undefined) {
+        linkedViewport.updateTheta(getNormalTheta());
+        linkedViewport.updatePhi(getNormalPhi());
+      }
     },
 
     updatePhi = function(newPhiDeg){
       lightPhi = deg2rad(newPhiDeg);
+      if (linkedViewport !== undefined) {
+        linkedViewport.updateTheta(getNormalTheta());
+        linkedViewport.updatePhi(getNormalPhi());
+      }
     },
 
     getNormalTheta = function(){
@@ -472,15 +486,20 @@ export default function ModelViewport(spec) {
             normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
         }
         normalTheta = 180*Math.acos(dot)/Math.PI;
-        let normalThetaElement = document.getElementById("normalTheta");
-        let normalPhiElement = document.getElementById("normalPhi");
-        normalThetaElement.value = normalTheta;
-        normalPhiElement.value = normalPhi + 180;
+        //let normalThetaElement = document.getElementById("normalTheta");
+        //let normalPhiElement = document.getElementById("normalPhi");
+        //normalThetaElement.value = normalTheta;
+        //normalPhiElement.value = normalPhi + 180;
+
         let evt = new Event('change');
-        normalThetaElement.dispatchEvent(evt);
-        normalPhiElement.dispatchEvent(evt);
-        let linkedCamRotElement = document.getElementById("linkedCamRot");
-        linkedCamRotElement.dispatchEvent(evt);
+
+        //normalThetaElement.dispatchEvent(evt);
+        //normalPhiElement.dispatchEvent(evt);
+        if (linkedViewport !== undefined) {
+          linkedViewport.updateTheta(normalTheta);
+          linkedViewport.updatePhi(normalPhi + 180);
+          linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+        }
     };
 
   //************* Start "constructor" **************
@@ -581,10 +600,9 @@ export default function ModelViewport(spec) {
 
             if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
             else cameraYRotation += 0.01*deltaY;
-            //console.log(cameraXRotation);
-            let evt = new Event('change');
-            let linkedCamRotElement = document.getElementById("linkedCamRot");
-            linkedCamRotElement.dispatchEvent(evt);
+            if (linkedViewport !== undefined) {
+              linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+            }
 
             lastMouseX = newX;
             lastMouseY = newY;
@@ -602,5 +620,7 @@ export default function ModelViewport(spec) {
     getNormalTheta,
     getNormalPhi,
     getLinkedCamRotMatrix,
+    registerLinkedViewport,
+    inputByModel
   });
 }

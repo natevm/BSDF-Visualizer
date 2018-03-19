@@ -10,6 +10,9 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   let vertSrc;
   let fragSrc;
 
+  //onload will be invoked when this is done
+  reader.readAsText(fileList[0]);
+
   reader.onload = function() {
     //FIXME: duplicate definition of shdrDir
     let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
@@ -17,6 +20,10 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
     loadBRDFPromise.then(value => {
+      //"value" is in some sense the "return value" of loadBRDFPromise.
+      //In other words, the "return value" of the original promise is the first argument
+      //to the function passed to the "resolve" parameter (i.e. the first parameter) of the
+      //"then" function.
       uniforms = value.uniformsInfo;
       vertSrc = value.finalVtxSrc;
       fragSrc = value.finalFragSrc;
@@ -102,8 +109,6 @@ export function loadAnalytical_getUniforms(fileList, viewers){
     });
   };
 
-  //onload will be invoked when this is done
-  reader.readAsText(fileList[0]);
 }
 
 export function loadBRDF_disneyFormat(spec){
@@ -140,34 +145,36 @@ export function loadBRDF_disneyFormat(spec){
 
   //"Asynchronous return"
   //see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-  return new Promise(resolve => {
-    Promise.all(promises).then(function() {
+  //return new Promise(resolve => {
+    //Promise.all(promises).then(function() {
+      //// returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      //// you can process it here
+      //console.log("Loading BRDF in Disney format");
+
+      //let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
+        //rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
+        //disneyBrdf: brdfFileStr, whichTemplate: templateType});
+
+      //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+    //}, function(err) {
+        //console.log("Shader Load Error: " + err);
+    //});
+  //});
+
+  return Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
       console.log("Loading BRDF in Disney format");
-      //console.log(templVertStr);
 
       let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
         disneyBrdf: brdfFileStr, whichTemplate: templateType});
 
-      //console.log("Uniforms for the .brdf: ");
-      //console.log(uniformsInfo);
-
-      //console.log("Final Vertex Shader source: ");
-      //console.log(finalVtxSrc);
-
-      //console.log("Final Fragment Shader source: ");
-      //console.log(finalFragSrc);
-
-      resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+      //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+      return {uniformsInfo, finalVtxSrc, finalFragSrc};
     }, function(err) {
         console.log("Shader Load Error: " + err);
     });
-  });
-
-  //while(1);  //HACK: spin-wait until we are done loading shaders
-  //throw "Error loading shaders!"; //code should never reach here
 }
 
 function uniformsInfo_toString(uniformsInfo){

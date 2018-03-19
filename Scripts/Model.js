@@ -24,7 +24,7 @@ export default function Model(){
 
     setTheta = function(newTheta){
       viewers.forEach(function(v) {
-        if (v.inputByModel === true) {
+        if (v.getInputByModel() === true) {
           v.updateTheta(newTheta);
         }
       });
@@ -32,7 +32,7 @@ export default function Model(){
 
     setPhi = function(newPhi){
       viewers.forEach(function(v) {
-        if (v.inputByModel === true) {
+        if (v.getInputByModel() === true) {
           v.updatePhi(newPhi);
         }
       });

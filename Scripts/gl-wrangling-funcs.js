@@ -13,8 +13,11 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   //onload will be invoked when this is done
   reader.readAsText(fileList[0]);
 
-  reader.onload = function() {
-    //FIXME: duplicate definition of shdrDir
+  //We can wrap onload with a promise, and set reader.onload = resolve.
+  //We can call .then() on the new promise and call the below code there.
+  //We can return this promise, which the caller can then handle.
+  return new Promise(resolve => {reader.onload = resolve;}).then(() => {
+    ////FIXME: duplicate definition of shdrDir
     let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
       shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
       vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
@@ -107,8 +110,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       console.log("Done adding uniforms!");
       //TODO: bind each function in uniform_update_funcs to its own slider.
     });
-  };
-
+  });
 }
 
 export function loadBRDF_disneyFormat(spec){

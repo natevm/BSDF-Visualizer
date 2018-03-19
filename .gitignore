@@ -2,7 +2,7 @@
 *.swp
 
 #ctags (use universal ctags: https://github.com/universal-ctags)
-tags 
+tags
 
 !models/*.obj
 

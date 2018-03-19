@@ -2,7 +2,7 @@
 
 import {deg2rad, calc_delTheta, calc_delPhi, polar_to_cartesian,
     polar_to_color} from './math-utils.js';
-import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
+import {perspectiveMatrix, compile_and_link_shdr, get_reflected,
     compute_L_hat, compute_N_hat, init_gl_context,
     brdfShaderFromTemplate} from './gl-wrangling-funcs.js';
 
@@ -19,18 +19,21 @@ import {perspectiveMatrix, get_initial_V, compile_and_link_shdr, get_reflected,
 
 //put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function BRDFViewport(spec) {
-
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
+
+  const //TODO: I should probably put more stuff that doesn't change here.
+    getInputByModel = function(){
+      return inputByModel;
+    };
   let
-    { canvasName, width, height, shdrDir } = spec,
+    { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance
     gl, //GL context is initialized in "setupWebGL2"
 
     // Programs are initialized in createShaders
     lobeProgram,
-    //lobeFragSrc, //we cache this so we can use when loading Disney's *.brdf later
     lobe_nUniformLoc,
     lobe_lUniformLoc,
     lobe_delThetaUniformLoc,
@@ -61,6 +64,34 @@ export default function BRDFViewport(spec) {
 
     prev_time = 0,
     //M = mat4.create(), //Right now we are keeping M as identity
+    get_initial_V = function(){
+      /*
+       * gl-matrix stores matrices in column-major order
+       * Therefore, the following matrix:
+       *
+       * [1, 0, 0, 0,
+       * 0, 1, 0, 0,
+       * 0, 0, 1, 0,
+       * x, y, z, 0]
+       *
+       * Is equivalent to this in the OpenGL docs:
+       *
+       * 1 0 0 x
+       * 0 1 0 y
+       * 0 0 1 z
+       * 0 0 0 0
+       */
+
+      // BRDF is in tangent space. Tangent space is Z-up.
+      // Also, we need to move the camera so that it's not at the origin
+      var cam_z = 1.5; // z-position of camera in camera space
+      var cam_y = 0.5; // altitude of camera
+      var init_V = [0,      0,     1, 0,
+                    1,      0,     0, 0,
+                    0,      1,     0, 0,
+                    0, -cam_y,-cam_z, 1];
+      return init_V;
+    },
     initial_V = get_initial_V(),
     V = mat4.clone(initial_V),
     num_lobe_verts = 0,
@@ -78,28 +109,53 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP PROGRAM
     /////////////////////
-    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
-      lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
-      lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
-
+    setupUniformsLobe = function() {
       lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
       lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
       lobe_delThetaUniformLoc =
           gl.getUniformLocation(lobeProgram, "u_delTheta");
       lobe_delPhiUniformLoc =
           gl.getUniformLocation(lobeProgram, "u_delPhi");
-
-      // model, view, and projection matrices, respectively.
       lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
       lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
       lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
 
+      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+    },
+
+    setupUniformsLine = function() {
       line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
       line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
       line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
 
-      setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
       setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+    },
+
+    setupShaders = function(lobeVsSource, lobeFsSource, lineVsSource, lineFsSource) {
+      lobeProgram = compile_and_link_shdr(gl, lobeVsSource, lobeFsSource);
+      lineProgram = compile_and_link_shdr(gl, lineVsSource, lineFsSource);
+
+      setupUniformsLobe();
+      setupUniformsLine();
+
+      //lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
+      //lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
+      //lobe_delThetaUniformLoc =
+          //gl.getUniformLocation(lobeProgram, "u_delTheta");
+      //lobe_delPhiUniformLoc =
+          //gl.getUniformLocation(lobeProgram, "u_delPhi");
+
+      // model, view, and projection matrices, respectively.
+      //lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
+      //lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
+      //lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
+
+      //line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
+      //line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
+      //line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
+
+      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
     /////////////////////
@@ -270,7 +326,7 @@ export default function BRDFViewport(spec) {
     },
 
     setupGeometry = function() {
-      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg + 180);
+      let L_hat = compute_L_hat(in_theta_deg, in_phi_deg);
       let N_hat = compute_N_hat();
 
       lobeVAO = gl.createVertexArray();
@@ -330,7 +386,11 @@ export default function BRDFViewport(spec) {
       let nearClip = 0.5;
       let farClip  = 50;
       let P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
-      let M = mat4.create();
+      //let M = mat4.create();
+      let M = mat4.fromValues(0, 1, 0, 0,
+                              1, 0, 0, 0,
+                              0, 0, 1, 0,
+                              0, 0, 0, 1);
 
       gl.useProgram(program);
 
@@ -347,34 +407,9 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
-    //setupUI = function() {
-      //const menu = d3.select("#brdf-menu");
-      //let thetaInput;
-      //let thetaOutput;
-      //let phiInput;
-      //let phiOutput;
-      //let camRotInput;
-
-      //[> add camRot slider <]
-      //menu.append("input")
-        //.attr("id", "slider_camRot")
-        //.attr("type", "range")
-        //.attr("min", -180)
-        //.attr("max", 180)
-        //.attr("step", 1)
-        //.attr("value", 0);
-    //},
-
-    //setupUICallbacks = function() {
-      //document.getElementById("slider_camRot").oninput = (event) => {
-        //updateCamRot(event.target.value);
-      //};
-    //},
-
-
     updateLinkedCamRot = function(lvm){
        let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
-       console.log(linkedViewMatrix4);
+       //console.log(linkedViewMatrix4);
        initial_V[12] = 0.0;
        initial_V[13] = 0.0;
        initial_V[14] = 0.0;
@@ -388,8 +423,8 @@ export default function BRDFViewport(spec) {
        initial_V[13] = -0.5;
        initial_V[14] = -1.5;
 
-       let slider = document.getElementById("slider_camRot");
-       slider.value = 0;
+       //let slider = document.getElementById("slider_camRot");
+       //slider.value = 0;
     },
 
     updateCamRot = function(newCamrotDeg){
@@ -402,7 +437,7 @@ export default function BRDFViewport(spec) {
       vec3.set(rot_axis, 0, 0, 1);
       mat4.fromRotation(rot, rot_angle, rot_axis);
       mat4.multiply(V,V,rot);
-      console.log(V);
+      //console.log(V);
     },
 
     updateTheta = function(newThetaDeg){
@@ -438,6 +473,18 @@ export default function BRDFViewport(spec) {
     },
 
     /////////////////////
+    // ADD UNIFORMS AT RUNTIME
+    // (called when we load a Disney .brdf)
+    /////////////////////
+    addUniformsFunc = function(addUniformsHelper){
+      lobeProgram = addUniformsHelper(gl);
+      //we need to set up our uniforms again because
+      //the above function returned a new lobeProgram.
+      setupUniformsLobe();
+      setupGeometry();
+    },
+
+    /////////////////////
     // DRAW
     /////////////////////
     render = function(time){
@@ -467,8 +514,6 @@ export default function BRDFViewport(spec) {
         prev_time = time;
       }
     };
-
-  //input is our *.brdf file as a multiline string
 
   //************* Start "constructor" **************
   {
@@ -535,5 +580,7 @@ export default function BRDFViewport(spec) {
     updatePhi,
     updateCamRot,
     updateLinkedCamRot,
+    addUniformsFunc,
+    getInputByModel
   });
 }

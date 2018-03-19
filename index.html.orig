@@ -37,19 +37,27 @@
 	</svg>
 
 	<body id="main-container">
+<<<<<<< HEAD
+    <div id="brdf-column">
+      <div id="brdf-menu">BRDF menu</div>
+      <div id="file-chooser">File Chooser</div>
+      <canvas id="brdf-canvas">BRDF canvas</canvas>
+    </div>
+=======
 		<div id="brdf-column">
 			<div id="brdf-header">BRDF Header</div>
 			<canvas id="brdf-canvas">BRDF canvas</canvas>
 			<div id="brdf-menu">BRDF menu</div>
 		</div>
+>>>>>>> master
 
 		<div id="model-column">
 			<div id="brdf-header">
-        <input class="niceSlider" id="slider_camRot" type='range'/>
+				<input class="niceSlider" id="model-camera-slider" type='range'/>
 			</div>
-			<canvas id="pointlight-canvas">Point light canvas</canvas>
+			<canvas id="model-canvas">Model canvas</canvas>
 			<div id="model-menu">
-				Point Light Menu
+				Model Menu
 			</div>
 		</div>
 	</body>
@@ -58,6 +66,6 @@
 	<script src='Scripts/webgl-obj-loader.js'></script>
 	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 	<script type="text/javascript" src="Scripts/jquery-3.3.1.js"></script>
-  <script type="module" src="Scripts/main.js"></script>
+	<script type="module" src="Scripts/main.js"></script>
 
 </html>

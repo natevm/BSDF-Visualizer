@@ -51,7 +51,7 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
 
 //See https://en.wikipedia.org/wiki/Relative_luminance
 float rgb_to_luminance(vec3 rgb_color){
-  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b; 
+  return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b;
 }
 
 void main() {
@@ -76,8 +76,8 @@ void main() {
     vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi);
 
     //Scale points by the BRDF
-    const vec3 X = vec3(1,0,0); 
-    const vec3 Y = vec3(0,1,0); 
+    const vec3 X = vec3(1,0,0);
+    const vec3 Y = vec3(0,1,0);
     p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));
     p_U *= rgb_to_luminance(BRDF(u_l, normalize(p_U), u_n, X, Y));
     p_D *= rgb_to_luminance(BRDF(u_l, normalize(p_D), u_n, X, Y));

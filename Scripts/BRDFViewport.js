@@ -22,6 +22,11 @@ export default function BRDFViewport(spec) {
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
+
+  const //TODO: I should probably put more stuff that doesn't change here.
+    getInputByModel = function(){
+      return inputByModel;
+    };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance
@@ -576,6 +581,6 @@ export default function BRDFViewport(spec) {
     updateCamRot,
     updateLinkedCamRot,
     addUniformsFunc,
-    inputByModel
+    getInputByModel
   });
 }

@@ -41,7 +41,7 @@ export default function Model(){
     setCamRot = function(newCamRot){
       //console.log("Got camera rotation " + newCamRot);
       viewers.forEach(function(v) {
-        if (v.inputByModel === true && "updateCamRot" in v) {
+        if (v.getInputByModel() === true && "updateCamRot" in v) {
           v.updateCamRot(newCamRot);
         }
       });

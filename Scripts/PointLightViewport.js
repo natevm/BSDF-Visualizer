@@ -20,6 +20,10 @@ export default function PointLightViewport(spec) {
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
+  const
+    updateCamRot = function(newCamRotDeg){
+      cameraXRotation = deg2rad(newCamRotDeg);
+    };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
     canvas = document.getElementById(canvasName),
@@ -61,7 +65,7 @@ export default function PointLightViewport(spec) {
 
     linkedViewport,
 
-    registerLinkedViewport = viewportPtr => {
+    registerLinkedViewport = function(viewportPtr){
       linkedViewport = viewportPtr;
     },
 
@@ -621,6 +625,7 @@ export default function PointLightViewport(spec) {
     getNormalPhi,
     getLinkedCamRotMatrix,
     registerLinkedViewport,
-    inputByModel
+    inputByModel,
+    updateCamRot
   });
 }

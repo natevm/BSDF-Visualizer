@@ -60,16 +60,11 @@ export default function GUI(inModel){
       incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
 
-      /* add camRot slider */
-      d3.select("#brdf-header").html("");
-      d3.select("#brdf-header").append("input")
-      .attr("id", "slider_camRot")
-      .attr("class", "niceSlider")
-      .attr("type", "range")
-      .attr("min", -180)
-      .attr("max", 180)
-      .attr("step", 1)
-      .attr("value", 0);
+      let camRotSlider = document.getElementById("slider_camRot");
+      camRotSlider.setAttribute("min", -180);
+      camRotSlider.setAttribute("max", 180);
+      camRotSlider.setAttribute("step", 1);
+      camRotSlider.setAttribute("value", 0);
     },
 
     setupUICallbacks = function(){

@@ -402,31 +402,6 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
-    //setupUI = function() {
-      //const menu = d3.select("#brdf-menu");
-      //let thetaInput;
-      //let thetaOutput;
-      //let phiInput;
-      //let phiOutput;
-      //let camRotInput;
-
-      //[> add camRot slider <]
-      //menu.append("input")
-        //.attr("id", "slider_camRot")
-        //.attr("type", "range")
-        //.attr("min", -180)
-        //.attr("max", 180)
-        //.attr("step", 1)
-        //.attr("value", 0);
-    //},
-
-    //setupUICallbacks = function() {
-      //document.getElementById("slider_camRot").oninput = (event) => {
-        //updateCamRot(event.target.value);
-      //};
-    //},
-
-
     updateLinkedCamRot = function(lvm){
        let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
        //console.log(linkedViewMatrix4);
@@ -443,8 +418,8 @@ export default function BRDFViewport(spec) {
        initial_V[13] = -0.5;
        initial_V[14] = -1.5;
 
-       let slider = document.getElementById("slider_camRot");
-       slider.value = 0;
+       //let slider = document.getElementById("slider_camRot");
+       //slider.value = 0;
     },
 
     updateCamRot = function(newCamrotDeg){

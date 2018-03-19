@@ -135,7 +135,7 @@ html, body {
 		height: 45vw;
 		width: 35vw;
 	}
-	#model-menu {
+	#pointlight-menu {
 		height: 10vw;
 		width: 35vw;
 
@@ -166,7 +166,7 @@ html, body {
 		flex-direction: column;
 		align-items: center;
   	}
-	#model-menu {
+	#pointlight-menu {
 		height: 20vw;
 		width: 80vw;
 

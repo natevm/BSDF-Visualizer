@@ -28,27 +28,29 @@ export default function GUI(inModel){
     setupUI = function(){
       //TODO: should this menu really be attached to #brdf-menu?
       //or should it be elsewhere?
-      let menu = d3.select("#brdf-menu");
+      let pointlightMenu = d3.select("#pointlight-menu");
+      let brdfMenu = d3.select("#brdf-menu");
       let thetaInput;
       let thetaOutput;
       let phiInput;
       let phiOutput;
       let camRotInput;
 
-      menu.html("");
+      pointlightMenu.html("");
+      brdfMenu.html("");
 
-      let fileChooser = menu.append("div")
+      let fileChooser = brdfMenu.append("div")
       .attr("id", "file-chooser")
       .style("display", "flex");
 
-      menu.append("br");
+      brdfMenu.append("br");
 
       fileChooser.html("");
       fileChooser.append("input")
       .attr("id", "file_chooser")
       .attr("type","file");
 
-      let sliderDiv = menu.append("div");
+      let sliderDiv = pointlightMenu.append("div");
       sliderDiv.style("display", "flex")
       .style("width", "100%");
 

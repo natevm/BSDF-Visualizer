@@ -268,7 +268,7 @@ export default function PointLightViewport(spec) {
       // });
 
       p.then((loaded_models) => {
-        console.log(loaded_models);
+        //console.log(loaded_models);
         models = loaded_models;
         initBuffers();
         modelsLoaded = true;

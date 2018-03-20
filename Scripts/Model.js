@@ -48,7 +48,17 @@ export default function Model(){
     },
 
     loadAnalyticalBRDF = function(in_fileList){
-      loadAnalytical_getUniforms(in_fileList, viewers);
+      loadAnalytical_getUniforms(in_fileList, viewers).then( returnedPromise => {
+        console.log(returnedPromise);
+        //returnedPromise.then( returnedValue => {
+          //console.log(returnedValue);
+        //});
+      });
+        //.then( returnValue => {
+            //const {uniforms, uniform_update_funcs} = returnValue;
+            //console.log(uniforms);
+            //console.log(uniform_update_funcs);
+      //});
     };
 
   //NathanX: What exactly does "debounce" do? Do we need it?

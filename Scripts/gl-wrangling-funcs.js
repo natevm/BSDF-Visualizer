@@ -1,3 +1,5 @@
+"use strict";
+
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
@@ -22,7 +24,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
       vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
-    loadBRDFPromise.then(value => {
+    return loadBRDFPromise.then(value => {
       //"value" is in some sense the "return value" of loadBRDFPromise.
       //In other words, the "return value" of the original promise is the first argument
       //to the function passed to the "resolve" parameter (i.e. the first parameter) of the
@@ -30,9 +32,6 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       uniforms = value.uniformsInfo;
       vertSrc = value.finalVtxSrc;
       fragSrc = value.finalFragSrc;
-      //console.log("Loading .brdf done!");
-      //console.log(vertSrc);
-      //console.log(fragSrc);
     }, err => {
         throw "BRDF load error: " + err;
     }).then( () => { //call the below asynchronously, AFTER the above is done loading
@@ -108,8 +107,14 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       });
     }).then( () => {
       console.log("Done adding uniforms!");
-      //TODO: bind each function in uniform_update_funcs to its own slider.
+      return {uniforms, uniform_update_funcs};
     });
+    //when loadAnalytical_getUniforms().then(successCallback, failureCallback)
+    //is called, we are really calling then() on the return value of the outer
+    //Promise chain, which resolves to the last Promise in inner promise chain
+    //(immediately above this comment) chain which returns
+    //{uniforms, uniform_update_funcs}. Therefore, the first parameter
+    //passed to successCallback is {uniforms, uniform_update_funcs}
   });
 }
 
@@ -166,7 +171,7 @@ export function loadBRDF_disneyFormat(spec){
   return Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
-      console.log("Loading BRDF in Disney format");
+      //console.log("Loading BRDF in Disney format");
 
       let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
@@ -217,13 +222,10 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
     //console.log(line);
   //});
 
-  console.log("substituting...");
-
   //Go until we reach the parameters
   while (currLine.search("::begin parameters") === -1) {
     currLine = getNextLine_brdfFile(brdfFile_it);
   }
-  console.log("Found ::begin parameters");
 
   //Ignoring whitespace, read each line into uniformsInfo
   currLine = getNextLine_brdfFile(brdfFile_it);
@@ -249,8 +251,6 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
     }
     currLine = getNextLine_brdfFile(brdfFile_it);
   }
-  console.log("Found ::end parameters");
-
   //Go until we reach the BRDF function
   while (currLine.search("::begin shader") === -1) {
     currLine = getNextLine_brdfFile(brdfFile_it);

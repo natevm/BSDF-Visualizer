@@ -86,12 +86,11 @@ export default function GUI(inModel){
 
       //File input snippet from:
       //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
-      document.getElementById("file_chooser").addEventListener("change",
+      document.getElementById("file_chooser").addEventListener("change", function(){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
-        function(){
-          model.loadAnalyticalBRDF(this.files);
-        }, false);
+        model.loadAnalyticalBRDF(this.files);
+      });
     };
 
   //************* Start "constructor" **************

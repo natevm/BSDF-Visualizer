@@ -149,11 +149,14 @@ export default function GUI(inModel){
             .text(name);
 
           document.getElementById(checkboxId).addEventListener("change", event => {
-            console.log(event.target.checked);
+            //console.log(event.target.checked);
+            uniform_update_funcs.get(name).forEach(f => {
+              f(event.target.checked);
+            });
           });
 
         } else if (curr_u.type === "color") {
-          console.warn("Color support not yet implemented!");
+          console.warn(name + ": Color support not yet implemented");
         } else {
           throw "Invalid uniform type: " + curr_u.type;
         }

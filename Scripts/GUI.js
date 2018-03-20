@@ -95,18 +95,19 @@ export default function GUI(inModel){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
         model.loadAnalyticalBRDF(this.files).then(returnResult => {
-          spawnUniformSliders(returnResult);
+          const {uniforms, uniform_update_funcs} = returnResult;
+          spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv);
         });
       });
     },
 
-    spawnUniformSliders = function(args){
-      const {uniforms, uniform_update_funcs} = args;
+    spawnUniformSliders = function(uniforms, uniform_update_funcs, parentDiv){
+      parentDiv.html(""); //clear old sliders
+
       Object.keys(uniforms).forEach( name => {
         let curr_u = uniforms[name];
-
         if (curr_u.type === "float"){
-          let currSliderEnvelope = addEnvelopeControl(brdfSliderDiv, name,
+          let currSliderEnvelope = addEnvelopeControl(parentDiv, name,
             "slider_" + name, curr_u.min, curr_u.max, curr_u.default);
           currSliderEnvelope.addEventListener('change', (event) => {
             //uniform_update_funcs maps from a name to a list of update

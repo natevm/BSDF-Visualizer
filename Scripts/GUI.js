@@ -20,7 +20,8 @@ export default function GUI(inModel){
     incidentThetaEnvelope,
     incidentPhiEnvelope,
     brdfSliderDiv,
-    brdfCheckboxDiv;
+    //brdfCheckboxDiv;
+    checkboxContainerDiv;
 
   const
     model = inModel,
@@ -52,13 +53,16 @@ export default function GUI(inModel){
       .attr("id", "file_chooser")
       .attr("type","file");
 
-      brdfCheckboxDiv = brdfMenu.append("div")
+      let brdfCheckboxDiv = brdfMenu.append("div")
       .attr("class", "checkbox-div")
       .attr("id", "checkboxes")
       .style("display", "flex")
       .style("width", "100%")
       .style("justify-content", "space-evenly");
       //brdfCheckboxDiv.append("br");
+
+      checkboxContainerDiv = brdfCheckboxDiv.append("div")
+        .style("display", "flex");
 
       brdfSliderDiv = brdfMenu.append("div")
       .attr("id", "sliders");
@@ -107,14 +111,15 @@ export default function GUI(inModel){
         model.loadAnalyticalBRDF(this.files).then(returnResult => {
           const {uniforms, uniform_update_funcs} = returnResult;
           spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-            brdfCheckboxDiv);
+            checkboxContainerDiv);
         });
       });
     },
 
-    spawnUniformSliders = function(uniforms, uniform_update_funcs, sliderDiv, checkboxDiv){
+    spawnUniformSliders = function(uniforms, uniform_update_funcs, sliderDiv, checkboxContainer){
       //clear old sliders, checkboxes, and color pickers
       sliderDiv.html("");
+      checkboxContainer.html("");
       //TODO: clear color pickers
 
       Object.keys(uniforms).forEach( name => {
@@ -131,21 +136,24 @@ export default function GUI(inModel){
             });
           });
         } else if (curr_u.type === "bool") {
-          //FIXME: stealing the slider knob's CSS classes
-          //let checkboxDiv = parentDiv.append("div")
-            //.attr("class","fl-studio-envelope__control");
-
-          let checkboxContainer = checkboxDiv.append("div")
-            .style("display", "flex");
+          let checkboxId = "checkbox_" + name;
           let checkbox = checkboxContainer.append("input")
-            .attr("id", "checkbox_" + name)
+            .attr("id", checkboxId)
             .attr("type","checkbox");
+
+          if (curr_u.default === true) {
+            checkbox.attr("checked",true);
+          }
 
           let label = checkboxContainer.append("div")
             .text(name);
 
+          document.getElementById(checkboxId).addEventListener("change", event => {
+            console.log(event.target.checked);
+          });
+
         } else if (curr_u.type === "color") {
-          //instance a color picker here.
+          console.warn("Color support not yet implemented!");
         } else {
           throw "Invalid uniform type: " + curr_u.type;
         }

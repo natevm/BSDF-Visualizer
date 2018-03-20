@@ -53,9 +53,11 @@ export default function GUI(inModel){
       .attr("type","file");
 
       brdfCheckboxDiv = brdfMenu.append("div")
-      .attr("id", "checkboxes");
-      brdfCheckboxDiv.style("display", "flex")
-      .style("width", "100%");
+      .attr("class", "checkbox-div")
+      .attr("id", "checkboxes")
+      .style("display", "flex")
+      .style("width", "100%")
+      .style("justify-content", "space-evenly");
       //brdfCheckboxDiv.append("br");
 
       brdfSliderDiv = brdfMenu.append("div")
@@ -133,13 +135,14 @@ export default function GUI(inModel){
           //let checkboxDiv = parentDiv.append("div")
             //.attr("class","fl-studio-envelope__control");
 
-          let checkbox = checkboxDiv.append("input")
+          let checkboxContainer = checkboxDiv.append("div")
+            .style("display", "flex");
+          let checkbox = checkboxContainer.append("input")
             .attr("id", "checkbox_" + name)
             .attr("type","checkbox");
 
-          let label = checkboxDiv.append("div")
-          //.attr("class", "fl-studio-envelope__label")
-          .text(name);
+          let label = checkboxContainer.append("div")
+            .text(name);
 
         } else if (curr_u.type === "color") {
           //instance a color picker here.

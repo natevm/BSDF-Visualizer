@@ -94,8 +94,11 @@ export function addEnvelopeControl(menu, name, rangeId, minimum, maximum, initia
       this.indicatorDot.style[`${transformProp}Origin`] = '20px 20px';
     },
     updateVisuals: function(norm) {
-      var curr_val = (1-norm)*minimum + norm*maximum; //LERP
-      value_label.text(curr_val);
+      let curr_val = (1-norm)*minimum + norm*maximum; //LERP
+      //FIXME: the below is currently a HACK. We should be using proper
+      //string formatting.
+      let formatted_str = curr_val.toString().slice(0,6);
+      value_label.text(formatted_str);
 
       var theta = Math.PI*2*norm + 0.5*Math.PI;
       var endX = this.r*Math.cos(theta) + 20;

@@ -19,7 +19,8 @@ export default function GUI(inModel){
   let
     incidentThetaEnvelope,
     incidentPhiEnvelope,
-    brdfSliderDiv;
+    brdfSliderDiv,
+    brdfCheckboxDiv;
 
   const
     model = inModel,
@@ -30,6 +31,7 @@ export default function GUI(inModel){
       //TODO: should this menu really be attached to #brdf-menu?
       //or should it be elsewhere?
       let pointlightMenu = d3.select("#pointlight-menu");
+      let brdfHeader = d3.select("#brdf-header");
       let brdfMenu = d3.select("#brdf-menu");
       let thetaInput;
       let thetaOutput;
@@ -39,19 +41,25 @@ export default function GUI(inModel){
 
       pointlightMenu.html("");
       brdfMenu.html("");
+      brdfHeader.html("");
 
-      let fileChooser = brdfMenu.append("div")
+      let fileChooser = brdfHeader.append("div")
       .attr("id", "file-chooser")
       .style("display", "flex");
-
-      brdfMenu.append("br");
 
       fileChooser.html("");
       fileChooser.append("input")
       .attr("id", "file_chooser")
       .attr("type","file");
 
-      brdfSliderDiv = brdfMenu.append("div");
+      brdfCheckboxDiv = brdfMenu.append("div")
+      .attr("id", "checkboxes");
+      brdfCheckboxDiv.style("display", "flex")
+      .style("width", "100%");
+      //brdfCheckboxDiv.append("br");
+
+      brdfSliderDiv = brdfMenu.append("div")
+      .attr("id", "sliders");
       brdfSliderDiv.style("display", "flex")
       .style("width", "100%");
 
@@ -96,20 +104,23 @@ export default function GUI(inModel){
         //that addEventListener binds the function to.
         model.loadAnalyticalBRDF(this.files).then(returnResult => {
           const {uniforms, uniform_update_funcs} = returnResult;
-          spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv);
+          spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+            brdfCheckboxDiv);
         });
       });
     },
 
-    spawnUniformSliders = function(uniforms, uniform_update_funcs, parentDiv){
-      parentDiv.html(""); //clear old sliders
+    spawnUniformSliders = function(uniforms, uniform_update_funcs, sliderDiv, checkboxDiv){
+      //clear old sliders, checkboxes, and color pickers
+      sliderDiv.html("");
+      //TODO: clear color pickers
 
       Object.keys(uniforms).forEach( name => {
         let curr_u = uniforms[name];
         if (curr_u.type === "float"){
-          let currSliderEnvelope = addEnvelopeControl(parentDiv, name,
+          let sliderEnvelope = addEnvelopeControl(sliderDiv, name,
             "slider_" + name, curr_u.min, curr_u.max, curr_u.default);
-          currSliderEnvelope.addEventListener('change', (event) => {
+          sliderEnvelope.addEventListener('change', (event) => {
             //uniform_update_funcs maps from a name to a list of update
             //functions (i.e. callbacks) for the uniform. We need to call
             //each function in the list.
@@ -118,7 +129,18 @@ export default function GUI(inModel){
             });
           });
         } else if (curr_u.type === "bool") {
-          //instance a checkbox here.
+          //FIXME: stealing the slider knob's CSS classes
+          //let checkboxDiv = parentDiv.append("div")
+            //.attr("class","fl-studio-envelope__control");
+
+          let checkbox = checkboxDiv.append("input")
+            .attr("id", "checkbox_" + name)
+            .attr("type","checkbox");
+
+          let label = checkboxDiv.append("div")
+          //.attr("class", "fl-studio-envelope__label")
+          .text(name);
+
         } else if (curr_u.type === "color") {
           //instance a color picker here.
         } else {

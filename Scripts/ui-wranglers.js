@@ -79,6 +79,10 @@ export function addEnvelopeControl(menu, name, rangeId, minimum, maximum, initia
   .attr("class", "fl-studio-envelope__label")
   .text(name);
 
+  let value_label = control.append("div")
+  .attr("class", "fl-studio-envelope__label")
+  .text(initial_value);
+
   let transformProp = getTransformProperty();
 
   return new KnobInput(knob.node(), rangeId, {
@@ -90,6 +94,9 @@ export function addEnvelopeControl(menu, name, rangeId, minimum, maximum, initia
       this.indicatorDot.style[`${transformProp}Origin`] = '20px 20px';
     },
     updateVisuals: function(norm) {
+      var curr_val = (1-norm)*minimum + norm*maximum; //LERP
+      value_label.text(curr_val);
+
       var theta = Math.PI*2*norm + 0.5*Math.PI;
       var endX = this.r*Math.cos(theta) + 20;
       var endY = this.r*Math.sin(theta) + 20;

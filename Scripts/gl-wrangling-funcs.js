@@ -52,7 +52,12 @@ export function loadAnalytical_getUniforms(fileList, viewers){
 
           if (u_type === "float") {
             let flt_update_func = flt => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               gl.uniform1f(loc,flt);
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             if ( (typeof curr_u.default) !== "number" ){
@@ -63,6 +68,9 @@ export function loadAnalytical_getUniforms(fileList, viewers){
             map_insert_chain(uniform_update_funcs, u, flt_update_func);
           } else if (u_type === "bool") {
             let bool_update_func = bool_v => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               if (bool_v === true) {
                 gl.uniform1i(loc,1);
               } else if (bool_v === false) {
@@ -70,6 +78,8 @@ export function loadAnalytical_getUniforms(fileList, viewers){
               } else {
                 throw "Invalid boolean input: " + bool_v;
               }
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             bool_update_func(curr_u.default);
@@ -77,7 +87,12 @@ export function loadAnalytical_getUniforms(fileList, viewers){
             map_insert_chain(uniform_update_funcs, u, bool_update_func);
           } else if (u_type === "color") {
             let vec3_update_func = vec3_v => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               gl.uniform3f(loc, vec3_v[0], vec3_v[1], vec3_v[2]);
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             if ( (typeof curr_u.defaultR) !== "number" ||

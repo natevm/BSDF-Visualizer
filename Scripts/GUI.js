@@ -18,7 +18,8 @@ export default function GUI(inModel){
   //in the "frozen" object that gets returned at the end.
   let
     incidentThetaEnvelope,
-    incidentPhiEnvelope;
+    incidentPhiEnvelope,
+    brdfSliderDiv;
 
   const
     model = inModel,
@@ -50,16 +51,20 @@ export default function GUI(inModel){
       .attr("id", "file_chooser")
       .attr("type","file");
 
-      let sliderDiv = pointlightMenu.append("div");
-      sliderDiv.style("display", "flex")
+      brdfSliderDiv = brdfMenu.append("div");
+      brdfSliderDiv.style("display", "flex")
+      .style("width", "100%");
+
+      let ptLightSliderDiv = pointlightMenu.append("div");
+      ptLightSliderDiv.style("display", "flex")
       .style("width", "100%");
 
       /* Add incident theta slider */
-      incidentThetaEnvelope = addEnvelopeControl(sliderDiv, "θ",
+      incidentThetaEnvelope = addEnvelopeControl(ptLightSliderDiv, "θ",
         "slider_incidentTheta", 0, 90, starting_theta);
 
       /* Add incident phi slider */
-      incidentPhiEnvelope = addEnvelopeControl(sliderDiv, "φ",
+      incidentPhiEnvelope = addEnvelopeControl(ptLightSliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
 
       let camRotSlider = document.getElementById("slider_camRot");
@@ -89,10 +94,35 @@ export default function GUI(inModel){
       document.getElementById("file_chooser").addEventListener("change", function(){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
-        model.loadAnalyticalBRDF(this.files).then( returnResult => {
-          console.log(returnResult);
+        model.loadAnalyticalBRDF(this.files).then(returnResult => {
+          spawnUniformSliders(returnResult);
         });
+      });
+    },
 
+    spawnUniformSliders = function(args){
+      const {uniforms, uniform_update_funcs} = args;
+      Object.keys(uniforms).forEach( name => {
+        let curr_u = uniforms[name];
+
+        if (curr_u.type === "float"){
+          let currSliderEnvelope = addEnvelopeControl(brdfSliderDiv, name,
+            "slider_" + name, curr_u.min, curr_u.max, curr_u.default);
+          currSliderEnvelope.addEventListener('change', (event) => {
+            //uniform_update_funcs maps from a name to a list of update
+            //functions (i.e. callbacks) for the uniform. We need to call
+            //each function in the list.
+            uniform_update_funcs.get(name).forEach(f => {
+              f(event.target.value);
+            });
+          });
+        } else if (curr_u.type === "bool") {
+          //instance a checkbox here.
+        } else if (curr_u.type === "color") {
+          //instance a color picker here.
+        } else {
+          throw "Invalid uniform type: " + curr_u.type;
+        }
       });
     };
 

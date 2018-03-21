@@ -109,7 +109,6 @@ export default function PointLightViewport(spec) {
       shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
       gl.useProgram(shaderProgram);
 
-
       shaderProgram.attrIndices = {};
 
       //NathanX: if we use Object.keys(object).forEach we don't have
@@ -348,7 +347,7 @@ export default function PointLightViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "model-template.frag",
+      return {shaderDir: shdrDir, templatePath: "model-renderer_template.frag",
         vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
     },
 
@@ -589,6 +588,7 @@ export default function PointLightViewport(spec) {
     Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
+
 
     defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
     rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);

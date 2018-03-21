@@ -44,9 +44,21 @@ vec3 BRDF( vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y )
     float NdotV = dot(N,V);
     float NdotL = dot(N,L);
 
+    //bool isotropic = false;
+
     float F = Fresnel(Rs, HdotV);
-    float norm_s = sqrt((nu+1.0)*((isotropic?nu:nv)+1.0))/(8.0*PI);
-    float n = isotropic ? nu :(nu*sqr(HdotX) + nv*sqr(HdotY))/(1.0-sqr(NdotH));
+    //float norm_s = sqrt((nu+1.0)*((isotropic?nu:nv)+1.0))/(8.0*PI);
+    //float n = isotropic ? nu :(nu*sqr(HdotX) + nv*sqr(HdotY))/(1.0-sqr(NdotH));
+    float norm_s;
+    float n;
+    if(isotropic){
+      norm_s = sqrt((nu+1.0)*((nu)+1.0))/(8.0*PI);
+      n = nu;
+    } else {
+      norm_s = sqrt((nu+1.0)*((nv)+1.0))/(8.0*PI);
+      n = (nu*sqr(HdotX) + nv*sqr(HdotY))/(1.0-sqr(NdotH));
+    }
+
     float rho_s = norm_s * F * pow(max(NdotH,0.0), n) / (HdotV * max(NdotV, NdotL));
 
     float rho_d = 28.0/(23.0*PI) * Rd * (1.0-pow(1.0-NdotV/2.0, 5.0)) * (1.0-pow(1.0-NdotL/2.0, 5.0));

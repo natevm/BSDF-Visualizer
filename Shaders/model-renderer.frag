@@ -36,8 +36,12 @@ void main(void) {
     //vec3 H = normalize(L + V);
     vec3 N = normalize(vTransformedNormal);
 
-    const vec3 X = vec3(1,0,0);
-    const vec3 Y = vec3(0,1,0);
+    //vec3 V = -normalize(vModelSpacePosition.xyz);
+    //vec3 L = normalize(uLightDirection);
+    //vec3 N = normalize(modelSpaceNormal);
+
+    vec3 X = mat3(uVMatrix) * vec3(1,0,0);
+    vec3 Y = mat3(uVMatrix) * vec3(0,1,0);
     vec3 color = BRDF(L, V, N, X, Y);
 
     //vec3 color = vDiffuse * dot(N, L) +

@@ -24,8 +24,18 @@ in mat4 inversePMatrix;
 in vec3 vModelSpacePosition;
 out vec4 vColor;
 
+//From Disney's BRDF Explorer:
+//https://www.disneyanimation.com/technology/brdf.html
+//(see DISNEY_LICENSE at the root of this repository
+//for a complete copy of their license).
+void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
+{
+    uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
+    uVec = normalize(cross(inVec, uVec));
+    vVec = normalize(cross(inVec, uVec));
+}
+
 //L, V, N assumed to be unit vectors
-//X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 
 //*************** START INLINED BRDF ******************
 // <INLINE_BRDF_HERE>
@@ -34,12 +44,15 @@ out vec4 vColor;
 void main(void) {
     vec3 V = -normalize(vPosition.xyz);
     vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-    //vec3 H = normalize(L + V);
-    vec3 N = normalize(vTransformedNormal);
+    L = normalize(L);
+    vec3 H = normalize(L + V);
+    vec3 N = normalize(vTransformedNormal); //eye space normal
+    vec3 X; //eye sapce tangent
+    vec3 Y; //eye space bitangent
 
-    const vec3 X = vec3(1,0,0);
-    const vec3 Y = vec3(0,1,0);
-    vec3 color = BRDF(L, V, N, X, Y);
+    computeTangentVectors(N, X, Y);
+
+    vec3 color = BRDF(L, V, N, X, Y) * clamp(dot(N, L),0.0,1.0);
 
     //vec3 color = vDiffuse * dot(N, L) +
       //vSpecular * pow(dot(H, N), vSpecularExponent);

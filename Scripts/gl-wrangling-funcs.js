@@ -4,6 +4,15 @@ import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
 
+//TODO: we want to pass the templatePath / vertPath / fragPath / templateType in as parameters.
+//NOT viewers.
+
+//We call this function once for each viewer, and pass in the appropriate information from
+//the viewer.
+//
+//pass in the viewer's addUniformfunc so we can call it on the viewer.
+//
+//The viewer should have a getter that returns the appropriate shader paths.
 export function loadAnalytical_getUniforms(fileList, viewers){
   let reader = new FileReader();
   //key: uniform name. value: function for updating the uniform.
@@ -115,6 +124,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
         return program;
       };
 
+      //TODO: this should be moved to the outside and call this function
       viewers.forEach( v => {
         if( "addUniformsFunc" in v ){
           v.addUniformsFunc(addUniformsHelper);

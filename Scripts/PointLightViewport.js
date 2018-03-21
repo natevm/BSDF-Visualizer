@@ -339,6 +339,21 @@ export default function PointLightViewport(spec) {
       lastTime = timeNow;
     },
 
+    /////////////////////
+    // ADD UNIFORMS AT RUNTIME
+    // (called when we load a Disney .brdf)
+    /////////////////////
+    //addUniformsFunc = function(addUniformsHelper){
+      //lobeProgram = addUniformsHelper(gl);
+      ////we need to set up our uniforms again because
+      ////the above function returned a new lobeProgram.
+      //setupUniformsLobe();
+      //setupGeometry();
+    //},
+
+    /////////////////////
+    // DRAW
+    /////////////////////
     render = function(time) {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       if (modelsLoaded) {

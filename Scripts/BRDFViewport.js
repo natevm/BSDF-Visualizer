@@ -137,25 +137,6 @@ export default function BRDFViewport(spec) {
 
       setupUniformsLobe();
       setupUniformsLine();
-
-      //lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
-      //lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
-      //lobe_delThetaUniformLoc =
-          //gl.getUniformLocation(lobeProgram, "u_delTheta");
-      //lobe_delPhiUniformLoc =
-          //gl.getUniformLocation(lobeProgram, "u_delPhi");
-
-      // model, view, and projection matrices, respectively.
-      //lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
-      //lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
-      //lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
-
-      //line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
-      //line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
-      //line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
-
-      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
     /////////////////////

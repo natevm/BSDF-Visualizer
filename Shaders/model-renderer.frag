@@ -25,18 +25,23 @@ out vec4 vColor;
 //V points towards eye
 //N is the normal
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
-//vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
-
-//}
+vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+    vec3 H = normalize(L + V);
+    return vDiffuse * dot(N, L) + vSpecular * pow(dot(H, N), vSpecularExponent);
+}
 
 void main(void) {
     vec3 V = -normalize(vPosition.xyz);
     vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-    vec3 H = normalize(L + V);
+    //vec3 H = normalize(L + V);
     vec3 N = normalize(vTransformedNormal);
 
-    vec3 color = vDiffuse * dot(N, L) +
-      vSpecular * pow(dot(H, N), vSpecularExponent);
+    const vec3 X = vec3(1,0,0);
+    const vec3 Y = vec3(0,1,0);
+    vec3 color = BRDF(L, V, N, X, Y);
+
+    //vec3 color = vDiffuse * dot(N, L) +
+      //vSpecular * pow(dot(H, N), vSpecularExponent);
 
 	vec4 pickPointView4 = inverse(uPickModelViewMatrix) * inversePMatrix * vec4(uPickPointNDC,1);
 	vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);

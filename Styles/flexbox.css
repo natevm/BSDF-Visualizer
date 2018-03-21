@@ -1,192 +1,192 @@
 html, body {
-	width: 100%;
+    width: 100%;
 }
 
 #main-container {
-	display: flex;
-	align-items: center;
-	margin: 0px;
+    display: flex;
+    align-items: center;
+    margin: 0px;
 }
 
 /* ------------------------------
-	HTML, Body, and Columns
+    HTML, Body, and Columns
   ------------------------------ */
 @media screen and (orientation:portrait) {
-	html, body {
-		height: 245vw;
-	}
-	#main-container {
-		flex-direction: column;
-	}
+    html, body {
+    	height: 245vw;
+    }
+    #main-container {
+    	flex-direction: column;
+    }
 
-	#brdf-column {
-		/*flex-basis: 50%;*/
-		width: 80vw;
-		height: 120vw;
-	}
+    #brdf-column {
+    	/*flex-basis: 50%;*/
+    	width: 80vw;
+    	height: 120vw;
+    }
 
-	#model-column{
-		/*flex-basis: 50%;*/
-		width: 80vw;
-		height: 120vw;
-	}
+    #model-column{
+    	/*flex-basis: 50%;*/
+    	width: 80vw;
+    	height: 120vw;
+    }
 }
 
 /* For landscape screens */
 @media screen and (orientation:landscape) {
-	html, body {
-		height: 100%;
-	}
+    html, body {
+    	height: 100%;
+    }
 
-	#main-container {
-		flex-direction: row;
-		justify-content: center;
-	}
+    #main-container {
+    	flex-direction: row;
+    	justify-content: center;
+    }
 
-	#brdf-column {
-		/*flex-basis: 50%;*/
-		width: 45vw;
-		height: 45vw;
-		padding-right: 2vw;
-	}
+    #brdf-column {
+    	/*flex-basis: 50%;*/
+    	width: 45vw;
+    	height: 45vw;
+    }
 
-	#model-column{
-		/*flex-basis: 50%;*/
-		width: 45vw;
-		height: 45vw;
-	}
+    #model-column{
+    	/*flex-basis: 50%;*/
+    	width: 45vw;
+    	height: 45vw;
+    	padding-right: 2vw;
+    }
 }
 
 /* ------------------------------
-	BRDF Items
+    BRDF Items
   ------------------------------ */
 @media screen and (orientation:portrait) {
-	#brdf-column {
-		padding-top: 10vw;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
+    #brdf-column {
+    	padding-top: 10vw;
+    	display: flex;
+    	flex-direction: column;
+    	align-items: center;
   	}
-	#brdf-menu {
-		height: 20vw;
-		width: 80vw;
+    #brdf-menu {
+    	height: 20vw;
+    	width: 80vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#brdf-canvas {
-		width: 80vw;
-		height: 68.5714286vw;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#brdf-header {
-		height: 10vw;
-		width: 80vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #brdf-canvas {
+    	width: 80vw;
+    	height: 68.5714286vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #brdf-header {
+    	height: 10vw;
+    	width: 80vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
 }
 @media screen and (orientation:landscape) {
-	#brdf-column {
-		display: flex;
-		flex-direction: column;
-		height: 45vw;
-		width: 35vw;
-	}
-	#brdf-menu {
-		height: 10vw;
-		width: 35vw;
+    #brdf-column {
+    	display: flex;
+    	flex-direction: column;
+    	height: 45vw;
+    	width: 35vw;
+    }
+    #brdf-menu {
+    	height: 10vw;
+    	width: 35vw;
 
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-	#brdf-canvas {
-		height: 30vw;
-		width: 35vw;
+    	display: flex;
+    	flex-direction: column;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #brdf-canvas {
+    	height: 30vw;
+    	width: 35vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#brdf-header {
-		height: 4vw;
-		width: 35vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #brdf-header {
+    	height: 4vw;
+    	width: 35vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
 }
 
 /* ------------------------------
-	Model Items
+    Model Items
   ------------------------------ */
 @media screen and (orientation:landscape) {
-	#model-column {
-		display: flex;
-		flex-direction: column;
-		height: 45vw;
-		width: 35vw;
-	}
-	#pointlight-menu {
-		height: 10vw;
-		width: 35vw;
+    #model-column {
+    	display: flex;
+    	flex-direction: column;
+    	height: 45vw;
+    	width: 35vw;
+    }
+    #pointlight-menu {
+    	height: 10vw;
+    	width: 35vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#model-canvas {
-		height: 30vw;
-		width: 35vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #model-canvas {
+    	height: 30vw;
+    	width: 35vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#model-header {
-		height: 4vw;
-		width: 35vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #model-header {
+    	height: 4vw;
+    	width: 35vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
 }
 @media screen and (orientation:portrait) {
-	#model-column {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
+    #model-column {
+    	display: flex;
+    	flex-direction: column;
+    	align-items: center;
   	}
-	#pointlight-menu {
-		height: 20vw;
-		width: 80vw;
+    #pointlight-menu {
+    	height: 20vw;
+    	width: 80vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#model-canvas {
-		width: 80vw;
-		height: 68.5714286vw;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	#model-header {
-		height: 10vw;
-		width: 80vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #model-canvas {
+    	width: 80vw;
+    	height: 68.5714286vw;
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
+    #model-header {
+    	height: 10vw;
+    	width: 80vw;
 
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
+    	display: flex;
+    	justify-content: center;
+    	align-items: center;
+    }
 }

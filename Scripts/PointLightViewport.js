@@ -95,8 +95,9 @@ export default function PointLightViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
 
-    initShaders = function(vsSource, fsSource) {
-      var shaderProgram;
+    //initShaders = function(vsSource, fsSource) {
+    initShaders = function(shaderProgram) {
+      //var shaderProgram;
       const attrs = {
         'aVertexPosition': OBJ.Layout.POSITION.key,
         'aVertexNormal': OBJ.Layout.NORMAL.key,
@@ -106,7 +107,7 @@ export default function PointLightViewport(spec) {
         'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
       };
 
-      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
+      //shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
       gl.useProgram(shaderProgram);
 
       shaderProgram.attrIndices = {};
@@ -160,7 +161,7 @@ export default function PointLightViewport(spec) {
         });
       };
 
-      return shaderProgram;
+      //return shaderProgram;
     },
 
     initBuffers = function() {
@@ -590,8 +591,10 @@ export default function PointLightViewport(spec) {
       // you can process it here
 
 
-    defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
-    rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);
+    defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
+    initShaders(defaultShaderProgram);
+    rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
+    initShaders(rttShaderProgram);
 
     initRTTFramebuffer();
     loadModels();

@@ -1,3 +1,5 @@
+"use strict";
+
 import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
@@ -10,19 +12,26 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   let vertSrc;
   let fragSrc;
 
-  reader.onload = function() {
-    //FIXME: duplicate definition of shdrDir
+  //onload will be invoked when this is done
+  reader.readAsText(fileList[0]);
+
+  //We can wrap onload with a promise, and set reader.onload = resolve.
+  //We can call .then() on the new promise and call the below code there.
+  //We can return this promise, which the caller can then handle.
+  return new Promise(resolve => {reader.onload = resolve;}).then(() => {
+    ////FIXME: duplicate definition of shdrDir
     let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
       shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
       vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
 
-    loadBRDFPromise.then(value => {
+    return loadBRDFPromise.then(value => {
+      //"value" is in some sense the "return value" of loadBRDFPromise.
+      //In other words, the "return value" of the original promise is the first argument
+      //to the function passed to the "resolve" parameter (i.e. the first parameter) of the
+      //"then" function.
       uniforms = value.uniformsInfo;
       vertSrc = value.finalVtxSrc;
       fragSrc = value.finalFragSrc;
-      //console.log("Loading .brdf done!");
-      //console.log(vertSrc);
-      //console.log(fragSrc);
     }, err => {
         throw "BRDF load error: " + err;
     }).then( () => { //call the below asynchronously, AFTER the above is done loading
@@ -43,7 +52,12 @@ export function loadAnalytical_getUniforms(fileList, viewers){
 
           if (u_type === "float") {
             let flt_update_func = flt => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               gl.uniform1f(loc,flt);
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             if ( (typeof curr_u.default) !== "number" ){
@@ -54,6 +68,9 @@ export function loadAnalytical_getUniforms(fileList, viewers){
             map_insert_chain(uniform_update_funcs, u, flt_update_func);
           } else if (u_type === "bool") {
             let bool_update_func = bool_v => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               if (bool_v === true) {
                 gl.uniform1i(loc,1);
               } else if (bool_v === false) {
@@ -61,6 +78,8 @@ export function loadAnalytical_getUniforms(fileList, viewers){
               } else {
                 throw "Invalid boolean input: " + bool_v;
               }
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             bool_update_func(curr_u.default);
@@ -68,7 +87,12 @@ export function loadAnalytical_getUniforms(fileList, viewers){
             map_insert_chain(uniform_update_funcs, u, bool_update_func);
           } else if (u_type === "color") {
             let vec3_update_func = vec3_v => {
+              let oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+              gl.useProgram(program);
+
               gl.uniform3f(loc, vec3_v[0], vec3_v[1], vec3_v[2]);
+
+              gl.useProgram(oldProgram); //restore previous state
             };
 
             if ( (typeof curr_u.defaultR) !== "number" ||
@@ -98,12 +122,15 @@ export function loadAnalytical_getUniforms(fileList, viewers){
       });
     }).then( () => {
       console.log("Done adding uniforms!");
-      //TODO: bind each function in uniform_update_funcs to its own slider.
+      return {uniforms, uniform_update_funcs};
     });
-  };
-
-  //onload will be invoked when this is done
-  reader.readAsText(fileList[0]);
+    //when loadAnalytical_getUniforms().then(successCallback, failureCallback)
+    //is called, we are really calling then() on the return value of the outer
+    //Promise chain, which resolves to the last Promise in inner promise chain
+    //(immediately above this comment) chain which returns
+    //{uniforms, uniform_update_funcs}. Therefore, the first parameter
+    //passed to successCallback is {uniforms, uniform_update_funcs}
+  });
 }
 
 export function loadBRDF_disneyFormat(spec){
@@ -140,34 +167,36 @@ export function loadBRDF_disneyFormat(spec){
 
   //"Asynchronous return"
   //see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-  return new Promise(resolve => {
-    Promise.all(promises).then(function() {
+  //return new Promise(resolve => {
+    //Promise.all(promises).then(function() {
+      //// returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
+      //// you can process it here
+      //console.log("Loading BRDF in Disney format");
+
+      //let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
+        //rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
+        //disneyBrdf: brdfFileStr, whichTemplate: templateType});
+
+      //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+    //}, function(err) {
+        //console.log("Shader Load Error: " + err);
+    //});
+  //});
+
+  return Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
-      console.log("Loading BRDF in Disney format");
-      //console.log(templVertStr);
+      //console.log("Loading BRDF in Disney format");
 
       let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
         disneyBrdf: brdfFileStr, whichTemplate: templateType});
 
-      //console.log("Uniforms for the .brdf: ");
-      //console.log(uniformsInfo);
-
-      //console.log("Final Vertex Shader source: ");
-      //console.log(finalVtxSrc);
-
-      //console.log("Final Fragment Shader source: ");
-      //console.log(finalFragSrc);
-
-      resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+      //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
+      return {uniformsInfo, finalVtxSrc, finalFragSrc};
     }, function(err) {
         console.log("Shader Load Error: " + err);
     });
-  });
-
-  //while(1);  //HACK: spin-wait until we are done loading shaders
-  //throw "Error loading shaders!"; //code should never reach here
 }
 
 function uniformsInfo_toString(uniformsInfo){
@@ -208,13 +237,10 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
     //console.log(line);
   //});
 
-  console.log("substituting...");
-
   //Go until we reach the parameters
   while (currLine.search("::begin parameters") === -1) {
     currLine = getNextLine_brdfFile(brdfFile_it);
   }
-  console.log("Found ::begin parameters");
 
   //Ignoring whitespace, read each line into uniformsInfo
   currLine = getNextLine_brdfFile(brdfFile_it);
@@ -240,8 +266,6 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
     }
     currLine = getNextLine_brdfFile(brdfFile_it);
   }
-  console.log("Found ::end parameters");
-
   //Go until we reach the BRDF function
   while (currLine.search("::begin shader") === -1) {
     currLine = getNextLine_brdfFile(brdfFile_it);

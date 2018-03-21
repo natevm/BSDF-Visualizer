@@ -356,13 +356,13 @@ export default function PointLightViewport(spec) {
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a Disney .brdf)
     /////////////////////
-    //addUniformsFunc = function(addUniformsHelper){
-      //lobeProgram = addUniformsHelper(gl);
-      ////we need to set up our uniforms again because
-      ////the above function returned a new lobeProgram.
-      //setupUniformsLobe();
-      //setupGeometry();
-    //},
+    addUniformsFunc = function(addUniformsHelper){
+      defaultShaderProgram = addUniformsHelper(gl);
+      //we need to set up our uniforms again because
+      //the above function returned a new lobeProgram.
+      initShaders(defaultShaderProgram);
+      initBuffers();
+    },
 
     /////////////////////
     // DRAW
@@ -665,6 +665,7 @@ export default function PointLightViewport(spec) {
     registerLinkedViewport,
     getInputByModel,
     updateCamRot,
-    getTemplateInfo
+    getTemplateInfo,
+    addUniformsFunc
   });
 }

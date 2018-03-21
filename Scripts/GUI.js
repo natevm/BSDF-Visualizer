@@ -20,8 +20,7 @@ export default function GUI(inModel){
     incidentThetaEnvelope,
     incidentPhiEnvelope,
     brdfSliderDiv,
-    //brdfCheckboxDiv;
-    checkboxContainerDiv;
+    brdfCheckboxDiv;
 
   const
     model = inModel,
@@ -53,19 +52,15 @@ export default function GUI(inModel){
       .attr("id", "file_chooser")
       .attr("type","file");
 
-      let brdfCheckboxDiv = brdfMenu.append("div")
-      .attr("class", "checkbox-div")
+      brdfCheckboxDiv = brdfMenu.append("div");
+      brdfCheckboxDiv.attr("class", "checkbox-div")
       .attr("id", "checkboxes")
       .style("display", "flex")
       .style("width", "100%")
       .style("justify-content", "space-evenly");
-      //brdfCheckboxDiv.append("br");
 
-      checkboxContainerDiv = brdfCheckboxDiv.append("div")
-        .style("display", "flex");
-
-      brdfSliderDiv = brdfMenu.append("div")
-      .attr("id", "sliders");
+      brdfSliderDiv = brdfMenu.append("div");
+      brdfSliderDiv.attr("id", "sliders");
       brdfSliderDiv.style("display", "flex")
       .style("width", "100%");
 
@@ -112,7 +107,7 @@ export default function GUI(inModel){
           //console.log(returnResult);
           const {uniforms, uniform_update_funcs} = returnResult;
           spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-            checkboxContainerDiv);
+            brdfCheckboxDiv);
         });
       });
     },
@@ -137,16 +132,23 @@ export default function GUI(inModel){
             });
           });
         } else if (curr_u.type === "bool") {
+          let checkboxDiv = checkboxContainer.append("div");
+          checkboxDiv.style("display", "flex")
+            .style("justify-content", "center")
+            .style("align-items", "center")
+            .style("flex-direction", "column");
+
           let checkboxId = "checkbox_" + name;
-          let checkbox = checkboxContainer.append("input")
+          let checkbox = checkboxDiv.append("input")
             .attr("id", checkboxId)
-            .attr("type","checkbox");
+            .attr("type","checkbox")
+            .classed("magic-checkbox", true);
 
           if (curr_u.default === true) {
             checkbox.attr("checked",true);
           }
 
-          let label = checkboxContainer.append("div")
+          let label = checkboxDiv.append("div")
             .text(name);
 
           document.getElementById(checkboxId).addEventListener("change", event => {

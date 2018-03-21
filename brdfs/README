@@ -1,3 +1,7 @@
 These are .brdf files from Disney's BRDF Explorer repository,
-but they have been ported to OpenGL ES. See LICENSE in this
-directory for Disney's license.
+but they have been ported to OpenGL ES, hence the extension
+.brdf-es.
+
+https://github.com/wdas/brdf/tree/master/src/brdfs
+
+See LICENSE in this directory for Disney's license.

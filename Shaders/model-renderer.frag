@@ -6,6 +6,7 @@ uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
 uniform vec3 uPickPointNDC;
 uniform mat4 uPickModelViewMatrix;
+
 in vec2 vTextureCoord;
 in vec3 vTransformedNormal;
 in vec4 vPosition;
@@ -18,6 +19,15 @@ in vec3 modelSpaceNormal;
 in mat4 inversePMatrix;
 in vec3 vModelSpacePosition;
 out vec4 vColor;
+
+//L, V, N assumed to be unit vectors
+//L points towards light.
+//V points towards eye
+//N is the normal
+//X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
+//vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+
+//}
 
 void main(void) {
     vec3 V = -normalize(vPosition.xyz);

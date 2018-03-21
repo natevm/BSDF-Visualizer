@@ -37,6 +37,11 @@ export default function PointLightViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
+
+    //TODO: move to const...
+    model_vert_shader_name = "model-renderer.vert",
+    model_frag_shader_name = "model-renderer.frag",
+
     models = {},
     mvMatrix = mat4.create(),
     pMatrix = mat4.create(),
@@ -339,6 +344,14 @@ export default function PointLightViewport(spec) {
       lastTime = timeNow;
     },
 
+    //templatePath: path to template shader for this Viewport.
+    //templateType: eitehr "vert" or "frag", specifies which shader is the
+    //template for this particular Viewport.
+    getTemplateInfo = function(){
+      return {shaderDir: shdrDir, templatePath: "model-template.frag",
+        vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
+    },
+
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a Disney .brdf)
@@ -547,13 +560,13 @@ export default function PointLightViewport(spec) {
     setupWebGL2();
 
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.vert",
+      url: shdrDir + model_vert_shader_name,
       success: function(result){
         defaultVertSrc = result.trim();
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.frag",
+      url: shdrDir + model_frag_shader_name,
       success: function(result){
         defaultFragSrc = result.trim();
       }
@@ -648,6 +661,7 @@ export default function PointLightViewport(spec) {
     getLinkedCamRotMatrix,
     registerLinkedViewport,
     getInputByModel,
-    updateCamRot
+    updateCamRot,
+    getTemplateInfo
   });
 }

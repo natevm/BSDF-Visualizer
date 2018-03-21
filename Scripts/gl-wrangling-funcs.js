@@ -158,8 +158,9 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   return new Promise(resolve => {reader.onload = resolve;}).then(() => {
     let promises = [];
 
+    //WARNING: hasOwnProperty won't get inherited properties. That's intentional for now...
     viewers.forEach( v => {
-      if (v.hasOwnProperty("getTemplateInfo")){
+      if (v.hasOwnProperty("getTemplateInfo") && v.hasOwnProperty("addUniformsFunc")){
         let templInfo = v.getTemplateInfo();
         let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
           shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,

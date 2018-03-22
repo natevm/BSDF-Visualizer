@@ -47,9 +47,9 @@ void main(void) {
     L = normalize(L);
     vec3 H = normalize(L + V);
     vec3 N = normalize(vTransformedNormal); //eye space normal
+
     vec3 X; //eye sapce tangent
     vec3 Y; //eye space bitangent
-
     computeTangentVectors(N, X, Y);
 
     vec3 color = BRDF(L, V, N, X, Y) * clamp(dot(N, L),0.0,1.0);

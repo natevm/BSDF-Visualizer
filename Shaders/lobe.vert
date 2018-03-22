@@ -16,8 +16,13 @@ uniform vec3 u_l;
 uniform float u_delTheta;
 uniform float u_delPhi;
 
+//*************** START INLINED UNIFORMS ******************
+// <INLINE_UNIFORMS_HERE>
+//*************** END INLINED UNIFORMS ********************
+
 out vec3 vColor;
-out vec4 world_normal;
+out vec4 normal_eyecoords;
+out vec4 pos_eyecoords;
 
 vec3 polar_to_cartesian(float theta_deg, float phi_deg){
   float theta = (M_PI/180.0) * theta_deg;
@@ -31,11 +36,27 @@ vec3 get_reflected(vec3 L, vec3 N){
   return normalize(L_plus_R - L);
 }
 
+//From Disney's BRDF Explorer:
+//https://www.disneyanimation.com/technology/brdf.html
+//(see DISNEY_LICENSE at the root of this repository
+//for a complete copy of their license).
+void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
+{
+    uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
+    uVec = normalize(cross(inVec, uVec));
+    vVec = normalize(cross(inVec, uVec));
+}
+
 //TODO: Disney's tool doesn't incorporate the dot product / cosine weight because
 //that's not part of the BRDF, it's the "form factor" in the rendering equation.
 
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
+
+//*************** START INLINED BRDF ******************
+// <INLINE_BRDF_HERE>
+//*************** END INLINED BRDF ********************
+
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
   //TODO: These should actually be uniforms.
   const float k_d = 0.7;
@@ -76,8 +97,10 @@ void main() {
     vec3 p_R = polar_to_cartesian(theta_deg,phi_deg - u_delPhi);
 
     //Scale points by the BRDF
-    const vec3 X = vec3(1,0,0);
-    const vec3 Y = vec3(0,1,0);
+    vec3 N = vec3(0,0,1);
+    vec3 X; //eye sapce tangent
+    vec3 Y; //eye space bitangent
+    computeTangentVectors(N, X, Y);
     p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));
     p_U *= rgb_to_luminance(BRDF(u_l, normalize(p_U), u_n, X, Y));
     p_D *= rgb_to_luminance(BRDF(u_l, normalize(p_D), u_n, X, Y));
@@ -102,5 +125,7 @@ void main() {
     //world_normal = u_m * model_normal;
     //world_normal = model_normal; //DEBUG ONLY.
     //world_normal = vec4(avg_model_normal,1); //DEBUG ONLY
-    world_normal = u_m * vec4(avg_model_normal,1);
+    //world_normal = u_m * vec4(avg_model_normal,1);
+    pos_eyecoords = u_v * u_m * vec4(p,1); //position, ends with 1.
+    normal_eyecoords = u_v * u_m * vec4(avg_model_normal,0); //direction, ends with 0.
 }

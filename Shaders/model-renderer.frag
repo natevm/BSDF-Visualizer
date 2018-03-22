@@ -20,11 +20,17 @@ in mat4 inversePMatrix;
 in vec3 vModelSpacePosition;
 out vec4 vColor;
 
+void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
+{
+    uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
+    uVec = normalize(cross(inVec, uVec));
+    vVec = normalize(cross(inVec, uVec));
+}
+
 //L, V, N assumed to be unit vectors
 //L points towards light.
 //V points towards eye
 //N is the normal
-//X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
     vec3 H = normalize(L + V);
     return vDiffuse * dot(N, L) + vSpecular * pow(dot(H, N), vSpecularExponent);
@@ -36,12 +42,14 @@ void main(void) {
     //vec3 H = normalize(L + V);
     vec3 N = normalize(vTransformedNormal);
 
+    vec3 X; //eye sapce tangent
+    vec3 Y; //eye space bitangent
+    computeTangentVectors(N, X, Y);
+
     //vec3 V = -normalize(vModelSpacePosition.xyz);
     //vec3 L = normalize(uLightDirection);
     //vec3 N = normalize(modelSpaceNormal);
 
-    vec3 X = mat3(uVMatrix) * vec3(1,0,0);
-    vec3 Y = mat3(uVMatrix) * vec3(0,1,0);
     vec3 color = BRDF(L, V, N, X, Y);
 
     //vec3 color = vDiffuse * dot(N, L) +

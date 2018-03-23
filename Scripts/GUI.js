@@ -76,11 +76,11 @@ export default function GUI(inModel){
       incidentPhiEnvelope = addEnvelopeControl(ptLightSliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
 
-      let camRotSlider = document.getElementById("slider_camRot");
-      camRotSlider.setAttribute("min", -180);
-      camRotSlider.setAttribute("max", 180);
-      camRotSlider.setAttribute("step", 1);
-      camRotSlider.setAttribute("value", 0);
+      // let camRotSlider = document.getElementById("slider_camRot");
+      // camRotSlider.setAttribute("min", -180);
+      // camRotSlider.setAttribute("max", 180);
+      // camRotSlider.setAttribute("step", 1);
+      // camRotSlider.setAttribute("value", 0);
     },
 
     setupButtonCallback = function(button, url) {
@@ -124,9 +124,9 @@ export default function GUI(inModel){
         model.setPhi(event.target.value);
       });
 
-      document.getElementById("slider_camRot").oninput = (event) => {
-        model.setCamRot(event.target.value);
-      };
+      // document.getElementById("slider_camRot").oninput = (event) => {
+      //   model.setCamRot(event.target.value);
+      // };
 
       //File input snippet from:
       //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications

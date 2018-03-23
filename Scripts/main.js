@@ -1,15 +1,15 @@
 import BRDFViewport from "./BRDFViewport.js";
-import PointLightViewport from "./PointLightViewport.js";
+import ModelViewport from "./ModelViewport.js";
 import GUI from "./GUI.js";
 import Model from "./Model.js";
 
 let brdfViewport;
-let pointLightViewport;
+let modelViewport;
 let model;
 
 const render = function(time) {
   brdfViewport.render(time);
-  pointLightViewport.render(time);
+  modelViewport.render(time);
   requestAnimationFrame(render);
 };
 
@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   brdfViewport = BRDFViewport({canvasName: "brdf-canvas", shdrDir: shdrPath,
     width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: false});
-  pointLightViewport = PointLightViewport({canvasName: "pointlight-canvas", shdrDir: shdrPath,
+  modelViewport = ModelViewport({canvasName: "model-canvas", shdrDir: shdrPath,
     width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: true});
 
-  pointLightViewport.registerLinkedViewport(brdfViewport);
+  modelViewport.registerLinkedViewport(brdfViewport);
 
   model.registerViewer(brdfViewport);
-  model.registerViewer(pointLightViewport);
+  model.registerViewer(modelViewport);
 
   GUI(model); //construct a GUI.
 

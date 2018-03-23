@@ -84,7 +84,9 @@ void main(void) {
 
 	vec4 pickPointView4 = inverse(uPickModelViewMatrix) * inversePMatrix * vec4(uPickPointNDC,1);
 	vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);
-	if (length(pickPointView - vModelSpacePosition) < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
-    //vColor = vec4(color, 1.0);
-    vColor = jet(color.x/hdr_max);
+	if (length(pickPointView - vModelSpacePosition) < 0.5){
+    color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
+  }
+  //vColor = vec4(color,1);
+  vColor = jet(color.x/hdr_max);
 }

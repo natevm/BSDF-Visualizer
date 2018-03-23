@@ -40,7 +40,7 @@ export default function PointLightViewport(spec) {
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
-    model_frag_shader_name = "model-renderer.frag",
+    model_frag_shader_name = "glslify_processed/model-renderer.frag",
 
     models = {},
     mvMatrix = mat4.create(),
@@ -565,6 +565,7 @@ export default function PointLightViewport(spec) {
         defaultVertSrc = result.trim();
       }
     }));
+    //console.log(shdrDir + model_frag_shader_name);
     promises.push($.ajax({
       url: shdrDir + model_frag_shader_name,
       success: function(result){
@@ -600,7 +601,7 @@ export default function PointLightViewport(spec) {
     loadModels();
 
     }, function(err) {
-        console.log("Shader Load Error: " + err);
+        console.log(err);
     });
 
     //mouse events

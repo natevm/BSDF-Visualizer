@@ -37,13 +37,20 @@
     </svg>
 
     <body id="main-container">
-
+        <div id="menu-column">
+            <div id="brdf-presets">
+                <button type="button">Ashikhman Shirley</button>
+                <button type="button">Phong</button>
+                <button type="button">Lambert</button>
+                <button type="button">Oren Nayar</button>
+            </div>
+        </div>
         <div id="model-column">
             <div id="model-header">
                 <input class="niceSlider" id="slider_camRot" type='range'/>
             </div>
-            <canvas id="pointlight-canvas">Point light canvas</canvas>
-            <div id="pointlight-menu">
+            <canvas id="model-canvas">Point light canvas</canvas>
+            <div id="model-menu">
                 Point Light Menu
             </div>
         </div>

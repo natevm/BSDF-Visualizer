@@ -37,6 +37,11 @@ export default function PointLightViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
+
+    //TODO: move to const...
+    model_vert_shader_name = "model-renderer.vert",
+    model_frag_shader_name = "model-renderer.frag",
+
     models = {},
     mvMatrix = mat4.create(),
     pMatrix = mat4.create(),
@@ -90,8 +95,9 @@ export default function PointLightViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
 
-    initShaders = function(vsSource, fsSource) {
-      var shaderProgram;
+    //initShaders = function(vsSource, fsSource) {
+    initShaders = function(shaderProgram) {
+      //var shaderProgram;
       const attrs = {
         'aVertexPosition': OBJ.Layout.POSITION.key,
         'aVertexNormal': OBJ.Layout.NORMAL.key,
@@ -101,9 +107,8 @@ export default function PointLightViewport(spec) {
         'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
       };
 
-      shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
+      //shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
       gl.useProgram(shaderProgram);
-
 
       shaderProgram.attrIndices = {};
 
@@ -156,7 +161,7 @@ export default function PointLightViewport(spec) {
         });
       };
 
-      return shaderProgram;
+      //return shaderProgram;
     },
 
     initBuffers = function() {
@@ -339,6 +344,29 @@ export default function PointLightViewport(spec) {
       lastTime = timeNow;
     },
 
+    //templatePath: path to template shader for this Viewport.
+    //templateType: eitehr "vert" or "frag", specifies which shader is the
+    //template for this particular Viewport.
+    getTemplateInfo = function(){
+      return {shaderDir: shdrDir, templatePath: "model-renderer_template.frag",
+        vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
+    },
+
+    /////////////////////
+    // ADD UNIFORMS AT RUNTIME
+    // (called when we load a Disney .brdf)
+    /////////////////////
+    addUniformsFunc = function(addUniformsHelper){
+      defaultShaderProgram = addUniformsHelper(gl);
+      //we need to set up our uniforms again because
+      //the above function returned a new lobeProgram.
+      initShaders(defaultShaderProgram);
+      initBuffers();
+    },
+
+    /////////////////////
+    // DRAW
+    /////////////////////
     render = function(time) {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       if (modelsLoaded) {
@@ -532,13 +560,13 @@ export default function PointLightViewport(spec) {
     setupWebGL2();
 
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.vert",
+      url: shdrDir + model_vert_shader_name,
       success: function(result){
         defaultVertSrc = result.trim();
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "model-renderer.frag",
+      url: shdrDir + model_frag_shader_name,
       success: function(result){
         defaultFragSrc = result.trim();
       }
@@ -562,8 +590,11 @@ export default function PointLightViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
 
-    defaultShaderProgram = initShaders(defaultVertSrc, defaultFragSrc);
-    rttShaderProgram = initShaders(rttVertSrc, rttFragSrc);
+
+    defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
+    initShaders(defaultShaderProgram);
+    rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
+    initShaders(rttShaderProgram);
 
     initRTTFramebuffer();
     loadModels();
@@ -633,6 +664,8 @@ export default function PointLightViewport(spec) {
     getLinkedCamRotMatrix,
     registerLinkedViewport,
     getInputByModel,
-    updateCamRot
+    updateCamRot,
+    getTemplateInfo,
+    addUniformsFunc
   });
 }

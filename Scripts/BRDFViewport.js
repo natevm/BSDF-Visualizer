@@ -41,6 +41,8 @@ export default function BRDFViewport(spec) {
     lobe_mUniformLoc,
     lobe_vUniformLoc,
     lobe_pUniformLoc,
+    lobe_vert_shader_name = "lobe.vert",
+    lobe_frag_shader_name = "phong.frag",
     lobeVAO,
 
     lineProgram,
@@ -137,25 +139,6 @@ export default function BRDFViewport(spec) {
 
       setupUniformsLobe();
       setupUniformsLine();
-
-      //lobe_nUniformLoc = gl.getUniformLocation(lobeProgram, "u_n");
-      //lobe_lUniformLoc = gl.getUniformLocation(lobeProgram, "u_l");
-      //lobe_delThetaUniformLoc =
-          //gl.getUniformLocation(lobeProgram, "u_delTheta");
-      //lobe_delPhiUniformLoc =
-          //gl.getUniformLocation(lobeProgram, "u_delPhi");
-
-      // model, view, and projection matrices, respectively.
-      //lobe_mUniformLoc = gl.getUniformLocation(lobeProgram, "u_m");
-      //lobe_vUniformLoc = gl.getUniformLocation(lobeProgram, "u_v");
-      //lobe_pUniformLoc = gl.getUniformLocation(lobeProgram, "u_p");
-
-      //line_mUniformLoc = gl.getUniformLocation(lineProgram, "u_m");
-      //line_vUniformLoc = gl.getUniformLocation(lineProgram, "u_v");
-      //line_pUniformLoc = gl.getUniformLocation(lineProgram, "u_p");
-
-      //setupMVP(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-      //setupMVP(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
     },
 
     /////////////////////
@@ -472,6 +455,14 @@ export default function BRDFViewport(spec) {
       num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
     },
 
+    //templatePath: path to template shader for this Viewport.
+    //templateType: eitehr "vert" or "frag", specifies which shader is the
+    //template for this particular Viewport.
+    getTemplateInfo = function(){
+      return {shaderDir: shdrDir, templatePath: "lobe_template.vert",
+        vertPath: lobe_vert_shader_name, fragPath: lobe_frag_shader_name, templateType: "vert"};
+    },
+
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a Disney .brdf)
@@ -545,13 +536,13 @@ export default function BRDFViewport(spec) {
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "lobe.vert",
+      url: shdrDir + lobe_vert_shader_name,
       success: function(result){
         lobeVertSrc = result.trim();
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "phong.frag",
+      url: shdrDir + lobe_frag_shader_name,
       success: function(result){
         lobeFragSrc = result.trim();
       }
@@ -581,6 +572,7 @@ export default function BRDFViewport(spec) {
     updateCamRot,
     updateLinkedCamRot,
     addUniformsFunc,
-    getInputByModel
+    getInputByModel,
+    getTemplateInfo
   });
 }

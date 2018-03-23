@@ -4,6 +4,15 @@ import {deg2rad, rotY, rotZ} from './math-utils.js';
 import {getNextLine_brdfFile} from './text-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
 
+//TODO: we want to pass the templatePath / vertPath / fragPath / templateType in as parameters.
+//NOT viewers.
+
+//We call this function once for each viewer, and pass in the appropriate information from
+//the viewer.
+//
+//pass in the viewer's addUniformfunc so we can call it on the viewer.
+//
+//The viewer should have a getter that returns the appropriate shader paths.
 export function loadAnalytical_getUniforms(fileList, viewers){
   let reader = new FileReader();
   //key: uniform name. value: function for updating the uniform.
@@ -12,19 +21,28 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   let vertSrc;
   let fragSrc;
 
-  //onload will be invoked when this is done
-  reader.readAsText(fileList[0]);
-
-  //We can wrap onload with a promise, and set reader.onload = resolve.
-  //We can call .then() on the new promise and call the below code there.
-  //We can return this promise, which the caller can then handle.
-  return new Promise(resolve => {reader.onload = resolve;}).then(() => {
-    ////FIXME: duplicate definition of shdrDir
-    let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
-      shdrDir: "./Shaders/", templatePath: "lobe_template.vert",
-      vertPath: "lobe.vert", fragPath: "phong.frag", templateType: "vert"});
-
-    return loadBRDFPromise.then(value => {
+  //****************************************************
+  //The function below defines a function addUniformsHelper, which is passed to
+  //a Viewport by calling addUniformsFunc.
+  //
+  //addUniformHelper needs to be called inside our Viewport because it requires access
+  //to the Viewport's unique OpenGL context. This means that we do not have to expose the Viewport's
+  //OpenGL context publicly. (No one else should be able to touch it, otherwise we might corrupt the
+  //Viewport's OpenGL state.)
+  //
+  //addUniformHelper is defined here in order to have access to uniform_update_funcs via closure.
+  //This way, our Viewport cannot access uniform_update_funcs. It shouldn't be allowed to because
+  //only the GUI should be able to update them.
+  //
+  //addUniformHelper binds uniforms using gl.getUniformLocation and also creates update
+  //functions for the uniform based on the uniform type (float, bool, or color). (These update
+  //functions are wrappers around gl.uniform*.) These update functions are stored in
+  //update_uniform_funcs, which is a Map that maps from the uniform name to a list of
+  //update functions (because if we have multiple Viewports, then the same uniform
+  //will have multiple update callbacks regsitered to it).
+  //****************************************************
+  var generate_addUniformsHelper = function(loadPromise, currViewer){
+    return loadPromise.then(value => {
       //"value" is in some sense the "return value" of loadBRDFPromise.
       //In other words, the "return value" of the original promise is the first argument
       //to the function passed to the "resolve" parameter (i.e. the first parameter) of the
@@ -115,21 +133,47 @@ export function loadAnalytical_getUniforms(fileList, viewers){
         return program;
       };
 
-      viewers.forEach( v => {
-        if( "addUniformsFunc" in v ){
-          v.addUniformsFunc(addUniformsHelper);
-        }
-      });
-    }).then( () => {
-      console.log("Done adding uniforms!");
-      return {uniforms, uniform_update_funcs};
+      //viewers.forEach( v => {
+        //if( "addUniformsFunc" in currViewer ){
+          currViewer.addUniformsFunc(addUniformsHelper);
+        //}
+      //});
     });
-    //when loadAnalytical_getUniforms().then(successCallback, failureCallback)
-    //is called, we are really calling then() on the return value of the outer
-    //Promise chain, which resolves to the last Promise in inner promise chain
-    //(immediately above this comment) chain which returns
-    //{uniforms, uniform_update_funcs}. Therefore, the first parameter
-    //passed to successCallback is {uniforms, uniform_update_funcs}
+    //.then( () => {
+      //console.log("Done adding uniforms!");
+      //return {uniforms, uniform_update_funcs};
+    //});
+  };
+
+  //*******************************************************
+  // Done defining generate_addUniformsHelper, get stuff done down below...
+  //*******************************************************
+
+  //onload will be invoked when this is done
+  reader.readAsText(fileList[0]);
+
+  //We can wrap onload with a promise, and set reader.onload = resolve.
+  //We can call .then() on the new promise and call the below code there.
+  //We can return this promise, which the caller can then handle.
+  return new Promise(resolve => {reader.onload = resolve;}).then(() => {
+    let promises = [];
+
+    //WARNING: hasOwnProperty won't get inherited properties. That's intentional for now...
+    viewers.forEach( v => {
+      if (v.hasOwnProperty("getTemplateInfo") && v.hasOwnProperty("addUniformsFunc")){
+        let templInfo = v.getTemplateInfo();
+        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
+          shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
+          vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
+          templateType: templInfo.templateType});
+        promises.push(generate_addUniformsHelper(loadBRDFPromise, v));
+      }
+    });
+
+    //return generate_addUniformsHelper(loadBRDFPromise, viewers[0]);
+    return Promise.all(promises).then(function() {
+      return({uniforms, uniform_update_funcs});
+    }); //when we call .then() in GUI.js, we are really just appending a .then() right here on this line.
   });
 }
 

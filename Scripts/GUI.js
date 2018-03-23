@@ -104,6 +104,7 @@ export default function GUI(inModel){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
         model.loadAnalyticalBRDF(this.files).then(returnResult => {
+          //console.log(returnResult);
           const {uniforms, uniform_update_funcs} = returnResult;
           spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
             brdfCheckboxDiv);

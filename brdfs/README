@@ -4,4 +4,4 @@ but they have been ported to OpenGL ES, hence the extension
 
 https://github.com/wdas/brdf/tree/master/src/brdfs
 
-See LICENSE in this directory for Disney's license.
+See ../DISNEY_LICENSE for a complete copy of Disney's license.

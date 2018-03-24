@@ -47,8 +47,8 @@ export default function Model(){
       });
     },
 
-    loadAnalyticalBRDF = function(in_fileList){
-      return loadAnalytical_getUniforms(in_fileList, viewers);
+    loadAnalyticalBRDF = function(in_file){
+      return loadAnalytical_getUniforms(in_file, viewers);
     };
 
   //NathanX: What exactly does "debounce" do? Do we need it?

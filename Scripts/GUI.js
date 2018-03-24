@@ -83,8 +83,8 @@ export default function GUI(inModel){
       // camRotSlider.setAttribute("value", 0);
     },
 
-    loadAnalytical = function(fileList){
-      model.loadAnalyticalBRDF(fileList).then(returnResult => {
+    loadAnalytical = function(file){
+      model.loadAnalyticalBRDF(file).then(returnResult => {
         //console.log(returnResult);
         const {uniforms, uniform_update_funcs} = returnResult;
         spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
@@ -104,7 +104,7 @@ export default function GUI(inModel){
           if (this.status == 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-            loadAnalytical([blob]);
+            loadAnalytical(blob);
             //model.loadAnalyticalBRDF([blob]).then(returnResult => {
               ////console.log(returnResult);
               //const {uniforms, uniform_update_funcs} = returnResult;
@@ -142,7 +142,7 @@ export default function GUI(inModel){
       document.getElementById("file_chooser").addEventListener("change", function(){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
-        loadAnalytical(this.files);
+        loadAnalytical(this.files[0]); //BOLD ASSUMPTION: only one file in list
         //model.loadAnalyticalBRDF(this.files).then(returnResult => {
           ////console.log(returnResult);
           //const {uniforms, uniform_update_funcs} = returnResult;
@@ -218,7 +218,7 @@ export default function GUI(inModel){
     if (this.status === 200) {
       // Note: .response instead of .responseText
       var blob = new Blob([this.response], {type: 'Blob'});
-      loadAnalytical([blob]);
+      loadAnalytical(blob);
     }
   };
   xhr.send();

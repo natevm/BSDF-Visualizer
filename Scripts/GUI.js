@@ -209,5 +209,18 @@ export default function GUI(inModel){
   //************* Start "constructor" **************
   setupUI();
   setupUICallbacks();
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');
+  xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
+  xhr.onload = function()
+  {
+    if (this.status === 200) {
+      // Note: .response instead of .responseText
+      var blob = new Blob([this.response], {type: 'Blob'});
+      loadAnalytical([blob]);
+    }
+  };
+  xhr.send();
   //************* End "constructor" **************
 }

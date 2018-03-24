@@ -348,7 +348,7 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "model-renderer_template.frag",
+      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
         vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
     },
 
@@ -601,7 +601,7 @@ export default function ModelViewport(spec) {
     loadModels();
 
     }, function(err) {
-        console.log(err);
+      console.error(err);
     });
 
     //mouse events

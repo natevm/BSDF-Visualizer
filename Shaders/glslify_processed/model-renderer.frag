@@ -88,5 +88,5 @@ void main(void) {
     color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
   }
   //vColor = vec4(color,1);
-  vColor = jet(color.x/hdr_max);
+  vColor = jet(clamp(color.x/hdr_max,0.0,1.0));
 }

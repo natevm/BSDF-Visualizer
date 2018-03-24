@@ -83,6 +83,15 @@ export default function GUI(inModel){
       // camRotSlider.setAttribute("value", 0);
     },
 
+    loadAnalytical = function(fileList){
+      model.loadAnalyticalBRDF(fileList).then(returnResult => {
+        //console.log(returnResult);
+        const {uniforms, uniform_update_funcs} = returnResult;
+        spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+          brdfCheckboxDiv);
+      });
+    },
+
     setupButtonCallback = function(button, url) {
       // Buttons to select predefined BRDFs
       button.on('click', (event) => {
@@ -95,13 +104,13 @@ export default function GUI(inModel){
           if (this.status == 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-
-            model.loadAnalyticalBRDF([blob]).then(returnResult => {
-              //console.log(returnResult);
-              const {uniforms, uniform_update_funcs} = returnResult;
-              spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-                brdfCheckboxDiv);
-            });
+            loadAnalytical([blob]);
+            //model.loadAnalyticalBRDF([blob]).then(returnResult => {
+              ////console.log(returnResult);
+              //const {uniforms, uniform_update_funcs} = returnResult;
+              //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+                //brdfCheckboxDiv);
+            //});
           }
         }
         xhr.send();
@@ -133,12 +142,13 @@ export default function GUI(inModel){
       document.getElementById("file_chooser").addEventListener("change", function(){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
-        model.loadAnalyticalBRDF(this.files).then(returnResult => {
-          //console.log(returnResult);
-          const {uniforms, uniform_update_funcs} = returnResult;
-          spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-            brdfCheckboxDiv);
-        });
+        loadAnalytical(this.files);
+        //model.loadAnalyticalBRDF(this.files).then(returnResult => {
+          ////console.log(returnResult);
+          //const {uniforms, uniform_update_funcs} = returnResult;
+          //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+            //brdfCheckboxDiv);
+        //});
       });
     },
 

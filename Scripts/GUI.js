@@ -20,7 +20,9 @@ export default function GUI(inModel){
     incidentThetaEnvelope,
     incidentPhiEnvelope,
     brdfSliderDiv,
-    brdfCheckboxDiv;
+    brdfCheckboxDiv,
+    heatCheckboxDiv,
+		heatmapEnabled;
 
   const
     model = inModel,
@@ -82,9 +84,10 @@ export default function GUI(inModel){
       // camRotSlider.setAttribute("step", 1);
       // camRotSlider.setAttribute("value", 0);
 
-      document.getElementById("heatmap-toggle").addEventListener("change", event => {
-        //console.log(typeof event.target.checked);
+      heatCheckboxDiv = document.getElementById("heatmap-toggle");
+      heatCheckboxDiv.addEventListener("change", event => {
         model.setHeatmap(event.target.checked);
+				heatmapEnabled = event.target.checked;
       });
     },
 
@@ -94,7 +97,14 @@ export default function GUI(inModel){
         const {uniforms, uniform_update_funcs} = returnResult;
         spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
           brdfCheckboxDiv);
-      });
+			}).then( () => {
+				//console.log(heatCheckboxDiv.getAttribute("checked"));
+				//let checkboxValStr = heatCheckboxDiv.getAttribute("checked");
+				////"cast" bool to str: http://stackoverflow.com/questions/263965/ddg#264037
+				//let checkboxValBool = (checkboxValStr === 'true');
+				//console.log(checkboxValStr);
+        model.setHeatmap(heatmapEnabled);
+			});
     },
 
     setupButtonCallback = function(button, url) {

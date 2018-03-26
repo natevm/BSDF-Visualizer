@@ -33,9 +33,9 @@ export default function ModelViewport(spec) {
     },
     setHeatmap = function(input_bool){
       if (input_bool === true) {
-        gl.uniform1i(uHeatmapLoc,1);
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,1);
       } else if (input_bool === false) {
-        gl.uniform1i(uHeatmapLoc,0);
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,0);
       } else {
         throw "expected input_bool to be a bool!";
       }
@@ -139,6 +139,7 @@ export default function ModelViewport(spec) {
         }
       });
 
+      shaderProgram.uHeatmapLoc = gl.getUniformLocation(shaderProgram, "uHeatmap");
       shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
       shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
@@ -609,7 +610,7 @@ export default function ModelViewport(spec) {
     rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
     initShaders(rttShaderProgram);
 
-    uHeatmapLoc = gl.getUniformLocation(defaultShaderProgram, "uHeatmap");
+    //uHeatmapLoc = gl.getUniformLocation(defaultShaderProgram, "uHeatmap");
 
     initRTTFramebuffer();
     loadModels();

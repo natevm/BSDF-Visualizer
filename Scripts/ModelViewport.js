@@ -272,7 +272,8 @@ export default function ModelViewport(spec) {
       //     initBuffers();
       // });
 
-      p.then((loaded_models) => {
+      return p.then((loaded_models) => {
+        console.log("Models loaded!");
         //console.log(loaded_models);
         models = loaded_models;
         initBuffers();

@@ -3,7 +3,6 @@
 import {addEnvelopeControl} from "./ui-wranglers.js";
 
 //requires d3.js
-
 //************************
 //"Class" Controller
 //
@@ -210,17 +209,20 @@ export default function GUI(inModel){
   setupUI();
   setupUICallbacks();
 
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');
-  xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
-  xhr.onload = function()
-  {
-    if (this.status === 200) {
-      // Note: .response instead of .responseText
-      var blob = new Blob([this.response], {type: 'Blob'});
-      loadAnalytical(blob);
-    }
-  };
-  xhr.send();
+  /*
+   *var xhr = new XMLHttpRequest();
+   *xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');
+   *xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
+   *xhr.onload = function()
+   *{
+   *  if (this.status === 200) {
+   *    // Note: .response instead of .responseText
+   *    var blob = new Blob([this.response], {type: 'Blob'});
+   *    console.log("Loading analytical!");
+   *    loadAnalytical(blob);
+   *  }
+   *};
+   *xhr.send();
+   */
   //************* End "constructor" **************
 }

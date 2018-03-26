@@ -22,7 +22,7 @@ export default function GUI(inModel){
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
-		heatmapEnabled;
+		heatmapEnabled = false;
 
   const
     model = inModel,

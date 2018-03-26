@@ -125,7 +125,10 @@ html, body {
     align-items: center;
 }
 
-
+#link_button {
+    width: 3vw;
+    padding-right: 2vw;
+}
 
 /* -------------- Portrait Overrides -------------- */
 @media screen and (orientation:portrait) {

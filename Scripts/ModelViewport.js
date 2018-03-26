@@ -46,7 +46,6 @@ export default function ModelViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
-
     uHeatmapLoc,
 
     //TODO: move to const...

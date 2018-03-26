@@ -19,6 +19,7 @@ export default function GUI(inModel){
   let
     incidentThetaEnvelope,
     incidentPhiEnvelope,
+    intensityEnvelope,
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
@@ -77,6 +78,9 @@ export default function GUI(inModel){
       /* Add incident phi slider */
       incidentPhiEnvelope = addEnvelopeControl(ptLightSliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
+
+      intensityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Intens.",
+        "slider_intensity", 0, 3, 1);
 
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);

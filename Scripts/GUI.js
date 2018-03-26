@@ -3,6 +3,7 @@
 import {addEnvelopeControl} from "./ui-wranglers.js";
 
 //requires d3.js
+
 //************************
 //"Class" Controller
 //
@@ -100,7 +101,7 @@ export default function GUI(inModel){
         xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
         xhr.onload = function()
         {
-          if (this.status == 200) {
+          if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
             loadAnalytical(blob);
@@ -111,7 +112,7 @@ export default function GUI(inModel){
                 //brdfCheckboxDiv);
             //});
           }
-        }
+        };
         xhr.send();
       });
     },
@@ -208,7 +209,11 @@ export default function GUI(inModel){
   //************* Start "constructor" **************
   setupUI();
   setupUICallbacks();
-
+  //WARNING: The below breaks ModelViewport in Chrome.
+  //I suspect this is due to a race condition
+  //When I tested, loadAnalytical fires before the model
+  //is done loading. To make this work, we might have to
+  //attach a callback to when the model is finished loading.
   /*
    *var xhr = new XMLHttpRequest();
    *xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');

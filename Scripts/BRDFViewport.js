@@ -51,6 +51,9 @@ export default function BRDFViewport(spec) {
     line_pUniformLoc,
     lineVAO,
 
+    current_lvm,
+    linked = true,
+
     renderReady = false,
 
     //TODO: remove in_theta_deg, in_phi_deg once we setup our
@@ -390,24 +393,31 @@ export default function BRDFViewport(spec) {
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
+
+    resetView = function() {
+      V = mat4.clone(initial_V);
+      linked = false;
+    },
+
+    recoverView = function() {
+      linked = true;
+      this.updateLinkedCamRot(current_lvm);
+    },
+
     updateLinkedCamRot = function(lvm){
-       let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
+     current_lvm = mat4.clone(lvm);
+     if (linked) {
+       let linkedViewMatrix4 = mat4.fromValues(lvm[0], lvm[1], lvm[2], 0, lvm[3], lvm[4], lvm[5], 0, lvm[6], lvm[7], lvm[8], 0, 0, -0.5, -1.5, 1);
        //console.log(linkedViewMatrix4);
        initial_V[12] = 0.0;
        initial_V[13] = 0.0;
        initial_V[14] = 0.0;
-       mat4.multiply(V,linkedViewMatrix4, initial_V);
-
-       let rot_angle_deg = oldCamrotDeg;
-       let rot_angle = deg2rad(rot_angle_deg);
-       let rot_axis = vec3.create();
-       let rot = mat4.create();
-
+       mat4.multiply(V, linkedViewMatrix4, initial_V);
        initial_V[13] = -0.5;
        initial_V[14] = -1.5;
-
        //let slider = document.getElementById("slider_camRot");
        //slider.value = 0;
+    }
     },
 
     updateCamRot = function(newCamrotDeg){
@@ -420,7 +430,6 @@ export default function BRDFViewport(spec) {
       vec3.set(rot_axis, 0, 0, 1);
       mat4.fromRotation(rot, rot_angle, rot_axis);
       mat4.multiply(V,V,rot);
-      //console.log(V);
     },
 
     updateTheta = function(newThetaDeg){
@@ -567,6 +576,8 @@ export default function BRDFViewport(spec) {
   //Put any methods / properties that we want to make public inside this object.
   return Object.freeze({
     render,
+    resetView,
+    recoverView,
     updateTheta,
     updatePhi,
     updateCamRot,

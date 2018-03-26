@@ -140,6 +140,12 @@ export default function GUI(inModel){
             brdfCheckboxDiv);
         });
       });
+
+      document.getElementById("link_button").addEventListener("click", function(){
+        //document.getElementById("link_button").toggleClass("unlink");
+          //in the below function, "this" appears to be bound to some object
+          //that addEventListener binds the function to.
+      });
     },
 
     spawnUniformSliders = function(uniforms, uniform_update_funcs, sliderDiv, checkboxContainer){

@@ -3,6 +3,7 @@
 precision mediump float;
 
 uniform bool uHeatmap;
+uniform float uIntensity;
 
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
@@ -57,7 +58,7 @@ void main(void) {
     vec3 Y; //eye space bitangent
     computeTangentVectors(N, X, Y);
 
-    vec3 color = BRDF(L, V, N, X, Y) * clamp(dot(N, L),0.0,1.0);
+    vec3 color = uIntensity * BRDF(L, V, N, X, Y) * clamp(dot(N, L),0.0,1.0);
 
     //vec3 color = vDiffuse * dot(N, L) +
       //vSpecular * pow(dot(H, N), vSpecularExponent);

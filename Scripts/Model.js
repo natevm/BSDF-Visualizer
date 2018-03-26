@@ -55,6 +55,14 @@ export default function Model(){
       });
     },
 
+    setIntensity = function(intensity){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setIntensity" in v) {
+          v.setIntensity(intensity);
+        }
+      });
+    },
+
     loadAnalyticalBRDF = function(in_file){
       return loadAnalytical_getUniforms(in_file, viewers);
     };
@@ -86,6 +94,7 @@ export default function Model(){
     setPhi,
     setCamRot,
     setHeatmap,
+    setIntensity,
     loadAnalyticalBRDF,
   });
 }

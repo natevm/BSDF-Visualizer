@@ -32,6 +32,7 @@ export default function ModelViewport(spec) {
       return inputByModel;
     },
     setHeatmap = function(input_bool){
+      gl.useProgram(defaultShaderProgram);
       if (input_bool === true) {
         gl.uniform1i(defaultShaderProgram.uHeatmapLoc,1);
       } else if (input_bool === false) {
@@ -39,6 +40,10 @@ export default function ModelViewport(spec) {
       } else {
         throw "expected input_bool to be a bool!";
       }
+    },
+    setIntensity = function(newIntensity){
+      gl.useProgram(defaultShaderProgram);
+      gl.uniform1f(defaultShaderProgram.uIntensityLoc, newIntensity);
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -46,7 +51,6 @@ export default function ModelViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
-    uHeatmapLoc,
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
@@ -139,6 +143,10 @@ export default function ModelViewport(spec) {
       });
 
       shaderProgram.uHeatmapLoc = gl.getUniformLocation(shaderProgram, "uHeatmap");
+      shaderProgram.uIntensityLoc = gl.getUniformLocation(shaderProgram, "uIntensity");
+
+      setIntensity(1.0); //set default intensity
+
       shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
       shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
@@ -609,8 +617,6 @@ export default function ModelViewport(spec) {
     rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
     initShaders(rttShaderProgram);
 
-    //uHeatmapLoc = gl.getUniformLocation(defaultShaderProgram, "uHeatmap");
-
     initRTTFramebuffer();
     loadModels();
 
@@ -684,6 +690,7 @@ export default function ModelViewport(spec) {
     updateCamRot,
     getTemplateInfo,
     addUniformsFunc,
-    setHeatmap
+    setHeatmap,
+    setIntensity
   });
 }

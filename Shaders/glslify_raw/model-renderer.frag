@@ -3,6 +3,7 @@
 precision mediump float;
 
 uniform bool uHeatmap;
+uniform float uIntensity;
 
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
@@ -56,7 +57,7 @@ void main(void) {
     //vec3 L = normalize(uLightDirection);
     //vec3 N = normalize(modelSpaceNormal);
 
-    vec3 color = BRDF(L, V, N, X, Y);
+    vec3 color = uIntensity * BRDF(L, V, N, X, Y);
 
     //vec3 color = vDiffuse * dot(N, L) +
       //vSpecular * pow(dot(H, N), vSpecularExponent);

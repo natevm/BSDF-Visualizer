@@ -152,6 +152,10 @@ export default function GUI(inModel){
         model.setPhi(event.target.value);
       });
 
+      intensityEnvelope.addEventListener('change', (event) => {
+        model.setIntensity(event.target.value);
+      });
+
       // document.getElementById("slider_camRot").oninput = (event) => {
       //   model.setCamRot(event.target.value);
       // };

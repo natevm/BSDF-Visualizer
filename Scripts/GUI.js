@@ -92,7 +92,7 @@ export default function GUI(inModel){
         xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
         xhr.onload = function()
         {
-          if (this.status == 200) {
+          if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
 
@@ -103,7 +103,7 @@ export default function GUI(inModel){
                 brdfCheckboxDiv);
             });
           }
-        }
+        };
         xhr.send();
       });
     },

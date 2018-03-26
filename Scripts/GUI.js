@@ -30,7 +30,7 @@ export default function GUI(inModel){
     setupUI = function(){
       //TODO: should this menu really be attached to #brdf-menu?
       //or should it be elsewhere?
-      let pointlightMenu = d3.select("#pointlight-menu");
+      let modelMenu = d3.select("#model-menu");
       let brdfHeader = d3.select("#brdf-header");
       let brdfMenu = d3.select("#brdf-menu");
       let thetaInput;
@@ -39,7 +39,7 @@ export default function GUI(inModel){
       let phiOutput;
       let camRotInput;
 
-      pointlightMenu.html("");
+      modelMenu.html("");
       brdfMenu.html("");
       brdfHeader.html("");
 
@@ -64,7 +64,7 @@ export default function GUI(inModel){
       brdfSliderDiv.style("display", "flex")
       .style("width", "100%");
 
-      let ptLightSliderDiv = pointlightMenu.append("div");
+      let ptLightSliderDiv = modelMenu.append("div");
       ptLightSliderDiv.style("display", "flex")
       .style("width", "100%");
 
@@ -76,14 +76,44 @@ export default function GUI(inModel){
       incidentPhiEnvelope = addEnvelopeControl(ptLightSliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
 
-      let camRotSlider = document.getElementById("slider_camRot");
-      camRotSlider.setAttribute("min", -180);
-      camRotSlider.setAttribute("max", 180);
-      camRotSlider.setAttribute("step", 1);
-      camRotSlider.setAttribute("value", 0);
+      // let camRotSlider = document.getElementById("slider_camRot");
+      // camRotSlider.setAttribute("min", -180);
+      // camRotSlider.setAttribute("max", 180);
+      // camRotSlider.setAttribute("step", 1);
+      // camRotSlider.setAttribute("value", 0);
+    },
+
+    setupButtonCallback = function(button, url) {
+      // Buttons to select predefined BRDFs
+      button.on('click', (event) => {
+        var blob = null;
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
+        xhr.onload = function()
+        {
+          if (this.status === 200) {
+            // Note: .response instead of .responseText
+            var blob = new Blob([this.response], {type: 'Blob'});
+
+            model.loadAnalyticalBRDF([blob]).then(returnResult => {
+              //console.log(returnResult);
+              const {uniforms, uniform_update_funcs} = returnResult;
+              spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+                brdfCheckboxDiv);
+            });
+          }
+        };
+        xhr.send();
+      });
     },
 
     setupUICallbacks = function(){
+      setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhman_shirley.brdf-es");
+      setupButtonCallback(d3.select("#btn2"), "./brdfs/d_phong.brdf-es");
+      setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.brdf-es");
+      setupButtonCallback(d3.select("#btn4"), "./brdfs/orennayar.brdf-es");
+
       //Set initial values
       //now this slider only controls light theta and phi
       incidentThetaEnvelope.addEventListener('change', (event) => {
@@ -94,9 +124,9 @@ export default function GUI(inModel){
         model.setPhi(event.target.value);
       });
 
-      document.getElementById("slider_camRot").oninput = (event) => {
-        model.setCamRot(event.target.value);
-      };
+      // document.getElementById("slider_camRot").oninput = (event) => {
+      //   model.setCamRot(event.target.value);
+      // };
 
       //File input snippet from:
       //https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications

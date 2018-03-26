@@ -1,193 +1,204 @@
-html, body {
-    width: 100%;
+/* Global CSS Variables */
+:root {
+  --LandscapeTotalHeight: 100%;
+  --LandscapeColumnHeight: 50vw;
+  /* These three variables should add up to column height */
+  --LandscapeRow1Height: 5vw;
+  --LandscapeRow2Height: 35vw;
+  --LandscapeRow3Height: 10vw;
+  --LandscapeColumnRightPad: 2vw;
+
+  --PortraitTotalHeight: 245vw;
+  --PortraitColumnHeight: 245vw;
+    /* These three variables should add up to column height */
+  --PortraitRow1Height: 10vw;
+  --PortraitRow2Height: 120vw;
+  --PortraitRow3Height: 120vw;
 }
 
+
+html, body {
+    width: 100%;
+    height: var(--LandscapeTotalHeight);
+}
+
+/* -------- Main Flexbox Containter -------- */
 #main-container {
     display: flex;
     align-items: center;
     margin: 0px;
+    flex-direction: row;
+    justify-content: center;
 }
 
-/* ------------------------------
-    HTML, Body, and Columns
-  ------------------------------ */
+/* -------------- Menu Column -------------- */
+#menu-column {
+    width: 10vw;
+    height: var(--LandscapeColumnHeight);
+    padding-right: var(--LandscapeColumnRightPad);
+}
+
+#brdf-presets {
+    width: 10vw;
+    height: var(--LandscapeColumnHeight);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+/* -------------- Model Column -------------- */
+#model-column {
+    /*flex-basis: 50%;*/
+    width: var(--LandscapeColumnHeight);
+    height: var(--LandscapeColumnHeight);
+    padding-right: var(--LandscapeColumnRightPad);
+    display: flex;
+    flex-direction: column;
+    height: var(--LandscapeColumnHeight);
+    width: 35vw;
+}
+
+#model-header {
+    height: var(--LandscapeRow1Height);
+    width: 35vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#model-canvas {
+    height: var(--LandscapeRow2Height);
+    width: 35vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#model-menu {
+    height: var(--LandscapeRow3Height);
+    width: 35vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* -------------- BRDF Column -------------- */
+#brdf-column {
+    /*flex-basis: 50%;*/
+    width: var(--LandscapeColumnHeight);
+    height: var(--LandscapeColumnHeight);
+    display: flex;
+    flex-direction: column;
+    height: var(--LandscapeColumnHeight);
+    width: 35vw;
+}
+
+#brdf-header {
+    height: var(--LandscapeRow1Height);
+    width: 35vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#brdf-canvas {
+    height: var(--LandscapeRow2Height);
+    width: 35vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#brdf-menu {
+    height: var(--LandscapeRow3Height);
+    width: 35vw;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+/* -------------- Portrait Overrides -------------- */
 @media screen and (orientation:portrait) {
     html, body {
-    	height: 245vw;
+    	height: var(--PortraitTotalHeight);
     }
+
+    /* -------- Main Flexbox Containter -------- */
     #main-container {
     	flex-direction: column;
     }
 
-    #brdf-column {
-    	/*flex-basis: 50%;*/
-    	width: 80vw;
-    	height: 120vw;
+    /* -------------- Menu Row -------------- */
+    #menu-column {
+        width: 80vw;
+        height: var(--PortraitRow1Height);
+        padding-right: initial;
     }
 
+    #brdf-presets {
+        width: 80vw;
+        height: var(--PortraitRow1Height);
+        flex-direction: row;
+    }
+
+    /* -------------- Model Row -------------- */
     #model-column{
     	/*flex-basis: 50%;*/
     	width: 80vw;
-    	height: 120vw;
-    }
-}
-
-/* For landscape screens */
-@media screen and (orientation:landscape) {
-    html, body {
-    	height: 100%;
+    	height: var(--PortraitRow2Height);
+      padding-top: 10vw;
+      padding-right: initial;
+      align-items: center;
     }
 
-    #main-container {
-    	flex-direction: row;
-    	justify-content: center;
+    #model-header {
+      height: 10vw;
+      width: 80vw;
     }
 
+    #model-canvas {
+      width: 80vw;
+      height: 68.5714286vw;
+    }
+
+    #model-menu {
+      height: 20vw;
+      width: 80vw;
+    }
+
+    /* -------------- BRDF Row -------------- */
     #brdf-column {
-    	/*flex-basis: 50%;*/
-    	width: 45vw;
-    	height: 45vw;
-    }
-
-    #model-column{
-    	/*flex-basis: 50%;*/
-    	width: 45vw;
-    	height: 45vw;
-    	padding-right: 2vw;
-    }
-}
-
-/* ------------------------------
-    BRDF Items
-  ------------------------------ */
-@media screen and (orientation:portrait) {
-    #brdf-column {
+      /*flex-basis: 50%;*/
+      width: 80vw;
+      height: var(--PortraitRow3Height);
     	padding-top: 10vw;
-    	display: flex;
-    	flex-direction: column;
     	align-items: center;
-  	}
-    #brdf-menu {
-    	height: 20vw;
-    	width: 80vw;
+      padding-right: initial;
+    }
 
-    	display: flex;
-    	flex-direction: row;
-    	justify-content: center;
-    	align-items: center;
-    }
-    #brdf-canvas {
-    	width: 80vw;
-    	height: 68.5714286vw;
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
     #brdf-header {
     	height: 10vw;
     	width: 80vw;
-
-    	display: flex;
-    	justify-content: center;
     	align-items: center;
     }
-}
-@media screen and (orientation:landscape) {
-    #brdf-column {
-    	display: flex;
-    	flex-direction: column;
-    	height: 45vw;
-    	width: 35vw;
-    }
-    #brdf-menu {
-    	height: 10vw;
-    	width: 35vw;
 
-    	display: flex;
-    	flex-direction: row;
-    	justify-content: center;
-    	align-items: center;
-    }
     #brdf-canvas {
-    	height: 30vw;
-    	width: 35vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
+      width: 80vw;
+      height: 68.5714286vw;
     }
-    #brdf-header {
-    	height: 4vw;
-    	width: 35vw;
 
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-}
-
-/* ------------------------------
-    Model Items
-  ------------------------------ */
-@media screen and (orientation:landscape) {
-    #model-column {
-    	display: flex;
-    	flex-direction: column;
-    	height: 45vw;
-    	width: 35vw;
-    }
-    #pointlight-menu {
-    	height: 10vw;
-    	width: 35vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-    #model-canvas {
-    	height: 30vw;
-    	width: 35vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-    #model-header {
-    	height: 4vw;
-    	width: 35vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-}
-@media screen and (orientation:portrait) {
-    #model-column {
-    	display: flex;
-    	flex-direction: column;
-    	align-items: center;
-  	}
-    #pointlight-menu {
-    	height: 20vw;
-    	width: 80vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-    #model-canvas {
-    	width: 80vw;
-    	height: 68.5714286vw;
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
-    }
-    #model-header {
-    	height: 10vw;
-    	width: 80vw;
-
-    	display: flex;
-    	justify-content: center;
-    	align-items: center;
+    #brdf-menu {
+      height: 20vw;
+      width: 80vw;
     }
 }

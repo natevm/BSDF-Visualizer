@@ -13,10 +13,10 @@ body {
 	background-color: var(--main-bg-color);
 }
 
+#brdf-presets,
 #brdf-menu, #brdf-canvas, #brdf-header,
-#pointlight-menu, #model-canvas, #model-header
+#model-menu, #model-canvas, #model-header
 {
 	background-color: var(--transparent-color1);
 	box-shadow: 0 0 0.25em 0 rgba(0, 0, 0, 0.25);
-	margin: 1px;
 }

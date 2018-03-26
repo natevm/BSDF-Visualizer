@@ -47,6 +47,14 @@ export default function Model(){
       });
     },
 
+    setHeatmap = function(in_bool){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setHeatmap" in v) {
+          v.setHeatmap(in_bool);
+        }
+      });
+    },
+
     loadAnalyticalBRDF = function(in_file){
       return loadAnalytical_getUniforms(in_file, viewers);
     };
@@ -77,6 +85,7 @@ export default function Model(){
     setTheta,
     setPhi,
     setCamRot,
+    setHeatmap,
     loadAnalyticalBRDF,
   });
 }

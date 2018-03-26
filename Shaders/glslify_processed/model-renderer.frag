@@ -3,7 +3,7 @@
 precision mediump float;
 #define GLSLIFY 1
 
-uniform bool useHeatmap;
+uniform bool uHeatmap;
 
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
@@ -90,7 +90,7 @@ void main(void) {
 	if (length(pickPointView - vModelSpacePosition) < 0.5){
     color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
   }
-  if (useHeatmap) {
+  if (uHeatmap) {
     vColor = jet(clamp(color.x/hdr_max,0.0,1.0));
   } else {
     vColor = vec4(color,1);

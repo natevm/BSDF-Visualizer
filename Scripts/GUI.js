@@ -83,7 +83,8 @@ export default function GUI(inModel){
       // camRotSlider.setAttribute("value", 0);
 
       document.getElementById("heatmap-toggle").addEventListener("change", event => {
-        console.log(event.target.checked);
+        //console.log(typeof event.target.checked);
+        model.setHeatmap(event.target.checked);
       });
     },
 

@@ -30,6 +30,15 @@ export default function ModelViewport(spec) {
     },
     getInputByModel = function(){
       return inputByModel;
+    },
+    setHeatmap = function(input_bool){
+      if (input_bool === true) {
+        gl.uniform1i(uHeatmapLoc,1);
+      } else if (input_bool === false) {
+        gl.uniform1i(uHeatmapLoc,0);
+      } else {
+        throw "expected input_bool to be a bool!";
+      }
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -37,6 +46,8 @@ export default function ModelViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
+
+    uHeatmapLoc,
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
@@ -271,6 +282,7 @@ export default function ModelViewport(spec) {
       //     /* Now that the models are loaded, we can initialize the buffers */
       //     initBuffers();
       // });
+
 
       return p.then((loaded_models) => {
         //console.log("Models loaded!");
@@ -592,19 +604,22 @@ export default function ModelViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
 
-
     defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
     initShaders(defaultShaderProgram);
     rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
     initShaders(rttShaderProgram);
 
+    uHeatmapLoc = gl.getUniformLocation(defaultShaderProgram, "uHeatmap");
+
     initRTTFramebuffer();
     loadModels();
+
 
     }, function(err) {
       console.error(err);
     });
 
+    //FIXME: This should really be moved to GUI.js
     //mouse events
       document.getElementById(canvasName).ondblclick = (event) => {
           if (pickPointNDC[0] < 500){
@@ -668,6 +683,7 @@ export default function ModelViewport(spec) {
     getInputByModel,
     updateCamRot,
     getTemplateInfo,
-    addUniformsFunc
+    addUniformsFunc,
+    setHeatmap
   });
 }

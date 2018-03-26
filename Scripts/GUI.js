@@ -81,6 +81,10 @@ export default function GUI(inModel){
       // camRotSlider.setAttribute("max", 180);
       // camRotSlider.setAttribute("step", 1);
       // camRotSlider.setAttribute("value", 0);
+
+      document.getElementById("heatmap-toggle").addEventListener("change", event => {
+        console.log(event.target.checked);
+      });
     },
 
     loadAnalytical = function(file){

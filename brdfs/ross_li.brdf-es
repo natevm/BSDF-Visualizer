@@ -10,9 +10,9 @@ analytic
 # [type] [name] [min val] [max val] [default val]
 
 ::begin parameters
-float f_iso 0 1 0.3
-float f_vol 0 0 0.3
-float f_geo 0 1 0.3
+float f_iso 0 0.6 0.2
+float f_vol 0 0.4 0.09
+float f_geo 0 0.04 0.15
 ::end parameters
 
 # Then comes the shader. This should be GLSL code

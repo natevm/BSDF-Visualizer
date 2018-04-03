@@ -141,6 +141,7 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn2"), "./brdfs/d_phong.brdf-es");
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.brdf-es");
       setupButtonCallback(d3.select("#btn4"), "./brdfs/orennayar.brdf-es");
+      setupButtonCallback(d3.select("#btn5"), "./brdfs/ross_li.brdf-es");
 
       //Set initial values
       //now this slider only controls light theta and phi

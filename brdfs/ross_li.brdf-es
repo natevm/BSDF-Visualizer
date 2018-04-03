@@ -63,6 +63,18 @@ vec3 BRDF( vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y )
   float curly_theta = acos(cos_curly_theta);
   float phi = acos(cos_phi);
 
+  //************************
+  //VOLUME SCATTERING
+  //************************
+  float cos_xi = dot(L,V); //"scattering angle", or angle between L and V
+  float xi = acos(cos_xi);
+
+  float K_vol = ((PI/2.0 - xi)*cos_xi + sin(xi))/(cos_theta + cos_curly_theta) - PI/4.0;
+
+  //************************
+  //GEOMETRIC SCATTERING
+  //************************
+
   float h_over_b = 2.0; //Assumed to be 2 for MODIS processing, see [1]
   float b_over_r = 1.0; //Assumed to be 1 for MODIS processing, see [1]
 
@@ -82,11 +94,14 @@ vec3 BRDF( vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y )
   float K_geo = O - sec(theta_prime) - sec(curly_theta_prime)
     + 0.5*(1.0 + cos_xi_prime)*sec(theta_prime)*sec(curly_theta_prime);
 
-  K_geo = max(0.0, K_geo);
+  K_geo = max(0.0, K_geo); //TODO: This is a HACK!
 
-  float K_vol = 0.0; //TODO: implement volume scattering term.
+  //************************
+  //FINAL BRDF
+  //************************
 
   return vec3(f_iso + f_vol*K_vol + f_geo*K_geo);
+  //return vec3(f_iso + f_vol*K_vol + 0.000001*K_geo);
 }
 
 ::end shader

@@ -316,7 +316,7 @@ export default function ModelViewport(spec) {
       mat4.identity(mvMatrix);
       // move the camera
       //view matrix
-      mat4.translate(mvMatrix, mvMatrix, [0, -10, -40]);
+      mat4.translate(mvMatrix, mvMatrix, [0, 0, -40]);
       mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
       mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
       vMatrix = mat4.clone(mvMatrix);

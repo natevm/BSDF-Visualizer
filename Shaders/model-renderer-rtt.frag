@@ -2,22 +2,31 @@
 
 precision mediump float;
 
-uniform vec3 uLightDirection;
+/* Uniforms */
+uniform vec3 diffuse;
+uniform vec3 specular;
+uniform float specularExponent;
+
+uniform mat4 uMMatrix;
 uniform mat4 uVMatrix;
+uniform mat4 uPMatrix;
 
+uniform vec3 uLightDirection;
+uniform vec3 uModelSpacePickPoint;
+uniform mat4 uNMatrix;
+
+uniform sampler2D EnvMap;
+
+/* Varying */
 in vec2 vTextureCoord;
-in vec3 vTransformedNormal;
 in vec4 vPosition;
-
-in vec3 vDiffuse;
-in vec3 vSpecular;
-in float vSpecularExponent;
-
-in vec3 modelSpaceNormal;
-in mat4 inversePMatrix;
+in vec3 vTransformedNormal;
+in vec3 vWorldNormal;
+in vec3 vModelSpaceNormal;
 in vec3 vModelSpacePosition;
+
 out vec4 vColor;
 
 void main(void) {
-    vColor = vec4(modelSpaceNormal, gl_FragCoord.z);
+    vColor = vec4(vModelSpaceNormal, gl_FragCoord.z);
 }

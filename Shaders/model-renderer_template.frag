@@ -2,10 +2,15 @@
 
 precision mediump float;
 
+uniform vec3 uDiffuse;
+uniform vec3 uSpecular;
+uniform float uSpecularExponent;
+
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
 uniform vec3 uPickPointNDC;
 uniform mat4 uPickModelViewMatrix;
+uniform sampler2D EnvMap;
 
 //*************** START INLINED UNIFORMS ******************
 // <INLINE_UNIFORMS_HERE>
@@ -14,10 +19,6 @@ uniform mat4 uPickModelViewMatrix;
 in vec2 vTextureCoord;
 in vec3 vTransformedNormal;
 in vec4 vPosition;
-
-in vec3 vDiffuse;
-in vec3 vSpecular;
-in float vSpecularExponent;
 
 in vec3 modelSpaceNormal;
 in mat4 inversePMatrix;
@@ -61,4 +62,6 @@ void main(void) {
 	vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);
 	if (length(pickPointView - vModelSpacePosition) < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
     vColor = vec4(color, 1.0);
+
+    VColor = texture(EnvMap, vec2(0.0, 0.0));
 }

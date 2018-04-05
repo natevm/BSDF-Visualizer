@@ -37,15 +37,18 @@ export default function ModelViewport(spec) {
     gl, // WebGL context
     rttShaderProgram,
     defaultShaderProgram,
+    skyboxShaderProgram,
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "model-renderer.frag",
-
     models = {},
-    mvMatrix = mat4.create(),
-    pMatrix = mat4.create(),
+    skyboxVertexBuffer,
+    envMapTex,
+    mMatrix = mat4.create(),
     vMatrix = mat4.create(),
+    pMatrix = mat4.create(),
+    normalMatrix = mat4.create(),
     camRotMatrix = mat3.create(),
     normalRotMatrix = mat3.create(),
     pickProjMatrix = mat4.create(),
@@ -101,10 +104,7 @@ export default function ModelViewport(spec) {
       const attrs = {
         'aVertexPosition': OBJ.Layout.POSITION.key,
         'aVertexNormal': OBJ.Layout.NORMAL.key,
-        'aTextureCoord': OBJ.Layout.UV.key,
-        'aDiffuse': OBJ.Layout.DIFFUSE.key,
-        'aSpecular': OBJ.Layout.SPECULAR.key,
-        'aSpecularExponent': OBJ.Layout.SPECULAR_EXPONENT.key,
+        'aTextureCoord': OBJ.Layout.UV.key
       };
 
       //shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
@@ -128,14 +128,20 @@ export default function ModelViewport(spec) {
         }
       });
 
-      shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-      shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+      shaderProgram.diffuseUniform = gl.getUniformLocation(shaderProgram, "uDiffuse");
+      shaderProgram.specularUniform = gl.getUniformLocation(shaderProgram, "uSpecular");
+      shaderProgram.specularExponentUniform = gl.getUniformLocation(shaderProgram, "uSpecularExponent");
+
+      shaderProgram.mMatrixUniform = gl.getUniformLocation(shaderProgram, "uMMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
-      shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
-      shaderProgram.pickProjMatrixUniform = gl.getUniformLocation(shaderProgram, "uPickProjMatrix");
-      shaderProgram.pickModelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "uPickModelViewMatrix");
+      shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+
       shaderProgram.lightDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightDirection");
-      shaderProgram.pickPointNDCUniform = gl.getUniformLocation(shaderProgram, "uPickPointNDC");
+      shaderProgram.modelSpacePickPointUniform = gl.getUniformLocation(shaderProgram, "uModelSpacePickPoint");
+      shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+
+      shaderProgram.envMapSamplerUniform = gl.getUniformLocation(shaderProgram, "EnvMap");
+
 
       shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
@@ -164,14 +170,42 @@ export default function ModelViewport(spec) {
       //return shaderProgram;
     },
 
+    initSkyboxShaderProgram = function() {
+      /* Find and store attributes/uniforms */
+      skyboxShaderProgram.aVertexPosition = gl.getAttribLocation(skyboxShaderProgram, "aVertexPosition");
+      skyboxShaderProgram.uEnvMap = gl.getUniformLocation(skyboxShaderProgram, "EnvMap");
+      skyboxShaderProgram.uIVMatrix = gl.getUniformLocation(skyboxShaderProgram, "uIVMatrix");
+      skyboxShaderProgram.uIPMatrix = gl.getUniformLocation(skyboxShaderProgram, "uIPMatrix");
+
+      /* Setup VAO */
+      skyboxShaderProgram.vao = gl.createVertexArray();
+      gl.bindVertexArray(skyboxShaderProgram.vao);
+
+      /* Skybox triangle */
+      let skyboxVerts = new Float32Array([
+        -1.0, -1.0, .99999,
+        -1.0, 3.0, .99999,
+        3.0, -1.0, .99999
+        ]);
+      skyboxVertexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, skyboxVerts, gl.STATIC_DRAW);
+
+      /* Enable the attrib array */
+      gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
+      gl.enableVertexAttribArray(skyboxShaderProgram.aVertexPosition);
+      // Four bytes per float, 3 floats per vert, offset 0
+      gl.vertexAttribPointer(skyboxShaderProgram.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+
+      gl.bindVertexArray(null);
+    },
+
+
     initBuffers = function() {
       let layout = new OBJ.Layout(
         OBJ.Layout.POSITION,
         OBJ.Layout.NORMAL,
-        OBJ.Layout.DIFFUSE,
-        OBJ.Layout.UV,
-        OBJ.Layout.SPECULAR,
-        OBJ.Layout.SPECULAR_EXPONENT);
+        OBJ.Layout.UV);
 
       // initialize the mesh's buffers
 
@@ -210,6 +244,8 @@ export default function ModelViewport(spec) {
         //models[modelKey] = {};
         //models[modelKey].mesh = models[modelKey];
       });
+
+
     },
 
     initRTTFramebuffer = function() {
@@ -232,19 +268,30 @@ export default function ModelViewport(spec) {
     },
 
     setMatrixUniforms = function(shaderProgram){
-      let normalMatrix = mat3.create();
       let lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
 
-      gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-      gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-      gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
-      gl.uniformMatrix4fv(shaderProgram.pickProjMatrixUniform, false, pickProjMatrix);
-      gl.uniformMatrix4fv(shaderProgram.pickModelViewMatrixUniform, false, pickModelViewMatrix);
+      gl.uniform3fv(shaderProgram.diffuseUniform, new Float32Array([0.0, 0.0, 0.0]));
+      gl.uniform3fv(shaderProgram.specularUniform, new Float32Array([100.0, 100.0, 100.0]));
+      gl.uniform1f(shaderProgram.specularExponentUniform, 1000.0);
 
-      mat3.normalFromMat4(normalMatrix, mvMatrix);
-      gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
+      gl.uniformMatrix4fv(shaderProgram.mMatrixUniform, false, mMatrix);
+      gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
+      gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+
       gl.uniform3fv(shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
-      gl.uniform3fv(shaderProgram.pickPointNDCUniform, pickPointNDC);
+      // TODO: add back pick point
+      gl.uniformMatrix4fv(shaderProgram.nMatrixUniform, false, normalMatrix);
+
+
+      // gl.uniformMatrix4fv(shaderProgram.pickProjMatrixUniform, false, pickProjMatrix);
+      // gl.uniformMatrix4fv(shaderProgram.pickModelViewMatrixUniform, false, pickModelViewMatrix);
+      // gl.uniform3fv(shaderProgram.pickPointNDCUniform, pickPointNDC);
+    },
+
+    setEnvMapUniforms = function(shaderProgram) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, envMapTex);
+      gl.uniform1i(shaderProgram.envMapSamplerUniform, 0);
     },
 
     loadModels = function(){
@@ -256,28 +303,58 @@ export default function ModelViewport(spec) {
         },
       ]);
 
-      //  (meshes) => {
-      //   console.log(models["teapot"]);
-      //   console.log('Name:', models["teapot"].name);
-      //     console.log('Mesh:', models["teapot"]);
-
-      //   /* For some reason this is giving me trouble. Seems to work on other browsers...*/
-      //     // for ([name, mesh] of Object.entries(models)) {
-
-      //     // }
-      //     models = models;
-      //     modelsLoaded = true;
-
-      //     /* Now that the models are loaded, we can initialize the buffers */
-      //     initBuffers();
-      // });
-
       p.then((loaded_models) => {
-        //console.log(loaded_models);
         models = loaded_models;
         initBuffers();
         modelsLoaded = true;
       });
+    },
+
+    isPowerOf2 = function(value) {
+      return (value & (value - 1)) == 0;
+    },
+
+    loadEnvironmentMap = function() {
+      console.log("Loading environment map");
+
+      let url = "./cubemaps/Arches_E_PineTree/Arches_E_PineTree_8k.jpg"
+      envMapTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, envMapTex);
+
+      /* Download image */
+      const level = 0;
+      const internalFormat = gl.RGBA;
+      const width = 1;
+      const height = 1;
+      const border = 0;
+      const srcFormat = gl.RGBA;
+      const srcType = gl.UNSIGNED_BYTE;
+      const pixel = new Uint8Array([255,0,255,255]); // Single opaque blue pixel until image is loaded.
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+        width, height, border, srcFormat, srcType, pixel);
+
+      /* Asyncronously replace with an environment map */
+      const image = new Image();
+      image.onload = function() {
+        gl.bindTexture(gl.TEXTURE_2D, envMapTex);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                      srcFormat, srcType, image);
+
+        // WebGL1 has different requirements for power of 2 images
+        // vs non power of 2 images so check if the image is a
+        // power of 2 in both dimensions.
+        if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+           // Yes, it's a power of 2. Generate mips.
+           gl.generateMipmap(gl.TEXTURE_2D);
+        } else {
+           // No, it's not a power of 2. Turn of mips and set
+           // wrapping to clamp to edge
+           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
+      };
+      image.src = url;
     },
 
     drawObject = function(model){
@@ -295,7 +372,25 @@ export default function ModelViewport(spec) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
       gl.useProgram(defaultShaderProgram);
       setMatrixUniforms(defaultShaderProgram);
+      setEnvMapUniforms(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    },
+
+    drawSkybox = function() {
+      gl.useProgram(skyboxShaderProgram);
+      /* Upload uniform */
+      let iVMatrix = mat4.create();
+      let iPMatrix = mat4.create();
+      mat4.invert(iVMatrix, vMatrix);
+      mat4.invert(iPMatrix, pMatrix);
+
+      gl.uniformMatrix4fv(skyboxShaderProgram.uIVMatrix, false, iVMatrix);
+      gl.uniformMatrix4fv(skyboxShaderProgram.uIPMatrix, false, iPMatrix);
+
+
+      gl.bindVertexArray(skyboxShaderProgram.vao);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.bindVertexArray(null);
     },
 
     drawNormalDepthTexture = function(model){
@@ -311,24 +406,49 @@ export default function ModelViewport(spec) {
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      //these values are hardcoded now for demo purpose, will change later
-      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
-      mat4.identity(mvMatrix);
-      // move the camera
-      //view matrix
-      mat4.translate(mvMatrix, mvMatrix, [0, -10, -40]);
-      mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
-      mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
-      vMatrix = mat4.clone(mvMatrix);
+
+      let teapotToWorld = mat4.create();
+      let worldToCamera = mat4.create();
+
+      /* Teapot to World */
+      //model matrix (rotate our z-up teapot to y-up) -- need to change later
+      mat4.identity(teapotToWorld);
+      mat4.rotate(teapotToWorld, teapotToWorld, -0.5 * Math.PI, [1, 0, 0]);
+
+      /* Use this as our model matrix */
+      mMatrix = mat4.clone(teapotToWorld)
+
+      /* World to Camera */
+      mat4.identity(worldToCamera);
+
+      // First, translate the camera
+      mat4.translate(worldToCamera, worldToCamera, [0, -2.5, -40]);
+
+      // Next, handle rotation
       let tempMatrix = mat4.create();
+      mat4.identity(tempMatrix);
       mat4.rotate(tempMatrix, tempMatrix, cameraYRotation, [1, 0, 0]);
       mat4.rotate(tempMatrix, tempMatrix, cameraXRotation, [0, 1, 0]);
+      mat4.multiply(worldToCamera, worldToCamera, tempMatrix);
       mat3.fromMat4(camRotMatrix, tempMatrix);
-      //model matrix (rotate our z-up teapot to y-up) -- need to change later
-      mat4.rotate(mvMatrix, mvMatrix, -0.5 * Math.PI, [1, 0, 0]);
+
+      /* Use this as our view matrix */
+      vMatrix = mat4.clone(worldToCamera);
+
+      /* Projection matrix */
+      //these values are hardcoded now for demo purpose, will change later
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
+
+      /* Find normal matrix */
+      let mvMatrix = mat4.create();
+      mat4.multiply(mvMatrix, vMatrix, mMatrix);
+      let vmMatrix = mat4.create();
+      mat4.invert(vmMatrix, mvMatrix);
+      normalMatrix = mat4.transpose(normalMatrix, vmMatrix);
 
       drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
+      drawSkybox();
     },
 
     animate = function() {
@@ -452,93 +572,95 @@ export default function ModelViewport(spec) {
     },
 
     selectPointEventFunction = function(event) {
-        let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
-        pos.y = canvas.height - pos.y - 1;
-        let pixels = new Float32Array(4);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
-        gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        //console.log([pos.x, pos.y]);
-        //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
-        normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
-        pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
-        pickProjMatrix = pMatrix;
-        pickModelViewMatrix = mat4.clone(mvMatrix);
-        //normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
-        //normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
+        // let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
+        // pos.y = canvas.height - pos.y - 1;
+        // let pixels = new Float32Array(4);
+        // gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+        // gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+        // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        // //console.log([pos.x, pos.y]);
+        // //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
+        // normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
+        // let pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
+        // //let pickPointClip =
 
-        let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi),
-            Math.cos(lightTheta),
-            Math.sin(lightTheta)*Math.sin(lightPhi));
-        let dot = vec3.dot(lightDirection, normalDir);
+        // pickProjMatrix = pMatrix;
+        // pickModelViewMatrix = mat4.clone(mvMatrix);
+        // //normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
+        // //normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
 
-        //compute normalPhi
-        let xdir;
-        let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
-        if (projNormal[2] === 0) {
-            if (projNormal[0] > 0) {
-                tangent = vec3.fromValues(0,0,-1);
-                bitangent = vec3.fromValues(0,1,0);
-            } else if (projNormal[0] < 0) {
-                tangent = vec3.fromValues(0,0,1);
-                bitangent = vec3.fromValues(0,1,0);
-            } else {
-                tangent = vec3.fromValues(1,0,0);
-                bitangent = vec3.fromValues(0,0,-1);
-            }
-        } else {
-            if(projNormal[2] > 0) {
-                xdir = vec3.fromValues(1,0,0);
-            } else { // projNormal[2] < 0
-                xdir = vec3.fromValues(-1,0,0);
-            }
-            bitangent = vec3.create();
-            tangent = vec3.create();
-            vec3.cross(bitangent, projNormal, xdir);
-            vec3.normalize(bitangent, bitangent);
-            vec3.cross(tangent, bitangent, projNormal);
-            vec3.normalize(tangent, tangent);
-        }
+        // let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi),
+        //     Math.cos(lightTheta),
+        //     Math.sin(lightTheta)*Math.sin(lightPhi));
+        // let dot = vec3.dot(lightDirection, normalDir);
 
-        vec3.cross(bitangent, tangent, normalDir);
-        normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
-            bitangent[0], bitangent[1], bitangent[2]);
+        // //compute normalPhi
+        // let xdir;
+        // let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
+        // if (projNormal[2] === 0) {
+        //     if (projNormal[0] > 0) {
+        //         tangent = vec3.fromValues(0,0,-1);
+        //         bitangent = vec3.fromValues(0,1,0);
+        //     } else if (projNormal[0] < 0) {
+        //         tangent = vec3.fromValues(0,0,1);
+        //         bitangent = vec3.fromValues(0,1,0);
+        //     } else {
+        //         tangent = vec3.fromValues(1,0,0);
+        //         bitangent = vec3.fromValues(0,0,-1);
+        //     }
+        // } else {
+        //     if(projNormal[2] > 0) {
+        //         xdir = vec3.fromValues(1,0,0);
+        //     } else { // projNormal[2] < 0
+        //         xdir = vec3.fromValues(-1,0,0);
+        //     }
+        //     bitangent = vec3.create();
+        //     tangent = vec3.create();
+        //     vec3.cross(bitangent, projNormal, xdir);
+        //     vec3.normalize(bitangent, bitangent);
+        //     vec3.cross(tangent, bitangent, projNormal);
+        //     vec3.normalize(tangent, tangent);
+        // }
+
+        // vec3.cross(bitangent, tangent, normalDir);
+        // normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
+        //     bitangent[0], bitangent[1], bitangent[2]);
 
 
-        //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
-          //  0, 0,0,1);
+        // //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
+        //   //  0, 0,0,1);
 
-        //normalRotMatrix = mat3.creat
-        let scaledNormal = vec3.create();
-        vec3.scale(scaledNormal, normalDir, dot);
-        let projLightDirection = vec3.create();
-        vec3.subtract(projLightDirection, lightDirection, scaledNormal);
-        vec3.normalize(projLightDirection, projLightDirection);
-        let prjx = vec3.dot(projLightDirection, tangent);
-        let scaledTangent = vec3.create();
-        vec3.scale(scaledTangent, tangent, prjx);
-        let prjyvec = vec3.create();
-        vec3.subtract(prjyvec, projLightDirection, scaledTangent);
-        if (vec3.dot(bitangent, prjyvec) >= 0) {
-            normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
-        } else {
-            normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
-        }
-        normalTheta = 180*Math.acos(dot)/Math.PI;
-        //let normalThetaElement = document.getElementById("normalTheta");
-        //let normalPhiElement = document.getElementById("normalPhi");
-        //normalThetaElement.value = normalTheta;
-        //normalPhiElement.value = normalPhi + 180;
+        // //normalRotMatrix = mat3.creat
+        // let scaledNormal = vec3.create();
+        // vec3.scale(scaledNormal, normalDir, dot);
+        // let projLightDirection = vec3.create();
+        // vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+        // vec3.normalize(projLightDirection, projLightDirection);
+        // let prjx = vec3.dot(projLightDirection, tangent);
+        // let scaledTangent = vec3.create();
+        // vec3.scale(scaledTangent, tangent, prjx);
+        // let prjyvec = vec3.create();
+        // vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+        // if (vec3.dot(bitangent, prjyvec) >= 0) {
+        //     normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+        // } else {
+        //     normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+        // }
+        // normalTheta = 180*Math.acos(dot)/Math.PI;
+        // //let normalThetaElement = document.getElementById("normalTheta");
+        // //let normalPhiElement = document.getElementById("normalPhi");
+        // //normalThetaElement.value = normalTheta;
+        // //normalPhiElement.value = normalPhi + 180;
 
-        let evt = new Event('change');
+        // let evt = new Event('change');
 
-        //normalThetaElement.dispatchEvent(evt);
-        //normalPhiElement.dispatchEvent(evt);
-        if (linkedViewport !== undefined) {
-          linkedViewport.updateTheta(normalTheta);
-          linkedViewport.updatePhi(normalPhi + 180);
-          linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
-        }
+        // //normalThetaElement.dispatchEvent(evt);
+        // //normalPhiElement.dispatchEvent(evt);
+        // if (linkedViewport !== undefined) {
+        //   linkedViewport.updateTheta(normalTheta);
+        //   linkedViewport.updatePhi(normalPhi + 180);
+        //   linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+        // }
     };
 
   //************* Start "constructor" **************
@@ -549,6 +671,8 @@ export default function ModelViewport(spec) {
     let defaultFragSrc;
     let rttVertSrc;
     let rttFragSrc;
+    let skyboxVertSrc;
+    let skyboxFragSrc;
     //ES6 promises: https://stackoverflow.com/a/10004137
     //jQuery AJAX requests return an ES6-compatible promise,
     //because jQuery 3.0+ implements the
@@ -583,6 +707,18 @@ export default function ModelViewport(spec) {
         rttFragSrc = result.trim();
       }
     }));
+    promises.push($.ajax({
+      url: shdrDir + "skybox.vert",
+      success: function(result){
+        skyboxVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "skybox.frag",
+      success: function(result){
+        skyboxFragSrc = result.trim();
+      }
+    }));
 
     //Wait for all async callbacks to return, then execute the code below.
     //$.when.apply($, promises).then(function() {
@@ -591,19 +727,21 @@ export default function ModelViewport(spec) {
       // you can process it here
 
 
-    defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
-    initShaders(defaultShaderProgram);
-    rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
-    initShaders(rttShaderProgram);
+      defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
+      initShaders(defaultShaderProgram);
+      rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
+      initShaders(rttShaderProgram);
+      skyboxShaderProgram = compile_and_link_shdr(gl, skyboxVertSrc, skyboxFragSrc);
+      initSkyboxShaderProgram();
 
-    initRTTFramebuffer();
-    loadModels();
+      initRTTFramebuffer();
+      loadModels();
+      loadEnvironmentMap();
+      }, function(err) {
+          console.log("Shader Load Error: " + err);
+      });
 
-    }, function(err) {
-        console.log("Shader Load Error: " + err);
-    });
-
-    //mouse events
+      //mouse events
       document.getElementById(canvasName).ondblclick = (event) => {
           if (pickPointNDC[0] < 500){
               pickPointNDCStored = vec3.clone(pickPointNDC);

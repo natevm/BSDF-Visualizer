@@ -2,6 +2,9 @@
 
 precision mediump float;
 
+uniform bool uHeatmap;
+uniform float uIntensity;
+
 uniform vec3 uLightDirection;
 uniform mat4 uVMatrix;
 uniform vec3 uPickPointNDC;
@@ -18,6 +21,7 @@ in float vSpecularExponent;
 in vec3 modelSpaceNormal;
 in mat4 inversePMatrix;
 in vec3 vModelSpacePosition;
+
 out vec4 vColor;
 
 void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
@@ -36,7 +40,10 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
     return vDiffuse * dot(N, L) + vSpecular * pow(dot(H, N), vSpecularExponent);
 }
 
+#pragma glslify: jet = require('glsl-colormap/jet')
+
 void main(void) {
+    float hdr_max = 2.0;
     vec3 V = -normalize(vPosition.xyz);
     vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
     //vec3 H = normalize(L + V);
@@ -50,13 +57,19 @@ void main(void) {
     //vec3 L = normalize(uLightDirection);
     //vec3 N = normalize(modelSpaceNormal);
 
-    vec3 color = BRDF(L, V, N, X, Y);
+    vec3 color = uIntensity * BRDF(L, V, N, X, Y);
 
     //vec3 color = vDiffuse * dot(N, L) +
       //vSpecular * pow(dot(H, N), vSpecularExponent);
 
 	vec4 pickPointView4 = inverse(uPickModelViewMatrix) * inversePMatrix * vec4(uPickPointNDC,1);
 	vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);
-	if (length(pickPointView - vModelSpacePosition) < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
-    vColor = vec4(color, 1.0);
+	if (length(pickPointView - vModelSpacePosition) < 0.5){
+    color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
+  }
+  if (uHeatmap) {
+    vColor = jet(clamp(color.x/hdr_max,0.0,1.0));
+  } else {
+    vColor = vec4(color,1);
+  }
 }

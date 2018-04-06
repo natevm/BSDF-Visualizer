@@ -47,8 +47,24 @@ export default function Model(){
       });
     },
 
-    loadAnalyticalBRDF = function(in_fileList){
-      return loadAnalytical_getUniforms(in_fileList, viewers);
+    setHeatmap = function(in_bool){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setHeatmap" in v) {
+          v.setHeatmap(in_bool);
+        }
+      });
+    },
+
+    setIntensity = function(intensity){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setIntensity" in v) {
+          v.setIntensity(intensity);
+        }
+      });
+    },
+
+    loadAnalyticalBRDF = function(in_file){
+      return loadAnalytical_getUniforms(in_file, viewers);
     };
 
   //NathanX: What exactly does "debounce" do? Do we need it?
@@ -77,6 +93,8 @@ export default function Model(){
     setTheta,
     setPhi,
     setCamRot,
+    setHeatmap,
+    setIntensity,
     loadAnalyticalBRDF,
   });
 }

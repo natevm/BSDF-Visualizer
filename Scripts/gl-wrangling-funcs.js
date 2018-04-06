@@ -13,7 +13,7 @@ import {map_insert_chain} from './collections-wranglers.js';
 //pass in the viewer's addUniformfunc so we can call it on the viewer.
 //
 //The viewer should have a getter that returns the appropriate shader paths.
-export function loadAnalytical_getUniforms(fileList, viewers){
+export function loadAnalytical_getUniforms(file, viewers){
   let reader = new FileReader();
   //key: uniform name. value: function for updating the uniform.
   let uniform_update_funcs = new Map();
@@ -150,7 +150,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   //*******************************************************
 
   //onload will be invoked when this is done
-  reader.readAsText(fileList[0]);
+  reader.readAsText(file);
 
   //We can wrap onload with a promise, and set reader.onload = resolve.
   //We can call .then() on the new promise and call the below code there.

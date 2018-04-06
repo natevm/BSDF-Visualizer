@@ -30,6 +30,20 @@ export default function ModelViewport(spec) {
     },
     getInputByModel = function(){
       return inputByModel;
+    },
+    setHeatmap = function(input_bool){
+      gl.useProgram(defaultShaderProgram);
+      if (input_bool === true) {
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,1);
+      } else if (input_bool === false) {
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,0);
+      } else {
+        throw "expected input_bool to be a bool!";
+      }
+    },
+    setIntensity = function(newIntensity){
+      gl.useProgram(defaultShaderProgram);
+      gl.uniform1f(defaultShaderProgram.uIntensityLoc, newIntensity);
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -42,7 +56,8 @@ export default function ModelViewport(spec) {
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
-    model_frag_shader_name = "model-renderer.frag",
+    model_frag_shader_name = "glslify_processed/model-renderer.frag",
+
     models = {},
     skyboxVertexBuffer,
     finalRenderVertexBuffer,
@@ -140,6 +155,11 @@ export default function ModelViewport(spec) {
       shaderProgram.diffuseUniform = gl.getUniformLocation(shaderProgram, "uDiffuse");
       shaderProgram.specularUniform = gl.getUniformLocation(shaderProgram, "uSpecular");
       shaderProgram.specularExponentUniform = gl.getUniformLocation(shaderProgram, "uSpecularExponent");
+
+      shaderProgram.uHeatmapLoc = gl.getUniformLocation(shaderProgram, "uHeatmap");
+      shaderProgram.uIntensityLoc = gl.getUniformLocation(shaderProgram, "uIntensity");
+
+      setIntensity(1.0); //set default intensity
 
       shaderProgram.mMatrixUniform = gl.getUniformLocation(shaderProgram, "uMMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
@@ -614,7 +634,7 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "model-renderer_template.frag",
+      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
         vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
     },
 
@@ -837,6 +857,7 @@ export default function ModelViewport(spec) {
         defaultVertSrc = result.trim();
       }
     }));
+    //console.log(shdrDir + model_frag_shader_name);
     promises.push($.ajax({
       url: shdrDir + model_frag_shader_name,
       success: function(result){
@@ -886,7 +907,6 @@ export default function ModelViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
 
-
       defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
       initShaders(defaultShaderProgram);
       rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
@@ -896,27 +916,27 @@ export default function ModelViewport(spec) {
       finalRenderShaderProgram = compile_and_link_shdr(gl, finalRenderVertSrc, finalRenderFragSrc);
       initFinalRenderShaderProgram();
 
-
       initRTTFramebuffer();
       initIBRFramebuffers();
 
       loadModels();
       loadEnvironmentMap();
-      }, function(err) {
-          console.log("Shader Load Error: " + err);
-      });
+    }, function(err) {
+        console.log("Shader Load Error: " + err);
+    });
 
-      //mouse events
-      document.getElementById(canvasName).ondblclick = (event) => {
-          if (pickPointNDC[0] < 500){
-              pickPointNDCStored = vec3.clone(pickPointNDC);
-              pickPointNDC = vec3.fromValues(999,999,999);
-          } else {
-              pickPointNDC = pickPointNDCStored;
-          }
-      };
+    //mouse events
 
-      document.getElementById(canvasName).onmousedown = (event) => {
+    document.getElementById(canvasName).ondblclick = (event) => {
+        if (pickPointNDC[0] < 500){
+            pickPointNDCStored = vec3.clone(pickPointNDC);
+            pickPointNDC = vec3.fromValues(999,999,999);
+        } else {
+            pickPointNDC = pickPointNDCStored;
+        }
+    };
+
+    document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
       mouseDown = true;
       totalFrames = 1;
@@ -971,6 +991,8 @@ export default function ModelViewport(spec) {
     getInputByModel,
     updateCamRot,
     getTemplateInfo,
-    addUniformsFunc
+    addUniformsFunc,
+    setHeatmap,
+    setIntensity
   });
 }

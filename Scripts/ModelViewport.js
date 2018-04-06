@@ -38,12 +38,14 @@ export default function ModelViewport(spec) {
     rttShaderProgram,
     defaultShaderProgram,
     skyboxShaderProgram,
+    finalRenderShaderProgram,
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "model-renderer.frag",
     models = {},
     skyboxVertexBuffer,
+    finalRenderVertexBuffer,
     envMapTex,
     mMatrix = mat4.create(),
     vMatrix = mat4.create(),
@@ -64,6 +66,7 @@ export default function ModelViewport(spec) {
     pickPointNDCStored = vec3.fromValues(0,0,0), //should be a vec3
     modelsLoaded = false,
 
+    totalFrames = 1,
     cameraXRotation = 0,
     cameraYRotation = 0,
     mouseDown = false,
@@ -77,6 +80,12 @@ export default function ModelViewport(spec) {
 
     rttFramebuffer,
     rttTexture,
+
+    ibrFramebuffer1,
+    ibrFramebuffer2,
+    ibrTexture1,
+    ibrTexture2,
+    currentIBR = 0,
 
     linkedViewport,
 
@@ -140,8 +149,10 @@ export default function ModelViewport(spec) {
       shaderProgram.modelSpacePickPointUniform = gl.getUniformLocation(shaderProgram, "uModelSpacePickPoint");
       shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
 
+      shaderProgram.totalFramesUniform = gl.getUniformLocation(shaderProgram, "uTotalFrames");
+      shaderProgram.timeUniform = gl.getUniformLocation(shaderProgram, "uTime");
       shaderProgram.envMapSamplerUniform = gl.getUniformLocation(shaderProgram, "EnvMap");
-
+      shaderProgram.prevFrameSamplerUniform = gl.getUniformLocation(shaderProgram, "PrevFrame");
 
       shaderProgram.applyAttributePointers = (model) => {
         const layout = model.vertexBuffer.layout;
@@ -196,6 +207,33 @@ export default function ModelViewport(spec) {
       gl.enableVertexAttribArray(skyboxShaderProgram.aVertexPosition);
       // Four bytes per float, 3 floats per vert, offset 0
       gl.vertexAttribPointer(skyboxShaderProgram.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+
+      gl.bindVertexArray(null);
+    },
+
+    initFinalRenderShaderProgram = function() {
+      finalRenderShaderProgram.aVertexPosition = gl.getAttribLocation(finalRenderShaderProgram, "aVertexPosition");
+      finalRenderShaderProgram.uTex = gl.getUniformLocation(finalRenderShaderProgram, "Tex");
+
+      /* Setup VAO */
+      finalRenderShaderProgram.vao = gl.createVertexArray();
+      gl.bindVertexArray(finalRenderShaderProgram.vao);
+
+      /* Skybox triangle */
+      let finalRenderVerts = new Float32Array([
+        -1.0, -1.0, .9,
+        -1.0, 3.0, .9,
+        3.0, -1.0, .9
+        ]);
+      finalRenderVertexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, finalRenderVertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, finalRenderVerts, gl.STATIC_DRAW);
+
+      /* Enable the attrib array */
+      gl.bindBuffer(gl.ARRAY_BUFFER, finalRenderVertexBuffer);
+      gl.enableVertexAttribArray(finalRenderShaderProgram.aVertexPosition);
+      // Four bytes per float, 3 floats per vert, offset 0
+      gl.vertexAttribPointer(finalRenderShaderProgram.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
 
       gl.bindVertexArray(null);
     },
@@ -267,12 +305,56 @@ export default function ModelViewport(spec) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
+    initIBRFramebuffers = function() {
+        /* Two framebuffers, used as ping pong buffers for progressive IBR */
+        ibrFramebuffer1 = gl.createFramebuffer();
+        ibrFramebuffer2 = gl.createFramebuffer();
+        ibrTexture1 = gl.createTexture();
+        ibrTexture2 = gl.createTexture();
+        let renderbuffer1 = gl.createRenderbuffer();
+        let renderbuffer2 = gl.createRenderbuffer();
+
+        ibrFramebuffer1.width = ibrFramebuffer2.width = canvas.width;
+        ibrFramebuffer1.height = ibrFramebuffer2.height = canvas.height;
+
+        /* Setup textures */
+        gl.bindTexture(gl.TEXTURE_2D, ibrTexture1);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ibrFramebuffer1.width, ibrFramebuffer1.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        gl.bindTexture(gl.TEXTURE_2D, ibrTexture2);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ibrFramebuffer2.width, ibrFramebuffer2.height, 0, gl.RGBA, gl.FLOAT, null);
+
+        /* Setup render buffers */
+        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer1);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, ibrFramebuffer1.width, ibrFramebuffer1.height);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer2);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, ibrFramebuffer2.width, ibrFramebuffer2.height);
+
+        /* Setup frame buffers */
+        gl.bindFramebuffer(gl.FRAMEBUFFER, ibrFramebuffer1);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer1)
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, ibrTexture1, 0);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, ibrFramebuffer2);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer2);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, ibrTexture2, 0);
+
+        /* Clear global state */
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    },
+
     setMatrixUniforms = function(shaderProgram){
       let lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
 
       gl.uniform3fv(shaderProgram.diffuseUniform, new Float32Array([0.0, 0.0, 0.0]));
-      gl.uniform3fv(shaderProgram.specularUniform, new Float32Array([100.0, 100.0, 100.0]));
-      gl.uniform1f(shaderProgram.specularExponentUniform, 1000.0);
+      gl.uniform3fv(shaderProgram.specularUniform, new Float32Array([1.0, 1.0, 1.0]));
+      gl.uniform1f(shaderProgram.specularExponentUniform, 1.0);
 
       gl.uniformMatrix4fv(shaderProgram.mMatrixUniform, false, mMatrix);
       gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
@@ -289,9 +371,33 @@ export default function ModelViewport(spec) {
     },
 
     setEnvMapUniforms = function(shaderProgram) {
+      gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, envMapTex);
       gl.uniform1i(shaderProgram.envMapSamplerUniform, 0);
+    },
+
+    setPrevFrameUniforms = function(shaderProgram) {
+      gl.useProgram(shaderProgram);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, (currentIBR == 0) ? ibrTexture2 : ibrTexture1);
+      gl.uniform1i(shaderProgram.prevFrameSamplerUniform, 1);
+    },
+
+    setFinalRenderUniforms = function(shaderProgram) {
+      gl.useProgram(shaderProgram);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, (currentIBR == 0) ? ibrTexture2 : ibrTexture1);
+      gl.uniform1i(shaderProgram.uTex, 0);
+    },
+
+
+    setTimeUniform = function(shaderProgram) {
+      let d = new Date();
+      gl.useProgram(shaderProgram);
+      gl.uniform1f(shaderProgram.timeUniform, Math.random());
+      gl.uniform1f(shaderProgram.totalFramesUniform, totalFrames);
+      totalFrames++;
     },
 
     loadModels = function(){
@@ -357,7 +463,9 @@ export default function ModelViewport(spec) {
       image.src = url;
     },
 
-    drawObject = function(model){
+    drawObject = function(model) {
+      let framebuffer = (currentIBR == 0) ? ibrFramebuffer1 : ibrFramebuffer2;
+
       /*
          Takes in a model that points to a mesh and draws the object on the scene.
          Assumes that the setMatrixUniforms function exists
@@ -365,7 +473,10 @@ export default function ModelViewport(spec) {
          */
       //    gl2.useProgram(shaderProgram);
 
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
       gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
       defaultShaderProgram.applyAttributePointers(model);
 
@@ -373,16 +484,30 @@ export default function ModelViewport(spec) {
       gl.useProgram(defaultShaderProgram);
       setMatrixUniforms(defaultShaderProgram);
       setEnvMapUniforms(defaultShaderProgram);
+      setPrevFrameUniforms(defaultShaderProgram);
+      setTimeUniform(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+
+      // gl.blitFramebuffer(0, 0, canvas.width, canvas.height,
+      //                    0, 0, canvas.width, canvas.height,
+      //                    gl.COLOR_BUFFER_BIT, gl.NEAREST);
+
     },
 
     drawSkybox = function() {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
       gl.useProgram(skyboxShaderProgram);
       /* Upload uniform */
       let iVMatrix = mat4.create();
       let iPMatrix = mat4.create();
       mat4.invert(iVMatrix, vMatrix);
       mat4.invert(iPMatrix, pMatrix);
+
+      setEnvMapUniforms(skyboxShaderProgram);
 
       gl.uniformMatrix4fv(skyboxShaderProgram.uIVMatrix, false, iVMatrix);
       gl.uniformMatrix4fv(skyboxShaderProgram.uIPMatrix, false, iPMatrix);
@@ -393,8 +518,24 @@ export default function ModelViewport(spec) {
       gl.bindVertexArray(null);
     },
 
+    drawFinalRender = function() {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+      gl.useProgram(finalRenderShaderProgram);
+
+      /* Upload uniform */
+      setFinalRenderUniforms(finalRenderShaderProgram);
+
+      gl.bindVertexArray(finalRenderShaderProgram.vao);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.bindVertexArray(null);
+      currentIBR = (currentIBR == 0) ? 1 : 0;
+
+    },
+
     drawNormalDepthTexture = function(model){
       gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+      gl.clearColor(0.0,0.0,0.0,0.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       rttShaderProgram.applyAttributePointers(model);
 
@@ -406,6 +547,8 @@ export default function ModelViewport(spec) {
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
       let teapotToWorld = mat4.create();
       let worldToCamera = mat4.create();
@@ -449,6 +592,9 @@ export default function ModelViewport(spec) {
       drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
       drawSkybox();
+      drawFinalRender();
+
+
     },
 
     animate = function() {
@@ -673,6 +819,8 @@ export default function ModelViewport(spec) {
     let rttFragSrc;
     let skyboxVertSrc;
     let skyboxFragSrc;
+    let finalRenderVertSrc;
+    let finalRenderFragSrc;
     //ES6 promises: https://stackoverflow.com/a/10004137
     //jQuery AJAX requests return an ES6-compatible promise,
     //because jQuery 3.0+ implements the
@@ -719,6 +867,18 @@ export default function ModelViewport(spec) {
         skyboxFragSrc = result.trim();
       }
     }));
+    promises.push($.ajax({
+      url: shdrDir + "finalRender.vert",
+      success: function(result){
+        finalRenderVertSrc = result.trim();
+      }
+    }));
+    promises.push($.ajax({
+      url: shdrDir + "finalRender.frag",
+      success: function(result){
+        finalRenderFragSrc = result.trim();
+      }
+    }));
 
     //Wait for all async callbacks to return, then execute the code below.
     //$.when.apply($, promises).then(function() {
@@ -733,8 +893,13 @@ export default function ModelViewport(spec) {
       initShaders(rttShaderProgram);
       skyboxShaderProgram = compile_and_link_shdr(gl, skyboxVertSrc, skyboxFragSrc);
       initSkyboxShaderProgram();
+      finalRenderShaderProgram = compile_and_link_shdr(gl, finalRenderVertSrc, finalRenderFragSrc);
+      initFinalRenderShaderProgram();
+
 
       initRTTFramebuffer();
+      initIBRFramebuffers();
+
       loadModels();
       loadEnvironmentMap();
       }, function(err) {
@@ -754,6 +919,7 @@ export default function ModelViewport(spec) {
       document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
       mouseDown = true;
+      totalFrames = 1;
       if( event.which === 2 || event.ctrlKey ) {
           selectPointEventFunction(event);
       }
@@ -769,6 +935,7 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
+        totalFrames = 1;
         if( event.which === 2 || event.ctrlKey ) {
             selectPointEventFunction(event);
         }

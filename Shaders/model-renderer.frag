@@ -15,7 +15,10 @@ uniform vec3 uLightDirection;
 uniform vec3 uModelSpacePickPoint;
 uniform mat4 uNMatrix;
 
+uniform float uTotalFrames;
+uniform float uTime;
 uniform sampler2D EnvMap;
+uniform sampler2D PrevFrame;
 
 /* Varying */
 in vec2 vTextureCoord;
@@ -24,6 +27,7 @@ in vec3 vTransformedNormal;
 in vec3 vWorldNormal;
 in vec3 vModelSpaceNormal;
 in vec3 vModelSpacePosition;
+in vec4 vProjPosition;
 
 out vec4 vColor;
 
@@ -55,43 +59,39 @@ float rand(vec2 co){
     return (2.0 * fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453)) - 1.0;
 }
 
-vec3 hemisphereSample_cos(float u, float v) {
-    float phi = v * 2.0 * PI;
-    float cosTheta = sqrt(1.0 - u);
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-}
-
 void main(void) {
     vec3 V = -normalize(vPosition.xyz);
 
     /* Assuming uLightDirection is in model space */
     vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-
-    vec3 L1 = (vec3(rand(gl_FragCoord.xy), rand(gl_FragCoord.xy + 10.0), rand(gl_FragCoord.xy + 20.0)));
-    vec3 L2 = (vec3(rand(gl_FragCoord.xy), rand(gl_FragCoord.xy + 30.0), rand(gl_FragCoord.xy + 40.0)));
-    vec3 L3 = (vec3(rand(gl_FragCoord.xy), rand(gl_FragCoord.xy + 50.0), rand(gl_FragCoord.xy + 60.0)));
-    vec3 L4 = (vec3(rand(gl_FragCoord.xy), rand(gl_FragCoord.xy + 70.0), rand(gl_FragCoord.xy + 80.0)));
-    vec3 L5 = (vec3(rand(gl_FragCoord.xy), rand(gl_FragCoord.xy + 90.0), rand(gl_FragCoord.xy + 100.0)));
-
     vec3 N = normalize(vTransformedNormal);
     vec3 X; //eye space tangent
     vec3 Y; //eye space bitangent
     computeTangentVectors(N, X, Y);
 
     vec3 finalColor = vec3(0.0,0.0,0.0);
-    for (int i = 0; i < 8; ++i) {
-        float rand1 = rand(gl_FragCoord.xy + float(i * 10));
-        float rand2 = rand(gl_FragCoord.xy + float(i * 20));
-        float rand3 = rand(gl_FragCoord.xy + float(i * 30));
+    for (int i = 1; i <= 4; ++i) {
+        float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
+        float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
+        float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
+        if (uTotalFrames <= 1.0) {
+            rand1 = rand(gl_FragCoord.xy * float(i * 3));
+            rand2 = rand(gl_FragCoord.xy * float(i * 5));
+            rand3 = rand(gl_FragCoord.xy * float(i * 7));
+        }
         vec3 L = normalize(vWorldNormal + vec3(rand1, rand2, rand3));
-        finalColor += (BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 8.0;
+        finalColor += (BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 4.0;
     }
 
-    vColor = vec4(finalColor, 1.0);
+            //vec4((calculateColor(eye, initialRay, newLight), texture, textureWeight), 1.0);
+
+    vec2 UV = ((vProjPosition.xy / vProjPosition.w)  + 1.0) * .5;
+    vColor = vec4(finalColor * 1.0/float(uTotalFrames) + vec3(texture(PrevFrame, UV)) * (float(uTotalFrames)-1.0)/float(uTotalFrames), 1.0);// + texture(EnvMap, toSpherical(uLightDirection));
+    //vColor = vec4(vec3(texture(EnvMap, toSpherical(vWorldNormal))), 1.0);// + texture(EnvMap, toSpherical(uLightDirection));
 
  //    float len = length(uModelSpacePickPoint - vModelSpacePosition);
     // if (len < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*len));
 
-    //vColor = texture(EnvMap, toSpherical(uLightDirection));
+    //vec2 position = ( gl_FragCoord.xy / resolution.xy );
+    //vColor = texture(PrevFrame, );
 }

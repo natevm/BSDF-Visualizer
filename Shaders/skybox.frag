@@ -21,5 +21,5 @@ vec2 toSpherical(vec3 dir) {
 }
 
 void main(void) {
-    vColor = vec4(texture(EnvMap, toSpherical(vUVW - vCamPos)).xyz, 0.0);
+    vColor = vec4(texture(EnvMap, toSpherical(vUVW - vCamPos)).xyz, 1.0);
 }

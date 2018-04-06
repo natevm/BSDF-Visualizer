@@ -24,6 +24,7 @@ in vec3 vTransformedNormal;
 in vec3 vWorldNormal;
 in vec3 vModelSpaceNormal;
 in vec3 vModelSpacePosition;
+in vec4 vProjPosition;
 
 out vec4 vColor;
 

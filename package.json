@@ -1,0 +1,23 @@
+{
+  "name": "bsdf-visualizer",
+  "version": "0.1.0",
+  "description": "Reflectance Visualization Tool",
+  "main": "main.js",
+  "dependencies": {
+    "glsl-colormap": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/n8vm/BSDF-Visualizer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/n8vm/BSDF-Visualizer/issues"
+  },
+  "homepage": "https://github.com/n8vm/BSDF-Visualizer#readme"
+}

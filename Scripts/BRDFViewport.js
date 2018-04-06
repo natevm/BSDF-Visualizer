@@ -473,6 +473,7 @@ export default function BRDFViewport(spec) {
       //the above function returned a new lobeProgram.
       setupUniformsLobe();
       setupGeometry();
+      renderReady = true;
     },
 
     /////////////////////

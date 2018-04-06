@@ -30,6 +30,20 @@ export default function ModelViewport(spec) {
     },
     getInputByModel = function(){
       return inputByModel;
+    },
+    setHeatmap = function(input_bool){
+      gl.useProgram(defaultShaderProgram);
+      if (input_bool === true) {
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,1);
+      } else if (input_bool === false) {
+        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,0);
+      } else {
+        throw "expected input_bool to be a bool!";
+      }
+    },
+    setIntensity = function(newIntensity){
+      gl.useProgram(defaultShaderProgram);
+      gl.uniform1f(defaultShaderProgram.uIntensityLoc, newIntensity);
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -40,7 +54,7 @@ export default function ModelViewport(spec) {
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
-    model_frag_shader_name = "model-renderer.frag",
+    model_frag_shader_name = "glslify_processed/model-renderer.frag",
 
     models = {},
     mvMatrix = mat4.create(),
@@ -127,6 +141,11 @@ export default function ModelViewport(spec) {
           console.warn('Shader attribute "' + attrName + '" not found in shader. Is it undeclared or unused in the shader code?');
         }
       });
+
+      shaderProgram.uHeatmapLoc = gl.getUniformLocation(shaderProgram, "uHeatmap");
+      shaderProgram.uIntensityLoc = gl.getUniformLocation(shaderProgram, "uIntensity");
+
+      setIntensity(1.0); //set default intensity
 
       shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
       shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
@@ -272,7 +291,9 @@ export default function ModelViewport(spec) {
       //     initBuffers();
       // });
 
-      p.then((loaded_models) => {
+
+      return p.then((loaded_models) => {
+        //console.log("Models loaded!");
         //console.log(loaded_models);
         models = loaded_models;
         initBuffers();
@@ -348,7 +369,7 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "model-renderer_template.frag",
+      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
         vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
     },
 
@@ -565,6 +586,7 @@ export default function ModelViewport(spec) {
         defaultVertSrc = result.trim();
       }
     }));
+    //console.log(shdrDir + model_frag_shader_name);
     promises.push($.ajax({
       url: shdrDir + model_frag_shader_name,
       success: function(result){
@@ -590,7 +612,6 @@ export default function ModelViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
 
-
     defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
     initShaders(defaultShaderProgram);
     rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
@@ -599,10 +620,12 @@ export default function ModelViewport(spec) {
     initRTTFramebuffer();
     loadModels();
 
+
     }, function(err) {
-        console.log("Shader Load Error: " + err);
+      console.error(err);
     });
 
+    //FIXME: This should really be moved to GUI.js
     //mouse events
       document.getElementById(canvasName).ondblclick = (event) => {
           if (pickPointNDC[0] < 500){
@@ -666,6 +689,8 @@ export default function ModelViewport(spec) {
     getInputByModel,
     updateCamRot,
     getTemplateInfo,
-    addUniformsFunc
+    addUniformsFunc,
+    setHeatmap,
+    setIntensity
   });
 }

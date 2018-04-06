@@ -19,8 +19,11 @@ export default function GUI(inModel){
   let
     incidentThetaEnvelope,
     incidentPhiEnvelope,
+    intensityEnvelope,
     brdfSliderDiv,
-    brdfCheckboxDiv;
+    brdfCheckboxDiv,
+    heatCheckboxDiv,
+		heatmapEnabled = false;
 
   const
     model = inModel,
@@ -76,11 +79,36 @@ export default function GUI(inModel){
       incidentPhiEnvelope = addEnvelopeControl(ptLightSliderDiv, "φ",
         "slider_incidentPhi", -180, 180, starting_phi);
 
+      intensityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Intens.",
+        "slider_intensity", 0, 3, 1);
+
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);
       // camRotSlider.setAttribute("max", 180);
       // camRotSlider.setAttribute("step", 1);
       // camRotSlider.setAttribute("value", 0);
+
+      heatCheckboxDiv = document.getElementById("heatmap-toggle");
+      heatCheckboxDiv.addEventListener("change", event => {
+        model.setHeatmap(event.target.checked);
+				heatmapEnabled = event.target.checked;
+      });
+    },
+
+    loadAnalytical = function(file){
+      model.loadAnalyticalBRDF(file).then(returnResult => {
+        //console.log(returnResult);
+        const {uniforms, uniform_update_funcs} = returnResult;
+        spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+          brdfCheckboxDiv);
+			}).then( () => {
+				//console.log(heatCheckboxDiv.getAttribute("checked"));
+				//let checkboxValStr = heatCheckboxDiv.getAttribute("checked");
+				////"cast" bool to str: http://stackoverflow.com/questions/263965/ddg#264037
+				//let checkboxValBool = (checkboxValStr === 'true');
+				//console.log(checkboxValStr);
+        model.setHeatmap(heatmapEnabled);
+			});
     },
 
     setupButtonCallback = function(button, url) {
@@ -95,13 +123,13 @@ export default function GUI(inModel){
           if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-
-            model.loadAnalyticalBRDF([blob]).then(returnResult => {
-              //console.log(returnResult);
-              const {uniforms, uniform_update_funcs} = returnResult;
-              spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-                brdfCheckboxDiv);
-            });
+            loadAnalytical(blob);
+            //model.loadAnalyticalBRDF([blob]).then(returnResult => {
+              ////console.log(returnResult);
+              //const {uniforms, uniform_update_funcs} = returnResult;
+              //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+                //brdfCheckboxDiv);
+            //});
           }
         };
         xhr.send();
@@ -113,6 +141,7 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn2"), "./brdfs/d_phong.brdf-es");
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.brdf-es");
       setupButtonCallback(d3.select("#btn4"), "./brdfs/orennayar.brdf-es");
+      setupButtonCallback(d3.select("#btn5"), "./brdfs/ross_li.brdf-es");
 
       //Set initial values
       //now this slider only controls light theta and phi
@@ -124,6 +153,10 @@ export default function GUI(inModel){
         model.setPhi(event.target.value);
       });
 
+      intensityEnvelope.addEventListener('change', (event) => {
+        model.setIntensity(event.target.value);
+      });
+
       // document.getElementById("slider_camRot").oninput = (event) => {
       //   model.setCamRot(event.target.value);
       // };
@@ -133,12 +166,13 @@ export default function GUI(inModel){
       document.getElementById("file_chooser").addEventListener("change", function(){
         //in the below function, "this" appears to be bound to some object
         //that addEventListener binds the function to.
-        model.loadAnalyticalBRDF(this.files).then(returnResult => {
-          //console.log(returnResult);
-          const {uniforms, uniform_update_funcs} = returnResult;
-          spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-            brdfCheckboxDiv);
-        });
+        loadAnalytical(this.files[0]); //BOLD ASSUMPTION: only one file in list
+        //model.loadAnalyticalBRDF(this.files).then(returnResult => {
+          ////console.log(returnResult);
+          //const {uniforms, uniform_update_funcs} = returnResult;
+          //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
+            //brdfCheckboxDiv);
+        //});
       });
     },
 
@@ -199,5 +233,25 @@ export default function GUI(inModel){
   //************* Start "constructor" **************
   setupUI();
   setupUICallbacks();
+  //WARNING: The below breaks ModelViewport in Chrome.
+  //I suspect this is due to a race condition
+  //When I tested, loadAnalytical fires before the model
+  //is done loading. To make this work, we might have to
+  //attach a callback to when the model is finished loading.
+  /*
+   *var xhr = new XMLHttpRequest();
+   *xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');
+   *xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
+   *xhr.onload = function()
+   *{
+   *  if (this.status === 200) {
+   *    // Note: .response instead of .responseText
+   *    var blob = new Blob([this.response], {type: 'Blob'});
+   *    console.log("Loading analytical!");
+   *    loadAnalytical(blob);
+   *  }
+   *};
+   *xhr.send();
+   */
   //************* End "constructor" **************
 }

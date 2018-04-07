@@ -260,68 +260,77 @@ function uniformsInfo_toString(uniformsInfo){
   return uniformsStr;
 }
 
+//Requires js-yaml: https://github.com/nodeca/js-yaml
+//
 //Consumes a template shader with:
-// 1) Analytical BRDF in Disney's .brdf format.
+// 1) Analytical BRDF in our YAML format.
 // 2) A "template shader" that contains the strings:
 //   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
-function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
-  let uniformsInfo = {};
-  let brdfLines = disneyBrdfSrc.split('\n');
-  //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
-  let brdfFile_it = brdfLines[Symbol.iterator]();
-  //let currLine = brdfFile_it.next().value;
-  let currLine = getNextLine_brdfFile(brdfFile_it);
-  let brdfFuncStr = "";
+function brdfTemplSubst(templShdrSrc, brdfYaml){
+/*
+ *  let uniformsInfo = {};
+ *  let brdfLines = disneyBrdfSrc.split('\n');
+ *  //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
+ *  let brdfFile_it = brdfLines[Symbol.iterator]();
+ *  //let currLine = brdfFile_it.next().value;
+ *  let currLine = getNextLine_brdfFile(brdfFile_it);
+ *  let brdfFuncStr = "";
+ *
+ *  //Parsing files line-by-line: https://stackoverflow.com/a/42316936
+ *
+ *  //console.log("Printing line by line");
+ *  //templateShdrLines.map((line) => {
+ *    //console.log(line);
+ *  //});
+ *
+ *  //Go until we reach the parameters
+ *  while (currLine.search("::begin parameters") === -1) {
+ *    currLine = getNextLine_brdfFile(brdfFile_it);
+ *  }
+ *
+ *  //Ignoring whitespace, read each line into uniformsInfo
+ *  currLine = getNextLine_brdfFile(brdfFile_it);
+ *  while (currLine.search("::end parameters") === -1) {
+ *    if (/\S/.test(currLine)) { //at least one non-whitespace char
+ *      let tokens = currLine.split(" ");
+ *      let param_type = tokens[0];
+ *      let name = tokens[1];
+ *
+ *      if (param_type === "float") {
+ *        uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
+ *          max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
+ *      } else if (param_type === "bool") {
+ *        uniformsInfo[name] = {type: "bool",
+ *          default: (parseInt(tokens[2]) ? true : false)};
+ *      } else if (param_type === "color") {
+ *        uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
+ *          defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};
+ *      } else {
+ *        throw "Invalid parameter param_type for param '" + name +
+ *          "' in .brdf file!";
+ *      }
+ *    }
+ *    currLine = getNextLine_brdfFile(brdfFile_it);
+ *  }
+ *  //Go until we reach the BRDF function
+ *  while (currLine.search("::begin shader") === -1) {
+ *    currLine = getNextLine_brdfFile(brdfFile_it);
+ *  }
+ *
+ *  //Copy the BRDF function verbatim
+ *  //We could use a string buffer if we need better performance
+ *  currLine = getNextLine_brdfFile(brdfFile_it);
+ *  while (currLine.search("::end shader") === -1) {
+ *    brdfFuncStr = brdfFuncStr + currLine + "\n";
+ *    currLine = getNextLine_brdfFile(brdfFile_it);
+ *  }
+ */
 
-  //Parsing files line-by-line: https://stackoverflow.com/a/42316936
-
-  //console.log("Printing line by line");
-  //templateShdrLines.map((line) => {
-    //console.log(line);
-  //});
-
-  //Go until we reach the parameters
-  while (currLine.search("::begin parameters") === -1) {
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
-
-  //Ignoring whitespace, read each line into uniformsInfo
-  currLine = getNextLine_brdfFile(brdfFile_it);
-  while (currLine.search("::end parameters") === -1) {
-    if (/\S/.test(currLine)) { //at least one non-whitespace char
-      let tokens = currLine.split(" ");
-      let param_type = tokens[0];
-      let name = tokens[1];
-
-      if (param_type === "float") {
-        uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
-          max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
-      } else if (param_type === "bool") {
-        uniformsInfo[name] = {type: "bool",
-          default: (parseInt(tokens[2]) ? true : false)};
-      } else if (param_type === "color") {
-        uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
-          defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};
-      } else {
-        throw "Invalid parameter param_type for param '" + name +
-          "' in .brdf file!";
-      }
-    }
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
-  //Go until we reach the BRDF function
-  while (currLine.search("::begin shader") === -1) {
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
-
-  //Copy the BRDF function verbatim
-  //We could use a string buffer if we need better performance
-  currLine = getNextLine_brdfFile(brdfFile_it);
-  while (currLine.search("::end shader") === -1) {
-    brdfFuncStr = brdfFuncStr + currLine + "\n";
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
+  let brdf_t = jsyaml.load(brdfYaml);
+  //console.log(brdf_t);
+  let uniformsInfo = brdf_t.uniforms;
+  let brdfFuncStr = brdf_t.brdf;
 
   {
     //Based on uniformsInfo, generate string that contains the GLSL uniforms

@@ -86,10 +86,6 @@ void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 
-//*************** START INLINED BRDF ******************
-// <INLINE_BRDF_HERE>
-//*************** END INLINED BRDF ********************
-
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
   //TODO: These should actually be uniforms.
   const float k_d = 0.7;

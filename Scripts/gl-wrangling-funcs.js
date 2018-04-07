@@ -342,6 +342,7 @@ function brdfTemplSubst(templShdrSrc, brdfYaml){
     let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
                                      .replace(brdfFuncHook, brdfFuncStr);
 
+    console.log(substitutedSrc);
     return {uInfo: uniformsInfo, substSrc: substitutedSrc};
   }
 }

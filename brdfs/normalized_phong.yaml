@@ -1,0 +1,17 @@
+uniforms:
+  n:
+    type: "float"
+    min: 1
+    max: 1000
+    default: 100
+brdf: >
+  #define M_PI 3.1415926535897932384626433832795
+
+  //using formula from http://www.thetenthplanet.de/archives/255
+
+  vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+    vec3 R = reflect(-L, N);
+    //float normalization = (n + 1.0) / (2.0 * M_PI);
+    float normalization = 1.0;
+    return vec3(normalization * pow(dot(R,L),n));
+  }

@@ -14,11 +14,6 @@ In order to work with these shaders:
 place them under `Shaders/glslify_processed`. :warning: Do not edit the shaders under
 `glslify_processed`. They will get overwritten by `preprocess_glslify_shaders.py`
 
-### Disney
- * Analytical BRDFs were modified from Disney's [BRDF Explorer](https://www.disneyanimation.com/technology/brdf.html).
- * Compute tangent and bitangent vector function from [BRDF explorer](https://www.disneyanimation.com/technology/brdf.html).
- * See `DISNEY_LICENSE` at the root of this repository for a complete copy of their license.
-
 ## Sources Cited
  Code snippets from: <citation needed>
 

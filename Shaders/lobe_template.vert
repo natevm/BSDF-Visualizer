@@ -78,9 +78,6 @@ void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
   vVec = bitangent;
 }
 
-//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because
-//that's not part of the BRDF, it's the "form factor" in the rendering equation.
-
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
 

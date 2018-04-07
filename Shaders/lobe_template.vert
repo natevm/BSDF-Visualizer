@@ -90,6 +90,10 @@ float rgb_to_luminance(vec3 rgb_color){
   return 0.2126*rgb_color.r + 0.7152*rgb_color.g + 0.0722*rgb_color.b;
 }
 
+vec3 clamped_BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+  return max(BRDF(L, V, N, X, Y), 0.0);
+}
+
 void main() {
     /*
     //FOR DEBUG OF UNIT SPHERE
@@ -116,11 +120,11 @@ void main() {
     vec3 X; //eye sapce tangent
     vec3 Y; //eye space bitangent
     computeTangentVectors(N, X, Y);
-    p *= rgb_to_luminance(BRDF(u_l, normalize(p), u_n, X, Y));
-    p_U *= rgb_to_luminance(BRDF(u_l, normalize(p_U), u_n, X, Y));
-    p_D *= rgb_to_luminance(BRDF(u_l, normalize(p_D), u_n, X, Y));
-    p_L *= rgb_to_luminance(BRDF(u_l, normalize(p_L), u_n, X, Y));
-    p_R *= rgb_to_luminance(BRDF(u_l, normalize(p_R), u_n, X, Y));
+    p *= rgb_to_luminance(clamped_BRDF(u_l, normalize(p), u_n, X, Y));
+    p_U *= rgb_to_luminance(clamped_BRDF(u_l, normalize(p_U), u_n, X, Y));
+    p_D *= rgb_to_luminance(clamped_BRDF(u_l, normalize(p_D), u_n, X, Y));
+    p_L *= rgb_to_luminance(clamped_BRDF(u_l, normalize(p_L), u_n, X, Y));
+    p_R *= rgb_to_luminance(clamped_BRDF(u_l, normalize(p_R), u_n, X, Y));
 
     vec3 v1 = p_R - p;
     vec3 v2 = p_U - p;

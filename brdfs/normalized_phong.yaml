@@ -12,5 +12,5 @@ brdf: >
   vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
     vec3 R = reflect(-L, N);
     float normalization = (n + 1.0) / (2.0 * M_PI);
-    return max(vec3(normalization * pow(dot(R,V),n)),0.0);
+    return vec3(normalization * pow(dot(R,V),n));
   }

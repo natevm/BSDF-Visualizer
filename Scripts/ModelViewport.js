@@ -15,7 +15,6 @@ import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 // https://github.com/n8vm/BSDF-Visualizer/wiki/Classless-OOP-reference
 //************************
 
-//put "constructor" arguments inside "spec" (see main.js for usage example)
 export default function ModelViewport(spec) {
   //Declare our object's properties and methods below.
   //They are private by default, unless we put them
@@ -32,18 +31,17 @@ export default function ModelViewport(spec) {
       return inputByModel;
     },
     setHeatmap = function(input_bool){
-      gl.useProgram(defaultShaderProgram);
-      if (input_bool === true) {
-        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,1);
-      } else if (input_bool === false) {
-        gl.uniform1i(defaultShaderProgram.uHeatmapLoc,0);
-      } else {
-        throw "expected input_bool to be a bool!";
-      }
+      useHeatmap = input_bool;
+      resetIBL();
+    },
+    setIBL = function(input_bool){
+      useIBL = input_bool;
+      maxConvergence = (useIBL) ? 100 : 4;
+      resetIBL();
     },
     setIntensity = function(newIntensity){
-      gl.useProgram(defaultShaderProgram);
-      gl.uniform1f(defaultShaderProgram.uIntensityLoc, newIntensity);
+      intensity = newIntensity;
+      resetIBL();
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -57,6 +55,7 @@ export default function ModelViewport(spec) {
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "glslify_processed/model-renderer.frag",
+    cubemapURL = "./cubemaps/Old_Industrial_Hall/fin4_Bg.jpg",
 
     models = {},
     skyboxVertexBuffer,
@@ -96,11 +95,16 @@ export default function ModelViewport(spec) {
     rttFramebuffer,
     rttTexture,
 
-    ibrFramebuffer1,
-    ibrFramebuffer2,
-    ibrTexture1,
-    ibrTexture2,
-    currentIBR = 0,
+    iblFramebuffer1,
+    iblFramebuffer2,
+    iblTexture1,
+    iblTexture2,
+    currentIBLBuffer = 0,
+    maxConvergence = 100,
+
+    intensity = 2.0,
+    useIBL = true,
+    useHeatmap = false,
 
     linkedViewport,
 
@@ -122,7 +126,6 @@ export default function ModelViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
 
-    //initShaders = function(vsSource, fsSource) {
     initShaders = function(shaderProgram) {
       //var shaderProgram;
       const attrs = {
@@ -131,18 +134,10 @@ export default function ModelViewport(spec) {
         'aTextureCoord': OBJ.Layout.UV.key
       };
 
-      //shaderProgram = compile_and_link_shdr(gl, vsSource, fsSource);
       gl.useProgram(shaderProgram);
 
       shaderProgram.attrIndices = {};
 
-      //NathanX: if we use Object.keys(object).forEach we don't have
-      //to check for attrs.hasOwnProperty()
-      //
-      //for (const attrName in attrs) {
-        //if (!attrs.hasOwnProperty(attrName)) {
-          //continue;
-        //}
       Object.keys(attrs).forEach(function(attrName) {
         shaderProgram.attrIndices[attrName] = gl.getAttribLocation(shaderProgram, attrName);
         if (shaderProgram.attrIndices[attrName] !== -1) {
@@ -156,10 +151,9 @@ export default function ModelViewport(spec) {
       shaderProgram.specularUniform = gl.getUniformLocation(shaderProgram, "uSpecular");
       shaderProgram.specularExponentUniform = gl.getUniformLocation(shaderProgram, "uSpecularExponent");
 
-      shaderProgram.uHeatmapLoc = gl.getUniformLocation(shaderProgram, "uHeatmap");
-      shaderProgram.uIntensityLoc = gl.getUniformLocation(shaderProgram, "uIntensity");
-
-      setIntensity(1.0); //set default intensity
+      shaderProgram.uHeatmap = gl.getUniformLocation(shaderProgram, "uHeatmap");
+      shaderProgram.uIBL = gl.getUniformLocation(shaderProgram, "uIBL");
+      shaderProgram.uIntensity = gl.getUniformLocation(shaderProgram, "uIntensity");
 
       shaderProgram.mMatrixUniform = gl.getUniformLocation(shaderProgram, "uMMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
@@ -197,8 +191,6 @@ export default function ModelViewport(spec) {
           }
         });
       };
-
-      //return shaderProgram;
     },
 
     initSkyboxShaderProgram = function() {
@@ -327,41 +319,41 @@ export default function ModelViewport(spec) {
 
     initIBRFramebuffers = function() {
         /* Two framebuffers, used as ping pong buffers for progressive IBR */
-        ibrFramebuffer1 = gl.createFramebuffer();
-        ibrFramebuffer2 = gl.createFramebuffer();
-        ibrTexture1 = gl.createTexture();
-        ibrTexture2 = gl.createTexture();
+        iblFramebuffer1 = gl.createFramebuffer();
+        iblFramebuffer2 = gl.createFramebuffer();
+        iblTexture1 = gl.createTexture();
+        iblTexture2 = gl.createTexture();
         let renderbuffer1 = gl.createRenderbuffer();
         let renderbuffer2 = gl.createRenderbuffer();
 
-        ibrFramebuffer1.width = ibrFramebuffer2.width = canvas.width;
-        ibrFramebuffer1.height = ibrFramebuffer2.height = canvas.height;
+        iblFramebuffer1.width = iblFramebuffer2.width = canvas.width;
+        iblFramebuffer1.height = iblFramebuffer2.height = canvas.height;
 
         /* Setup textures */
-        gl.bindTexture(gl.TEXTURE_2D, ibrTexture1);
+        gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ibrFramebuffer1.width, ibrFramebuffer1.height, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblFramebuffer1.width, iblFramebuffer1.height, 0, gl.RGBA, gl.FLOAT, null);
 
-        gl.bindTexture(gl.TEXTURE_2D, ibrTexture2);
+        gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ibrFramebuffer2.width, ibrFramebuffer2.height, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblFramebuffer2.width, iblFramebuffer2.height, 0, gl.RGBA, gl.FLOAT, null);
 
         /* Setup render buffers */
         gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer1);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, ibrFramebuffer1.width, ibrFramebuffer1.height);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblFramebuffer1.width, iblFramebuffer1.height);
         gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer2);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, ibrFramebuffer2.width, ibrFramebuffer2.height);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblFramebuffer2.width, iblFramebuffer2.height);
 
         /* Setup frame buffers */
-        gl.bindFramebuffer(gl.FRAMEBUFFER, ibrFramebuffer1);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, iblFramebuffer1);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer1)
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, ibrTexture1, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, iblTexture1, 0);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, ibrFramebuffer2);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, iblFramebuffer2);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer2);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, ibrTexture2, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, iblTexture2, 0);
 
         /* Clear global state */
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -369,55 +361,69 @@ export default function ModelViewport(spec) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
-    setMatrixUniforms = function(shaderProgram){
+    setMainUniforms = function(shaderProgram){
       let lightDirection = [Math.sin(lightTheta)*Math.cos(lightPhi) , Math.cos(lightTheta), Math.sin(lightTheta)*Math.sin(lightPhi)];
 
-      gl.uniform3fv(shaderProgram.diffuseUniform, new Float32Array([0.0, 0.0, 0.0]));
+      /* Color data */
+      gl.uniform3fv(shaderProgram.diffuseUniform, new Float32Array([1.0, 1.0, 1.0]));
       gl.uniform3fv(shaderProgram.specularUniform, new Float32Array([1.0, 1.0, 1.0]));
-      gl.uniform1f(shaderProgram.specularExponentUniform, 1.0);
+      gl.uniform1f(shaderProgram.specularExponentUniform, 100.0);
+      gl.uniform1f(shaderProgram.uIntensity, intensity);
 
+      /* Matrix data  */
       gl.uniformMatrix4fv(shaderProgram.mMatrixUniform, false, mMatrix);
       gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
       gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+      gl.uniformMatrix4fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 
+      /* Light */
       gl.uniform3fv(shaderProgram.lightDirectionUniform, new Float32Array(lightDirection));
       // TODO: add back pick point
-      gl.uniformMatrix4fv(shaderProgram.nMatrixUniform, false, normalMatrix);
 
 
       // gl.uniformMatrix4fv(shaderProgram.pickProjMatrixUniform, false, pickProjMatrix);
       // gl.uniformMatrix4fv(shaderProgram.pickModelViewMatrixUniform, false, pickModelViewMatrix);
       // gl.uniform3fv(shaderProgram.pickPointNDCUniform, pickPointNDC);
-    },
 
-    setEnvMapUniforms = function(shaderProgram) {
-      gl.useProgram(shaderProgram);
+      /* Environment map */
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, envMapTex);
       gl.uniform1i(shaderProgram.envMapSamplerUniform, 0);
-    },
 
-    setPrevFrameUniforms = function(shaderProgram) {
+      /* IBR stuff */
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, (currentIBR == 0) ? ibrTexture2 : ibrTexture1);
+      gl.bindTexture(gl.TEXTURE_2D, (currentIBLBuffer == 0) ? iblTexture2 : iblTexture1);
       gl.uniform1i(shaderProgram.prevFrameSamplerUniform, 1);
+      gl.uniform1f(shaderProgram.timeUniform, Math.random());
+      gl.uniform1f(shaderProgram.totalFramesUniform, totalFrames);
+      gl.uniform1i(shaderProgram.uHeatmap, useHeatmap);
+      incrementIBL();
+
+      /* Heatmap */
+      gl.uniform1i(shaderProgram.uIBL, useIBL);
+    },
+
+    setSkyboxUniforms = function(shaderProgram) {
+      /* Environment map */
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, envMapTex);
+      gl.uniform1i(shaderProgram.envMapSamplerUniform, 0);
+
+      /* Matrix data */
+      let iVMatrix = mat4.create();
+      let iPMatrix = mat4.create();
+      mat4.invert(iVMatrix, vMatrix);
+      mat4.invert(iPMatrix, pMatrix);
+      gl.uniformMatrix4fv(skyboxShaderProgram.uIVMatrix, false, iVMatrix);
+      gl.uniformMatrix4fv(skyboxShaderProgram.uIPMatrix, false, iPMatrix);
     },
 
     setFinalRenderUniforms = function(shaderProgram) {
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, (currentIBR == 0) ? ibrTexture2 : ibrTexture1);
+      gl.bindTexture(gl.TEXTURE_2D, (currentIBLBuffer == 0) ? iblTexture2 : iblTexture1);
       gl.uniform1i(shaderProgram.uTex, 0);
-    },
-
-
-    setTimeUniform = function(shaderProgram) {
-      let d = new Date();
-      gl.useProgram(shaderProgram);
-      gl.uniform1f(shaderProgram.timeUniform, Math.random());
-      gl.uniform1f(shaderProgram.totalFramesUniform, totalFrames);
-      totalFrames++;
     },
 
     loadModels = function(){
@@ -443,7 +449,6 @@ export default function ModelViewport(spec) {
     loadEnvironmentMap = function() {
       console.log("Loading environment map");
 
-      let url = "./cubemaps/Arches_E_PineTree/Arches_E_PineTree_8k.jpg"
       envMapTex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, envMapTex);
 
@@ -455,13 +460,14 @@ export default function ModelViewport(spec) {
       const border = 0;
       const srcFormat = gl.RGBA;
       const srcType = gl.UNSIGNED_BYTE;
-      const pixel = new Uint8Array([255,0,255,255]); // Single opaque blue pixel until image is loaded.
+      const pixel = new Uint8Array([0,0,0,255]); // Single opaque blue pixel until image is loaded.
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
         width, height, border, srcFormat, srcType, pixel);
 
       /* Asyncronously replace with an environment map */
       const image = new Image();
       image.onload = function() {
+        resetIBL();
         gl.bindTexture(gl.TEXTURE_2D, envMapTex);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                       srcFormat, srcType, image);
@@ -480,15 +486,15 @@ export default function ModelViewport(spec) {
            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
       };
-      image.src = url;
+      image.src = cubemapURL;
     },
 
     drawObject = function(model) {
-      let framebuffer = (currentIBR == 0) ? ibrFramebuffer1 : ibrFramebuffer2;
+      let framebuffer = (currentIBLBuffer == 0) ? iblFramebuffer1 : iblFramebuffer2;
 
       /*
          Takes in a model that points to a mesh and draws the object on the scene.
-         Assumes that the setMatrixUniforms function exists
+         Assumes that the setMainUniforms function exists
          as well as the shaderProgram has a uniform attribute called "samplerUniform"
          */
       //    gl2.useProgram(shaderProgram);
@@ -502,37 +508,17 @@ export default function ModelViewport(spec) {
 
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
       gl.useProgram(defaultShaderProgram);
-      setMatrixUniforms(defaultShaderProgram);
-      setEnvMapUniforms(defaultShaderProgram);
-      setPrevFrameUniforms(defaultShaderProgram);
-      setTimeUniform(defaultShaderProgram);
+      setMainUniforms(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer);
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
-
-      // gl.blitFramebuffer(0, 0, canvas.width, canvas.height,
-      //                    0, 0, canvas.width, canvas.height,
-      //                    gl.COLOR_BUFFER_BIT, gl.NEAREST);
-
     },
 
     drawSkybox = function() {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
       gl.useProgram(skyboxShaderProgram);
-      /* Upload uniform */
-      let iVMatrix = mat4.create();
-      let iPMatrix = mat4.create();
-      mat4.invert(iVMatrix, vMatrix);
-      mat4.invert(iPMatrix, pMatrix);
-
-      setEnvMapUniforms(skyboxShaderProgram);
-
-      gl.uniformMatrix4fv(skyboxShaderProgram.uIVMatrix, false, iVMatrix);
-      gl.uniformMatrix4fv(skyboxShaderProgram.uIPMatrix, false, iPMatrix);
-
-
+      setSkyboxUniforms(skyboxShaderProgram);
       gl.bindVertexArray(skyboxShaderProgram.vao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
@@ -540,17 +526,12 @@ export default function ModelViewport(spec) {
 
     drawFinalRender = function() {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
       gl.useProgram(finalRenderShaderProgram);
-
-      /* Upload uniform */
       setFinalRenderUniforms(finalRenderShaderProgram);
-
       gl.bindVertexArray(finalRenderShaderProgram.vao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
-      currentIBR = (currentIBR == 0) ? 1 : 0;
-
+      currentIBLBuffer = (currentIBLBuffer == 0) ? 1 : 0;
     },
 
     drawNormalDepthTexture = function(model){
@@ -561,7 +542,7 @@ export default function ModelViewport(spec) {
 
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
       gl.useProgram(rttShaderProgram);
-      setMatrixUniforms(rttShaderProgram);
+      setMainUniforms(rttShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     },
 
@@ -611,7 +592,8 @@ export default function ModelViewport(spec) {
 
       drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
-      drawSkybox();
+      if (useIBL)
+          drawSkybox();
       drawFinalRender();
 
 
@@ -659,6 +641,15 @@ export default function ModelViewport(spec) {
         drawScene();
         animate();
       }
+    },
+
+    resetIBL = function() {
+      totalFrames = 1;
+    },
+
+    incrementIBL = function() {
+      totalFrames += 1;
+      if (totalFrames > maxConvergence) totalFrames = maxConvergence;
     },
 
     updateTheta = function(newThetaDeg){
@@ -738,100 +729,102 @@ export default function ModelViewport(spec) {
     },
 
     selectPointEventFunction = function(event) {
-        // let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
-        // pos.y = canvas.height - pos.y - 1;
-        // let pixels = new Float32Array(4);
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
-        // gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        // //console.log([pos.x, pos.y]);
-        // //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
-        // normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
-        // let pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
-        // //let pickPointClip =
+        let pos = getNoPaddingNoBorderCanvasRelativeMousePosition(event, canvas);
+        pos.y = canvas.height - pos.y - 1;
+        let pixels = new Float32Array(4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+        gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //console.log([pos.x, pos.y]);
+        //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
+        normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
+        let pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
+        //let pickPointClip =
 
-        // pickProjMatrix = pMatrix;
-        // pickModelViewMatrix = mat4.clone(mvMatrix);
-        // //normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
-        // //normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
+        pickProjMatrix = pMatrix;
+        let mvMatrix = mat4.create();
+        mat4.multiply(mvMatrix, vMatrix, mMatrix);
+        pickModelViewMatrix = mat4.clone(mvMatrix);
+        //normalPhi = 180 * Math.atan2(normalDir[2], normalDir[0]) / Math.PI;
+        //normalTheta = 180 * Math.acos(pixels[2]) / Math.PI;
 
-        // let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi),
-        //     Math.cos(lightTheta),
-        //     Math.sin(lightTheta)*Math.sin(lightPhi));
-        // let dot = vec3.dot(lightDirection, normalDir);
+        let lightDirection = vec3.fromValues(Math.sin(lightTheta)*Math.cos(lightPhi),
+            Math.cos(lightTheta),
+            Math.sin(lightTheta)*Math.sin(lightPhi));
+        let dot = vec3.dot(lightDirection, normalDir);
 
-        // //compute normalPhi
-        // let xdir;
-        // let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
-        // if (projNormal[2] === 0) {
-        //     if (projNormal[0] > 0) {
-        //         tangent = vec3.fromValues(0,0,-1);
-        //         bitangent = vec3.fromValues(0,1,0);
-        //     } else if (projNormal[0] < 0) {
-        //         tangent = vec3.fromValues(0,0,1);
-        //         bitangent = vec3.fromValues(0,1,0);
-        //     } else {
-        //         tangent = vec3.fromValues(1,0,0);
-        //         bitangent = vec3.fromValues(0,0,-1);
-        //     }
-        // } else {
-        //     if(projNormal[2] > 0) {
-        //         xdir = vec3.fromValues(1,0,0);
-        //     } else { // projNormal[2] < 0
-        //         xdir = vec3.fromValues(-1,0,0);
-        //     }
-        //     bitangent = vec3.create();
-        //     tangent = vec3.create();
-        //     vec3.cross(bitangent, projNormal, xdir);
-        //     vec3.normalize(bitangent, bitangent);
-        //     vec3.cross(tangent, bitangent, projNormal);
-        //     vec3.normalize(tangent, tangent);
-        // }
+        //compute normalPhi
+        let xdir;
+        let projNormal = vec3.fromValues(normalDir[0], 0, normalDir[2]);
+        if (projNormal[2] === 0) {
+            if (projNormal[0] > 0) {
+                tangent = vec3.fromValues(0,0,-1);
+                bitangent = vec3.fromValues(0,1,0);
+            } else if (projNormal[0] < 0) {
+                tangent = vec3.fromValues(0,0,1);
+                bitangent = vec3.fromValues(0,1,0);
+            } else {
+                tangent = vec3.fromValues(1,0,0);
+                bitangent = vec3.fromValues(0,0,-1);
+            }
+        } else {
+            if(projNormal[2] > 0) {
+                xdir = vec3.fromValues(1,0,0);
+            } else { // projNormal[2] < 0
+                xdir = vec3.fromValues(-1,0,0);
+            }
+            bitangent = vec3.create();
+            tangent = vec3.create();
+            vec3.cross(bitangent, projNormal, xdir);
+            vec3.normalize(bitangent, bitangent);
+            vec3.cross(tangent, bitangent, projNormal);
+            vec3.normalize(tangent, tangent);
+        }
 
-        // vec3.cross(bitangent, tangent, normalDir);
-        // normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
-        //     bitangent[0], bitangent[1], bitangent[2]);
+        vec3.cross(bitangent, tangent, normalDir);
+        normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
+            bitangent[0], bitangent[1], bitangent[2]);
 
 
-        // //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
-        //   //  0, 0,0,1);
+        //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
+          //  0, 0,0,1);
 
-        // //normalRotMatrix = mat3.creat
-        // let scaledNormal = vec3.create();
-        // vec3.scale(scaledNormal, normalDir, dot);
-        // let projLightDirection = vec3.create();
-        // vec3.subtract(projLightDirection, lightDirection, scaledNormal);
-        // vec3.normalize(projLightDirection, projLightDirection);
-        // let prjx = vec3.dot(projLightDirection, tangent);
-        // let scaledTangent = vec3.create();
-        // vec3.scale(scaledTangent, tangent, prjx);
-        // let prjyvec = vec3.create();
-        // vec3.subtract(prjyvec, projLightDirection, scaledTangent);
-        // if (vec3.dot(bitangent, prjyvec) >= 0) {
-        //     normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
-        // } else {
-        //     normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
-        // }
-        // normalTheta = 180*Math.acos(dot)/Math.PI;
-        // //let normalThetaElement = document.getElementById("normalTheta");
-        // //let normalPhiElement = document.getElementById("normalPhi");
-        // //normalThetaElement.value = normalTheta;
-        // //normalPhiElement.value = normalPhi + 180;
+        //normalRotMatrix = mat3.creat
+        let scaledNormal = vec3.create();
+        vec3.scale(scaledNormal, normalDir, dot);
+        let projLightDirection = vec3.create();
+        vec3.subtract(projLightDirection, lightDirection, scaledNormal);
+        vec3.normalize(projLightDirection, projLightDirection);
+        let prjx = vec3.dot(projLightDirection, tangent);
+        let scaledTangent = vec3.create();
+        vec3.scale(scaledTangent, tangent, prjx);
+        let prjyvec = vec3.create();
+        vec3.subtract(prjyvec, projLightDirection, scaledTangent);
+        if (vec3.dot(bitangent, prjyvec) >= 0) {
+            normalPhi = 180*Math.atan2(vec3.length(prjyvec), prjx) / Math.PI;
+        } else {
+            normalPhi = 180*Math.atan2(-vec3.length(prjyvec), prjx) / Math.PI;
+        }
+        normalTheta = 180*Math.acos(dot)/Math.PI;
+        //let normalThetaElement = document.getElementById("normalTheta");
+        //let normalPhiElement = document.getElementById("normalPhi");
+        //normalThetaElement.value = normalTheta;
+        //normalPhiElement.value = normalPhi + 180;
 
-        // let evt = new Event('change');
+        let evt = new Event('change');
 
-        // //normalThetaElement.dispatchEvent(evt);
-        // //normalPhiElement.dispatchEvent(evt);
-        // if (linkedViewport !== undefined) {
-        //   linkedViewport.updateTheta(normalTheta);
-        //   linkedViewport.updatePhi(normalPhi + 180);
-        //   linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
-        // }
+        //normalThetaElement.dispatchEvent(evt);
+        //normalPhiElement.dispatchEvent(evt);
+        if (linkedViewport !== undefined) {
+          linkedViewport.updateTheta(normalTheta);
+          linkedViewport.updatePhi(normalPhi + 180);
+          linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+        }
     };
 
   //************* Start "constructor" **************
   {
-    const shdrDir = "Shaders/"; //FIXME: duplicated code from BRDFViewport
+    const shdrDir = "./Shaders/"; //FIXME: duplicated code from BRDFViewport
 
     let defaultVertSrc;
     let defaultFragSrc;
@@ -862,6 +855,10 @@ export default function ModelViewport(spec) {
       url: shdrDir + model_frag_shader_name,
       success: function(result){
         defaultFragSrc = result.trim();
+      },
+      error: function(result){
+        console.log("failed to load model-renderer.vert with error ");
+        console.log(result);
       }
     }));
     promises.push($.ajax({
@@ -898,6 +895,9 @@ export default function ModelViewport(spec) {
       url: shdrDir + "finalRender.frag",
       success: function(result){
         finalRenderFragSrc = result.trim();
+      }, error: function(result) {
+        console.log("failed to load model-renderer.frag with error ");
+        console.log(result);
       }
     }));
 
@@ -926,7 +926,6 @@ export default function ModelViewport(spec) {
     });
 
     //mouse events
-
     document.getElementById(canvasName).ondblclick = (event) => {
         if (pickPointNDC[0] < 500){
             pickPointNDCStored = vec3.clone(pickPointNDC);
@@ -939,7 +938,7 @@ export default function ModelViewport(spec) {
     document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
       mouseDown = true;
-      totalFrames = 1;
+      resetIBL();
       if( event.which === 2 || event.ctrlKey ) {
           selectPointEventFunction(event);
       }
@@ -955,7 +954,7 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-        totalFrames = 1;
+        resetIBL();
         if( event.which === 2 || event.ctrlKey ) {
             selectPointEventFunction(event);
         }
@@ -992,6 +991,7 @@ export default function ModelViewport(spec) {
     updateCamRot,
     getTemplateInfo,
     addUniformsFunc,
+    setIBL,
     setHeatmap,
     setIntensity
   });

@@ -20,6 +20,7 @@ uniform float uTime;
 uniform sampler2D EnvMap;
 uniform sampler2D PrevFrame;
 uniform bool uHeatmap;
+uniform bool uIBL;
 uniform float uIntensity;
 
 //*************** START INLINED UNIFORMS ******************
@@ -55,7 +56,6 @@ void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
 // <INLINE_BRDF_HERE>
 //*************** END INLINED BRDF ********************
 
-<<<<<<< HEAD:Shaders/model-renderer_template.frag
 // Assumes radius = 1
 #define PI 3.1415926535897932384626433832795
 vec2 toSpherical(vec3 dir) {
@@ -67,56 +67,36 @@ vec2 toSpherical(vec3 dir) {
 float rand(vec2 co){
     return (2.0 * fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453)) - 1.0;
 }
-=======
+
 #pragma glslify: jet = require('glsl-colormap/jet')
->>>>>>> master:Shaders/glslify_raw/model-renderer_template.frag
 
 void main(void) {
     float hdr_max = 2.0;
     vec3 V = -normalize(vPosition.xyz);
-
-    /* Assuming uLightDirection is in model space */
-    vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
     vec3 N = normalize(vTransformedNormal);
     vec3 X; //eye space tangent
     vec3 Y; //eye space bitangent
     computeTangentVectors(N, X, Y);
 
-<<<<<<< HEAD:Shaders/model-renderer_template.frag
-    vec3 finalColor = vec3(0.0,0.0,0.0);
-    for (int i = 1; i <= 4; ++i) {
-        float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
-        float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
-        float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
-        if (uTotalFrames <= 1.0) {
-            rand1 = rand(gl_FragCoord.xy * float(i * 3));
-            rand2 = rand(gl_FragCoord.xy * float(i * 5));
-            rand3 = rand(gl_FragCoord.xy * float(i * 7));
+    vec3 color = vec3(0.0,0.0,0.0);
+    if (uIBL) {
+        for (int i = 1; i <= 16; ++i) {
+            float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
+            float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
+            float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
+            vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
+            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 16.0;
         }
-        vec3 L = normalize(vWorldNormal + vec3(rand1, rand2, rand3));
-        finalColor += (BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 4.0;
+    } else {
+        vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
+        color = (uIntensity * BRDF(L, V, N, X, Y));
     }
 
-    vec2 UV = ((vProjPosition.xy / vProjPosition.w)  + 1.0) * .5;
-    vColor = vec4(finalColor * 1.0/float(uTotalFrames) + vec3(texture(PrevFrame, UV)) * (float(uTotalFrames)-1.0)/float(uTotalFrames), 1.0);
-=======
-    vec3 color = uIntensity * BRDF(L, V, N, X, Y) * clamp(dot(N, L),0.0,1.0);
->>>>>>> master:Shaders/glslify_raw/model-renderer_template.frag
+    if (uHeatmap) color = jet(clamp(color.x/hdr_max,0.0,1.0)).xyz;
 
- //    float len = length(uModelSpacePickPoint - vModelSpacePosition);
-    // if (len < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*len));
-
-<<<<<<< HEAD:Shaders/model-renderer_template.frag
-    //vColor = texture(EnvMap, toSpherical(uLightDirection));
-=======
-    vec4 pickPointView4 = inverse(uPickModelViewMatrix) * inversePMatrix * vec4(uPickPointNDC,1);
-    vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);
-    if (length(pickPointView - vModelSpacePosition) < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
-    //vColor = vec4(color, 1.0);
-  if (uHeatmap) {
-    vColor = jet(clamp(color.x/hdr_max,0.0,1.0));
-  } else {
-    vColor = vec4(color,1.0);
-  }
->>>>>>> master:Shaders/glslify_raw/model-renderer_template.frag
+    float currentInfluence = 1.0/uTotalFrames;
+    float previousInfluence = (uTotalFrames-1.0)/uTotalFrames;
+    vec2 UV = ((vProjPosition.xy / vProjPosition.w) + 1.0) * .5;
+    vColor = vec4(color * currentInfluence + texture(PrevFrame, UV).xyz * previousInfluence, 1.0);
+    if (any(isnan(vColor))) vColor = vec4(color, 1.0);
 }

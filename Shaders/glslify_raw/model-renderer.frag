@@ -20,6 +20,7 @@ uniform float uTime;
 uniform sampler2D EnvMap;
 uniform sampler2D PrevFrame;
 uniform bool uHeatmap;
+uniform bool uIBL;
 uniform float uIntensity;
 
 /* Varying */
@@ -68,43 +69,30 @@ void main(void) {
     vec3 V = -normalize(vPosition.xyz);
 
     /* Assuming uLightDirection is in model space */
-    vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
     vec3 N = normalize(vTransformedNormal);
     vec3 X; //eye space tangent
     vec3 Y; //eye space bitangent
     computeTangentVectors(N, X, Y);
 
-    vec3 finalColor = vec3(0.0,0.0,0.0);
-    for (int i = 1; i <= 4; ++i) {
-        float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
-        float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
-        float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
-        if (uTotalFrames <= 1.0) {
-            rand1 = rand(gl_FragCoord.xy * float(i * 3));
-            rand2 = rand(gl_FragCoord.xy * float(i * 5));
-            rand3 = rand(gl_FragCoord.xy * float(i * 7));
+    vec3 color = vec3(0.0,0.0,0.0);
+    if (uIBL) {
+        for (int i = 1; i <= 16; ++i) {
+            float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
+            float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
+            float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
+            vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
+            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 16.0;
         }
-        vec3 L = normalize(vWorldNormal + vec3(rand1, rand2, rand3));
-        finalColor += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 4.0;
-    }
-
-            //vec4((calculateColor(eye, initialRay, newLight), texture, textureWeight), 1.0);
-
-    vec2 UV = ((vProjPosition.xy / vProjPosition.w)  + 1.0) * .5;
-    vec3 color color = vec4(finalColor * 1.0/float(uTotalFrames) + vec3(texture(PrevFrame, UV)) * (float(uTotalFrames)-1.0)/float(uTotalFrames), 1.0);// + texture(EnvMap, toSpherical(uLightDirection));
-    //vColor = vec4(vec3(texture(EnvMap, toSpherical(vWorldNormal))), 1.0);// + texture(EnvMap, toSpherical(uLightDirection));
-
- //    float len = length(uModelSpacePickPoint - vModelSpacePosition);
-    // if (len < 0.5) color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*len));
-
-    // vec4 pickPointView4 = inverse(uPickModelViewMatrix) * inversePMatrix * vec4(uPickPointNDC,1);
-    // vec3 pickPointView = vec3(pickPointView4.x/pickPointView4.w, pickPointView4.y/pickPointView4.w, pickPointView4.z/pickPointView4.w);
-    // if (length(pickPointView - vModelSpacePosition) < 0.5){
-    //     color = mix(color, vec3(1,0,0), smoothstep(0.0, 1.0, 1.0-2.0*length(pickPointView - vModelSpacePosition)));
-    // }
-    if (uHeatmap) {
-        vColor = jet(clamp(color.x/hdr_max,0.0,1.0));
     } else {
-        vColor = vec4(color,1);
+        vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
+        color = (uIntensity * BRDF(L, V, N, X, Y));
     }
+
+    if (uHeatmap) color = jet(clamp(color.x/hdr_max,0.0,1.0)).xyz;
+
+    float currentInfluence = 1.0/uTotalFrames;
+    float previousInfluence = (uTotalFrames-1.0)/uTotalFrames;
+    vec2 UV = ((vProjPosition.xy / vProjPosition.w) + 1.0) * .5;
+    vColor = vec4(color * currentInfluence + texture(PrevFrame, UV).xyz * previousInfluence, 1.0);
+    if (any(isnan(vColor))) vColor = vec4(color, 1.0);
 }

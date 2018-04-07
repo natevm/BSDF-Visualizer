@@ -23,7 +23,10 @@ export default function GUI(inModel){
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
-		heatmapEnabled = false;
+		heatmapEnabled = false,
+    iblCheckboxDiv,
+    iblEnabled = true;
+
 
   const
     model = inModel,
@@ -80,7 +83,7 @@ export default function GUI(inModel){
         "slider_incidentPhi", -180, 180, starting_phi);
 
       intensityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Intens.",
-        "slider_intensity", 0, 3, 1);
+        "slider_intensity", 0, 5, 2);
 
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);
@@ -92,6 +95,12 @@ export default function GUI(inModel){
       heatCheckboxDiv.addEventListener("change", event => {
         model.setHeatmap(event.target.checked);
 				heatmapEnabled = event.target.checked;
+      });
+
+      iblCheckboxDiv = document.getElementById("ibl-toggle");
+      iblCheckboxDiv.addEventListener("change", event => {
+        model.setIBL(event.target.checked);
+        iblEnabled = event.target.checked;
       });
     },
 

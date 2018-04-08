@@ -37,6 +37,11 @@ export default function ModelViewport(spec) {
     setIBL = function(input_bool){
       useIBL = input_bool;
       maxConvergence = (useIBL) ? 100 : 4;
+      if (useIBL) {
+        setEnvironmentTexture(cubemapURL);
+      }else {
+        setEnvironmentColor(0,0,0,255);
+      }
       resetIBL();
     },
     setIntensity = function(newIntensity){
@@ -102,7 +107,7 @@ export default function ModelViewport(spec) {
     currentIBLBuffer = 0,
     maxConvergence = 100,
 
-    intensity = 2.0,
+    intensity = 1.0,
     useIBL = true,
     useHeatmap = false,
 
@@ -446,11 +451,9 @@ export default function ModelViewport(spec) {
       return (value & (value - 1)) == 0;
     },
 
-    loadEnvironmentMap = function() {
-      console.log("Loading environment map");
-
-      envMapTex = gl.createTexture();
+    setEnvironmentColor = function(red = 255, blue = 255, green = 255, alpha = 255) {
       gl.bindTexture(gl.TEXTURE_2D, envMapTex);
+      resetIBL();
 
       /* Download image */
       const level = 0;
@@ -463,11 +466,21 @@ export default function ModelViewport(spec) {
       const pixel = new Uint8Array([0,0,0,255]); // Single opaque blue pixel until image is loaded.
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
         width, height, border, srcFormat, srcType, pixel);
+    },
 
-      /* Asyncronously replace with an environment map */
-      const image = new Image();
+    setEnvironmentTexture = function(url) {
+     const image = new Image();
       image.onload = function() {
         resetIBL();
+
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 1;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+
         gl.bindTexture(gl.TEXTURE_2D, envMapTex);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                       srcFormat, srcType, image);
@@ -486,7 +499,18 @@ export default function ModelViewport(spec) {
            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
       };
-      image.src = cubemapURL;
+      image.src = url;
+    },
+    loadEnvironmentMap = function() {
+      console.log("Loading environment map");
+
+      envMapTex = gl.createTexture();
+
+      /* Initially set environment to black. */
+      setEnvironmentColor(0,0,0,255);
+
+      /* Asyncronously replace with an environment map */
+      setEnvironmentTexture(cubemapURL);
     },
 
     drawObject = function(model) {
@@ -592,11 +616,8 @@ export default function ModelViewport(spec) {
 
       drawNormalDepthTexture(models.teapot);
       drawObject(models.teapot);
-      if (useIBL)
-          drawSkybox();
+      drawSkybox();
       drawFinalRender();
-
-
     },
 
     animate = function() {

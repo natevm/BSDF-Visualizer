@@ -81,7 +81,7 @@ void main(void) {
             float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
             float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
             vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
-            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L)))) / 16.0;
+            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
         }
     } else {
         vec3 L = mat3(uVMatrix) * normalize(uLightDirection);

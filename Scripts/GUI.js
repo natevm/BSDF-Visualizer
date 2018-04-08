@@ -83,7 +83,7 @@ export default function GUI(inModel){
         "slider_incidentPhi", -180, 180, starting_phi);
 
       intensityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Intens.",
-        "slider_intensity", 0, 5, 2);
+        "slider_intensity", 0, 5, 1);
 
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);

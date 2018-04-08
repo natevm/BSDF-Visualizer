@@ -572,6 +572,7 @@ export default function ModelViewport(spec) {
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+<<<<<<< HEAD
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -593,6 +594,17 @@ export default function ModelViewport(spec) {
       mat4.translate(worldToCamera, worldToCamera, [0, -2.5, -40]);
 
       // Next, handle rotation
+=======
+      //these values are hardcoded now for demo purpose, will change later
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
+      mat4.identity(mvMatrix);
+      // move the camera
+      //view matrix
+      mat4.translate(mvMatrix, mvMatrix, [0, 0, -40]);
+      mat4.rotate(mvMatrix, mvMatrix, cameraYRotation, [1, 0, 0]);
+      mat4.rotate(mvMatrix, mvMatrix, cameraXRotation, [0, 1, 0]);
+      vMatrix = mat4.clone(mvMatrix);
+>>>>>>> master
       let tempMatrix = mat4.create();
       mat4.identity(tempMatrix);
       mat4.rotate(tempMatrix, tempMatrix, cameraYRotation, [1, 0, 0]);

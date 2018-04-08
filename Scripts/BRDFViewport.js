@@ -56,7 +56,7 @@ export default function BRDFViewport(spec) {
     //TODO: remove in_theta_deg, in_phi_deg once we setup our
     //separate ControlsManager object
     in_theta_deg = 45,
-    in_phi_deg = 0,
+    in_phi_deg = 180,
     numPhiDivisions = 200,
     numThetaDivisions = 100,
     delTheta = 90 / numThetaDivisions,

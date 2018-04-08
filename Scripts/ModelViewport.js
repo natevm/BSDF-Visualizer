@@ -36,7 +36,7 @@ export default function ModelViewport(spec) {
     },
     setIBL = function(input_bool){
       useIBL = input_bool;
-      maxConvergence = (useIBL) ? 100 : 4;
+      maxConvergence = (useIBL) ? 512 : 4;
       if (useIBL) {
         setEnvironmentTexture(cubemapURL);
       }else {
@@ -107,7 +107,7 @@ export default function ModelViewport(spec) {
     currentIBLBuffer = 0,
     maxConvergence = 100,
 
-    intensity = 1.0,
+    intensity = 2.5,
     useIBL = true,
     useHeatmap = false,
 

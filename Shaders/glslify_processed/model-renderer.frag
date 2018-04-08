@@ -56,7 +56,7 @@ vec2 toSpherical(vec3 dir) {
 //N is the normal
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
     vec3 H = normalize(L + V);
-    return uDiffuse * dot(N, L) + uSpecular * pow(max(dot(N, H),0.0), uSpecularExponent);
+    return uDiffuse * (1.0 / PI) + uSpecular * pow(max(dot(N, H),0.0), uSpecularExponent) * (1.0 / dot(N, L));
 }
 
 float rand(vec2 co){
@@ -105,11 +105,12 @@ void main(void) {
             float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
             float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
             vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
-            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
+            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * dot(N, mat3(uVMatrix) * L)
+                * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
         }
     } else {
         vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-        color = (uIntensity * BRDF(L, V, N, X, Y));
+        color = (uIntensity * dot(N, L) * BRDF(L, V, N, X, Y));
     }
 
     if (uHeatmap) color = jet(clamp(color.x/hdr_max,0.0,1.0)).xyz;

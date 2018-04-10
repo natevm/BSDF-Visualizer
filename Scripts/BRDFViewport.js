@@ -528,24 +528,36 @@ export default function BRDFViewport(spec) {
       url: shdrDir + "color_only.vert",
       success: function(result){
         lineVertSrc = result.trim();
+      }, error: function(result) {
+        console.log("failed to load mcolor_only.vert with error ");
+        console.log(result);
       }
     }));
     promises.push($.ajax({
       url: shdrDir + "color_only.frag",
       success: function(result){
         lineFragSrc = result.trim();
+      }, error: function(result) {
+        console.log("failed to load color_only.frag with error ");
+        console.log(result);
       }
     }));
     promises.push($.ajax({
       url: shdrDir + lobe_vert_shader_name,
       success: function(result){
         lobeVertSrc = result.trim();
+      }, error: function(result) {
+        console.log("failed to load lobe.vert with error ");
+        console.log(result);
       }
     }));
     promises.push($.ajax({
       url: shdrDir + lobe_frag_shader_name,
       success: function(result){
         lobeFragSrc = result.trim();
+      }, error: function(result) {
+        console.log("failed to load phong.frag with error ");
+        console.log(result);
       }
     }));
 

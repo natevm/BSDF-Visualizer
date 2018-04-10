@@ -55,6 +55,14 @@ export default function Model(){
       });
     },
 
+    setIBL = function(in_bool){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setIBL" in v) {
+          v.setIBL(in_bool);
+        }
+      });
+    },
+
     setIntensity = function(intensity){
       viewers.forEach(function(v) {
         if (v.getInputByModel() === true && "setIntensity" in v) {
@@ -94,6 +102,7 @@ export default function Model(){
     setPhi,
     setCamRot,
     setHeatmap,
+    setIBL,
     setIntensity,
     loadAnalyticalBRDF,
   });

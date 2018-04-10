@@ -251,6 +251,9 @@ function brdfTemplSubst(templShdrSrc, brdfYaml){
   let brdf_t = jsyaml.load(brdfYaml);
   //console.log(brdf_t);
   let uniformsInfo = brdf_t.uniforms;
+  if( !uniformsInfo.hasOwnProperty('NdotL') ){
+    uniformsInfo.NdotL = {type: "bool", default: true};
+  }
   let brdfFuncStr = brdf_t.brdf;
 
   {

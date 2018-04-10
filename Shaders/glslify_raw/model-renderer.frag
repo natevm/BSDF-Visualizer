@@ -118,12 +118,11 @@ void main(void) {
             float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
             float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
             vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
-            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * dot(N, mat3(uVMatrix) * L)
-                * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
+            color += (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0) * clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
         }
     } else {
         vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-        color = (uIntensity * dot(N, L) * BRDF(L, V, N, X, Y));
+        color = (uIntensity * clamp(dot(N, L),0.0,1.0) * max(BRDF(L, V, N, X, Y),0.0));
     }
 
     if (uHeatmap) color = jet(clamp(color.x/hdr_max,0.0,1.0)).xyz;

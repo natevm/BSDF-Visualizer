@@ -22,6 +22,9 @@ uniforms:
     min: 10
     max: 10000
     default: 100
+  NdotL:
+    type: "bool"
+    default: false
 brdf: >
   #define M_PI 3.1415926535897932384626433832795
 

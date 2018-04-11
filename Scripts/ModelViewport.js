@@ -49,6 +49,12 @@ export default function ModelViewport(spec) {
     },
     setMaxConvergence = function(newMaxConvergence){
       maxConvergence = newMaxConvergence * 20000 + 1;
+    },
+
+    setQuality = function(newQuality){
+      quality = Math.max(newQuality, .01);
+      queueRefresh1 = true;
+      queueRefresh2 = true;
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -102,12 +108,16 @@ export default function ModelViewport(spec) {
     rttFramebuffer,
     rttTexture,
 
-    iblRenderBuffer,
-    iblColorBuffer,
-    iblTexture1, iblTexture2,
+    iblRenderBuffer = null,
+    iblColorBuffer = null,
+    depthBuffer = null, colorBuffer = null,
+    iblTexture1 = null, iblTexture2 = null,
     iblCurrentBuffer = 0,
     maxConvergence = 10000,
+
     quality = 1.0,
+    queueRefresh1 = false,
+    queueRefresh2 = false,
 
     intensity = 2.5,
     useIBL = true,
@@ -328,13 +338,8 @@ export default function ModelViewport(spec) {
     },
 
     initIBLFramebuffers = function() {
-        /* Two framebuffers, used as ping pong buffers for progressive IBR */
-        iblRenderBuffer = gl.createFramebuffer();
-        iblColorBuffer = gl.createFramebuffer();
-        iblTexture1 = gl.createTexture();
-        iblTexture2 = gl.createTexture();
-        let depthBuffer = gl.createRenderbuffer();
-        let colorBuffer = gl.createRenderbuffer();
+        if (iblRenderBuffer == null) iblRenderBuffer = gl.createFramebuffer();
+        if (iblColorBuffer == null) iblColorBuffer = gl.createFramebuffer();
 
         iblRenderBuffer.width = canvas.width * quality;
         iblRenderBuffer.height = canvas.height * quality;
@@ -343,22 +348,30 @@ export default function ModelViewport(spec) {
         iblColorBuffer.height = canvas.height * quality;
 
         /* Setup texture to blit to  */
-        gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+        if (iblTexture1 == null)  {
+          iblTexture1 = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+        }
+        if (iblTexture2 == null)  {
+          iblTexture2 = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+        }
 
-        gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+        if( depthBuffer==null) depthBuffer = gl.createRenderbuffer();
+        if( colorBuffer==null) colorBuffer = gl.createRenderbuffer();
 
         /* Setup render buffers */
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width, iblRenderBuffer.height);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         /* Setup frame buffers */
         gl.bindFramebuffer(gl.FRAMEBUFFER, iblRenderBuffer);
@@ -369,6 +382,34 @@ export default function ModelViewport(spec) {
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    },
+
+    updateIBLTextures = function(texIdx) {
+      initIBLFramebuffers();
+      iblRenderBuffer.width = canvas.width * quality;
+      iblRenderBuffer.height = canvas.height * quality;
+
+      iblColorBuffer.width = canvas.width * quality;
+      iblColorBuffer.height = canvas.height * quality;
+
+      if (texIdx == 0) {
+        /* Setup texture to blit to  */
+        gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+      }
+      else {
+        gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
+      }
+
+      /* Clear global state */
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
     setMainUniforms = function(shaderProgram){
@@ -639,9 +680,25 @@ export default function ModelViewport(spec) {
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.clearColor(0, 0, 0, 0);
+      gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       drawFinalRender();
+
+
+      if (queueRefresh1) {
+        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        updateIBLTextures(iblCurrentBuffer);
+        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        queueRefresh1 = false;
+        resetIBL();
+      }
+      else if (queueRefresh2) {
+        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        updateIBLTextures(iblCurrentBuffer);
+        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        queueRefresh2 = false;
+        resetIBL();
+      }
     },
 
     animate = function() {
@@ -1039,6 +1096,7 @@ export default function ModelViewport(spec) {
     setIBL,
     setHeatmap,
     setIntensity,
-    setMaxConvergence
+    setMaxConvergence,
+    setQuality
   });
 }

@@ -79,6 +79,14 @@ export default function Model(){
       });
     },
 
+    setQuality = function(newQuality){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setQuality" in v) {
+          v.setQuality(newQuality);
+        }
+      });
+    },
+
     loadAnalyticalBRDF = function(in_file){
       return loadAnalytical_getUniforms(in_file, viewers);
     };
@@ -113,6 +121,7 @@ export default function Model(){
     setIBL,
     setIntensity,
     setMaxConvergence,
+    setQuality,
     loadAnalyticalBRDF,
   });
 }

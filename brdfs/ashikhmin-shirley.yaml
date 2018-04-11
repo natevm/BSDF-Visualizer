@@ -1,0 +1,69 @@
+# "An Anisotropic Phong BRDF Model" by Ashikhmin, Shirley 2000
+
+# See p.2 of the paper for parameters
+uniforms:
+  Rs:
+    type: "float"
+    min: 0
+    max: 1
+    default: 0.05
+  Rd:
+    type: "float"
+    min: 0
+    max: 1
+    default: 0.9
+  nu:
+    type: "float"
+    min: 10
+    max: 10000
+    default: 100
+  nv:
+    type: "float"
+    min: 10
+    max: 10000
+    default: 100
+  NdotL:
+    type: "bool"
+    default: false
+brdf: >
+  #define M_PI 3.1415926535897932384626433832795
+
+  float sqr(float x){
+    return x*x;
+  }
+
+  // Schlick approximation
+
+  float F(float KdotH){
+    return Rs + (1.0 - Rs)*pow(1.0 - KdotH, 5.0);
+  }
+
+  // k1 - normalized vector to light.
+  // k2 - normalized vector to viewer.
+
+  float rho_s(vec3 k1, vec3 k2, vec3 N, vec3 H, vec3 u, vec3 v, float NdotH, float KdotH){
+    float scale = sqrt((nu+1.0)*(nv+1.0))/(8.0*M_PI);
+    float spec_num = pow(NdotH, (nu*sqr(dot(H,u)) + nv*sqr(dot(H,v)))/(1.0 - sqr(NdotH)));
+    float spec_denom = KdotH*max(dot(N,k1),dot(N,k2));
+
+    return scale * (spec_num / spec_denom) * F(KdotH);
+  }
+
+  float rho_d(vec3 k1, vec3 k2, vec3 N){
+    float scale = 28.0*Rd/(23.0*M_PI); //normalization
+    float t1 = (1.0 - pow(1.0 - dot(N,k1)/2.0,5.0));
+    float t2 = (1.0 - pow(1.0 - dot(N,k2)/2.0,5.0));
+    return scale * (1.0 - Rs) * t1 * t2;
+  }
+
+  vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+    vec3 k1 = L;
+    vec3 k2 = V;
+    vec3 u = X;
+    vec3 v = Y;
+    vec3 H = normalize(L+V);
+    float NdotH = dot(N,H);
+    float KdotH = dot(V,H);
+
+    return vec3(rho_s(k1, k2, N, H, u, v, NdotH, KdotH) + rho_d(k1, k2, N));
+  }

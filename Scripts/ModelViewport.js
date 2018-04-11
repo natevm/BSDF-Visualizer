@@ -643,7 +643,7 @@ export default function ModelViewport(spec) {
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
-    // (called when we load a Disney .brdf)
+    // (called when we load a BRDF)
     /////////////////////
     addUniformsFunc = function(addUniformsHelper){
       defaultShaderProgram = addUniformsHelper(gl);

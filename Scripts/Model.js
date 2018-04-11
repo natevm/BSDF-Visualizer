@@ -1,6 +1,6 @@
 "use strict";
 
-import {loadBRDF_disneyFormat, compile_and_link_shdr} from './gl-wrangling-funcs.js';
+import {compile_and_link_shdr} from './gl-wrangling-funcs.js';
 import {loadAnalytical_getUniforms} from './gl-wrangling-funcs.js';
 
 //************************

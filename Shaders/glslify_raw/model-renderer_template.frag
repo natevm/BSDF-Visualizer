@@ -39,15 +39,48 @@ in vec4 vProjPosition;
 
 out vec4 vColor;
 
-//From Disney's BRDF Explorer:
-//https://www.disneyanimation.com/technology/brdf.html
-//(see DISNEY_LICENSE at the root of this repository
-//for a complete copy of their license).
+//TODO: can we make inVec const?
+//TODO: can we do this with less branching? Possibly inefficient on GPU.
 void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
 {
-    uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
-    uVec = normalize(cross(inVec, uVec));
-    vVec = normalize(cross(inVec, uVec));
+  //inVec is +z in tangent space (the normal direction)
+  //uVec is +x in tangent space.
+  //vVec is +y in tangent space.
+
+  //This was created to match Daqi's code in selectPointEventFunction
+  //in ModelViewport.js
+  vec3 normalDir = inVec;
+  vec3 projNormal = vec3(normalDir.x, 0, normalDir.z);
+  vec3 bitangent;
+  vec3 tangent;
+  if (projNormal[2] == 0.0) {
+      if (projNormal[0] > 0.0) {
+          tangent = vec3(0.0,0.0,-1.0);
+          bitangent = vec3(0.0,1.0,0.0);
+      } else if (projNormal[0] < 0.0) {
+          tangent = vec3(0.0,0.0,1.0);
+          bitangent = vec3(0.0,1.0,0.0);
+      } else {
+          tangent = vec3(1.0,0.0,0.0);
+          bitangent = vec3(0.0,0.0,-1.0);
+      }
+  } else {
+      vec3 xdir;
+      if(projNormal[2] > 0.0) {
+          xdir = vec3(1.0,0.0,0.0);
+      } else { // projNormal[2] < 0
+          xdir = vec3(-1.0,0.0,0.0);
+      }
+      bitangent = cross(projNormal, xdir);
+      bitangent = normalize(bitangent);
+      tangent = cross(bitangent, projNormal);
+      tangent = normalize(tangent);
+  }
+
+  bitangent = cross(tangent, normalDir);
+
+  uVec = tangent;
+  vVec = bitangent;
 }
 
 //L, V, N assumed to be unit vectors
@@ -85,11 +118,18 @@ void main(void) {
             float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
             float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
             vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
-            color += (uIntensity * BRDF(mat3(uVMatrix) * L, V, N, X, Y) * dot(N, mat3(uVMatrix) * L) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
+            vec3 color_inc = (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0)  * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
+            if(NdotL){
+              color_inc *= clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0);
+            }
+            color += color_inc;
         }
     } else {
         vec3 L = mat3(uVMatrix) * normalize(uLightDirection);
-        color = (uIntensity * dot(N, L) * BRDF(L, V, N, X, Y));
+        color = (uIntensity * max(BRDF(L, V, N, X, Y),0.0));
+        if(NdotL){
+          color *= clamp(dot(N, L),0.0,1.0);
+        }
     }
 
     if (uHeatmap) color = jet(clamp(color.x/hdr_max,0.0,1.0)).xyz;

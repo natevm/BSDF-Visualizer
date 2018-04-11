@@ -146,11 +146,11 @@ export default function GUI(inModel){
     },
 
     setupUICallbacks = function(){
-      setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhman_shirley.brdf-es");
-      setupButtonCallback(d3.select("#btn2"), "./brdfs/d_phong.brdf-es");
-      setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.brdf-es");
-      setupButtonCallback(d3.select("#btn4"), "./brdfs/orennayar.brdf-es");
-      setupButtonCallback(d3.select("#btn5"), "./brdfs/ross_li.brdf-es");
+      setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhmin-shirley.yaml");
+      setupButtonCallback(d3.select("#btn2"), "./brdfs/normalized_phong.yaml");
+      setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");
+      setupButtonCallback(d3.select("#btn4"), "./brdfs/oren-nayar.yaml");
+      setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
 
       //Set initial values
       //now this slider only controls light theta and phi
@@ -249,7 +249,7 @@ export default function GUI(inModel){
   //attach a callback to when the model is finished loading.
   /*
    *var xhr = new XMLHttpRequest();
-   *xhr.open("GET", './brdfs/ashikhman_shirley.brdf-es');
+   *xhr.open("GET", './brdfs/ashikhman_shirley.yaml');
    *xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
    *xhr.onload = function()
    *{

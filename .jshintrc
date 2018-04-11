@@ -11,6 +11,7 @@
     "vec4" : true,
     "OBJ"  : true,
     "d3"   : true,
-    "$"    : true
+    "$"    : true,
+    "jsyaml" : true
   }
 }

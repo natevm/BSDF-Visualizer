@@ -465,7 +465,7 @@ export default function BRDFViewport(spec) {
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
-    // (called when we load a Disney .brdf)
+    // (called when we load a BRDF)
     /////////////////////
     addUniformsFunc = function(addUniformsHelper){
       lobeProgram = addUniformsHelper(gl);

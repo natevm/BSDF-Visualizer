@@ -36,7 +36,6 @@ export default function ModelViewport(spec) {
     },
     setIBL = function(input_bool){
       useIBL = input_bool;
-      maxConvergence = (useIBL) ? 512 : 4;
       if (useIBL) {
         setEnvironmentTexture(cubemapURL);
       }else {
@@ -47,6 +46,9 @@ export default function ModelViewport(spec) {
     setIntensity = function(newIntensity){
       intensity = newIntensity;
       resetIBL();
+    },
+    setMaxConvergence = function(newMaxConvergence){
+      maxConvergence = newMaxConvergence * 20000 + 1;
     };
   let
     { canvasName, width, height, shdrDir, inputByModel } = spec,
@@ -100,12 +102,12 @@ export default function ModelViewport(spec) {
     rttFramebuffer,
     rttTexture,
 
-    iblFramebuffer1,
-    iblFramebuffer2,
-    iblTexture1,
-    iblTexture2,
-    currentIBLBuffer = 0,
-    maxConvergence = 100,
+    iblRenderBuffer,
+    iblColorBuffer,
+    iblTexture1, iblTexture2,
+    iblCurrentBuffer = 0,
+    maxConvergence = 10000,
+    quality = 1.0,
 
     intensity = 2.5,
     useIBL = true,
@@ -126,6 +128,8 @@ export default function ModelViewport(spec) {
       }
       gl.clearColor(0, 0, 0, 1);
       gl.enable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.viewportWidth = canvas.width;
       gl.viewportHeight = canvas.height;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -231,6 +235,7 @@ export default function ModelViewport(spec) {
     initFinalRenderShaderProgram = function() {
       finalRenderShaderProgram.aVertexPosition = gl.getAttribLocation(finalRenderShaderProgram, "aVertexPosition");
       finalRenderShaderProgram.uTex = gl.getUniformLocation(finalRenderShaderProgram, "Tex");
+      finalRenderShaderProgram.uResolution = gl.getUniformLocation(finalRenderShaderProgram, "resolution");
 
       /* Setup VAO */
       finalRenderShaderProgram.vao = gl.createVertexArray();
@@ -322,43 +327,43 @@ export default function ModelViewport(spec) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
-    initIBRFramebuffers = function() {
+    initIBLFramebuffers = function() {
         /* Two framebuffers, used as ping pong buffers for progressive IBR */
-        iblFramebuffer1 = gl.createFramebuffer();
-        iblFramebuffer2 = gl.createFramebuffer();
+        iblRenderBuffer = gl.createFramebuffer();
+        iblColorBuffer = gl.createFramebuffer();
         iblTexture1 = gl.createTexture();
         iblTexture2 = gl.createTexture();
-        let renderbuffer1 = gl.createRenderbuffer();
-        let renderbuffer2 = gl.createRenderbuffer();
+        let depthBuffer = gl.createRenderbuffer();
+        let colorBuffer = gl.createRenderbuffer();
 
-        iblFramebuffer1.width = iblFramebuffer2.width = canvas.width;
-        iblFramebuffer1.height = iblFramebuffer2.height = canvas.height;
+        iblRenderBuffer.width = canvas.width * quality;
+        iblRenderBuffer.height = canvas.height * quality;
 
-        /* Setup textures */
+        iblColorBuffer.width = canvas.width * quality;
+        iblColorBuffer.height = canvas.height * quality;
+
+        /* Setup texture to blit to  */
         gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblFramebuffer1.width, iblFramebuffer1.height, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
 
         gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblFramebuffer2.width, iblFramebuffer2.height, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
 
         /* Setup render buffers */
-        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer1);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblFramebuffer1.width, iblFramebuffer1.height);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer2);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblFramebuffer2.width, iblFramebuffer2.height);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width, iblRenderBuffer.height);
+
+        gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height);
 
         /* Setup frame buffers */
-        gl.bindFramebuffer(gl.FRAMEBUFFER, iblFramebuffer1);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer1)
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, iblTexture1, 0);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, iblFramebuffer2);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer2);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, iblTexture2, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, iblRenderBuffer);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, colorBuffer);
 
         /* Clear global state */
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -398,7 +403,7 @@ export default function ModelViewport(spec) {
       /* IBR stuff */
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, (currentIBLBuffer == 0) ? iblTexture2 : iblTexture1);
+      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer == 0) ? iblTexture1 : iblTexture2);
       gl.uniform1i(shaderProgram.prevFrameSamplerUniform, 1);
       gl.uniform1f(shaderProgram.timeUniform, Math.random());
       gl.uniform1f(shaderProgram.totalFramesUniform, totalFrames);
@@ -427,8 +432,9 @@ export default function ModelViewport(spec) {
     setFinalRenderUniforms = function(shaderProgram) {
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, (currentIBLBuffer == 0) ? iblTexture2 : iblTexture1);
+      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer == 0) ? iblTexture1 : iblTexture2);
       gl.uniform1i(shaderProgram.uTex, 0);
+      gl.uniform2fv(shaderProgram.uResolution, new Float32Array([canvas.width, canvas.height]));
     },
 
     loadModels = function(){
@@ -514,8 +520,6 @@ export default function ModelViewport(spec) {
     },
 
     drawObject = function(model) {
-      let framebuffer = (currentIBLBuffer == 0) ? iblFramebuffer1 : iblFramebuffer2;
-
       /*
          Takes in a model that points to a mesh and draws the object on the scene.
          Assumes that the setMainUniforms function exists
@@ -524,9 +528,6 @@ export default function ModelViewport(spec) {
       //    gl2.useProgram(shaderProgram);
 
       //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
       gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
       defaultShaderProgram.applyAttributePointers(model);
 
@@ -534,13 +535,9 @@ export default function ModelViewport(spec) {
       gl.useProgram(defaultShaderProgram);
       setMainUniforms(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-
-      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer);
-      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     },
 
     drawSkybox = function() {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.useProgram(skyboxShaderProgram);
       setSkyboxUniforms(skyboxShaderProgram);
       gl.bindVertexArray(skyboxShaderProgram.vao);
@@ -549,16 +546,18 @@ export default function ModelViewport(spec) {
     },
 
     drawFinalRender = function() {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.useProgram(finalRenderShaderProgram);
       setFinalRenderUniforms(finalRenderShaderProgram);
       gl.bindVertexArray(finalRenderShaderProgram.vao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
-      currentIBLBuffer = (currentIBLBuffer == 0) ? 1 : 0;
+
+      iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
     },
 
     drawNormalDepthTexture = function(model){
+      gl.viewport(0, 0, canvas.width, canvas.height);
+
       gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
       gl.clearColor(0.0,0.0,0.0,0.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -572,8 +571,7 @@ export default function ModelViewport(spec) {
 
     drawScene = function() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
 
       let teapotToWorld = mat4.create();
       let worldToCamera = mat4.create();
@@ -615,8 +613,34 @@ export default function ModelViewport(spec) {
       normalMatrix = mat4.transpose(normalMatrix, vmMatrix);
 
       drawNormalDepthTexture(models.teapot);
+
+      /* Swap blitted texture */
+      gl.bindFramebuffer(gl.FRAMEBUFFER, iblColorBuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
+        (iblCurrentBuffer == 0) ? iblTexture2 : iblTexture1, 0);
+      gl.clearColor(0, 0, 0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, iblRenderBuffer);
+      gl.clearColor(0, 0, 0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.viewport(0, 0, iblRenderBuffer.width, iblRenderBuffer.height);
       drawObject(models.teapot);
       drawSkybox();
+
+      /* Blit multisampled FBO to texture */
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, iblColorBuffer);
+      gl.blitFramebuffer(
+          0, 0, iblRenderBuffer.width, iblRenderBuffer.width,
+          0, 0, iblColorBuffer.width, iblColorBuffer.width,
+          gl.COLOR_BUFFER_BIT, gl.LINEAR
+      );
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       drawFinalRender();
     },
 
@@ -669,7 +693,7 @@ export default function ModelViewport(spec) {
     },
 
     incrementIBL = function() {
-      totalFrames += 1;
+      totalFrames = parseFloat(totalFrames) + 1;
       if (totalFrames > maxConvergence) totalFrames = maxConvergence;
     },
 
@@ -913,7 +937,7 @@ export default function ModelViewport(spec) {
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "finalRender.frag",
+      url: shdrDir + "glslify_processed/finalRender.frag",
       success: function(result){
         finalRenderFragSrc = result.trim();
       }, error: function(result) {
@@ -938,7 +962,7 @@ export default function ModelViewport(spec) {
       initFinalRenderShaderProgram();
 
       initRTTFramebuffer();
-      initIBRFramebuffers();
+      initIBLFramebuffers();
 
       loadModels();
       loadEnvironmentMap();
@@ -1014,6 +1038,7 @@ export default function ModelViewport(spec) {
     addUniformsFunc,
     setIBL,
     setHeatmap,
-    setIntensity
+    setIntensity,
+    setMaxConvergence
   });
 }

@@ -71,6 +71,14 @@ export default function Model(){
       });
     },
 
+    setMaxConvergence = function(maxConvergence){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setMaxConvergence" in v) {
+          v.setMaxConvergence(maxConvergence);
+        }
+      });
+    },
+
     loadAnalyticalBRDF = function(in_file){
       return loadAnalytical_getUniforms(in_file, viewers);
     };
@@ -104,6 +112,7 @@ export default function Model(){
     setHeatmap,
     setIBL,
     setIntensity,
+    setMaxConvergence,
     loadAnalyticalBRDF,
   });
 }

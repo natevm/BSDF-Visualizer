@@ -140,13 +140,9 @@ export default function GUI(inModel){
           if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-            loadAnalytical(blob);
-            //model.loadAnalyticalBRDF([blob]).then(returnResult => {
-              ////console.log(returnResult);
-              //const {uniforms, uniform_update_funcs} = returnResult;
-              //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-                //brdfCheckboxDiv);
-            //});
+            loadAnalytical(blob).then(resetIBL => {
+              model.resetIBL();
+            });
           }
         };
         xhr.send();

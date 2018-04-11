@@ -21,7 +21,10 @@ export default function GUI(inModel){
     incidentPhiEnvelope,
     intensityEnvelope,
     convergenceEnvelope,
+<<<<<<< HEAD
     qualityEnvelope,
+=======
+>>>>>>> master
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
@@ -181,7 +184,6 @@ export default function GUI(inModel){
       qualityEnvelope.addEventListener('change', (event) => {
         model.setQuality(event.target.value);
       });
-
 
       // document.getElementById("slider_camRot").oninput = (event) => {
       //   model.setCamRot(event.target.value);

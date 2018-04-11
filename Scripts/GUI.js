@@ -21,10 +21,7 @@ export default function GUI(inModel){
     incidentPhiEnvelope,
     intensityEnvelope,
     convergenceEnvelope,
-<<<<<<< HEAD
     qualityEnvelope,
-=======
->>>>>>> master
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,

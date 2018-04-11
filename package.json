@@ -4,7 +4,8 @@
   "description": "Reflectance Visualization Tool",
   "main": "main.js",
   "dependencies": {
-    "glsl-colormap": "^1.0.1"
+    "glsl-colormap": "^1.0.1",
+    "glsl-fxaa": "^3.0.0"
   },
   "devDependencies": {},
   "scripts": {

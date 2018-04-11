@@ -97,8 +97,36 @@ vec2 toSpherical(vec3 dir) {
     return vec2(u, 1.0 - v);
 }
 
-float rand(vec2 co){
-    return (2.0 * fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453)) - 1.0;
+// From LGWJGL3
+vec3 randomCosineWeightedHemispherePoint(vec3 rand, vec3 n) {
+  float r = rand.x * 0.5 + 0.5; // [-1..1) -> [0..1)
+  float angle = (rand.y + 1.0) * PI; // [-1..1] -> [0..2*PI)
+  float sr = sqrt(r);
+  vec2 p = vec2(sr * cos(angle), sr * sin(angle));
+  /*
+   * Unproject disk point up onto hemisphere:
+   * 1.0 == sqrt(x*x + y*y + z*z) -> z = sqrt(1.0 - x*x - y*y)
+   */
+  vec3 ph = vec3(p.xy, sqrt(1.0 - p*p));
+  /*
+   * Compute some arbitrary tangent space for orienting
+   * our hemisphere 'ph' around the normal. We use the camera's up vector
+   * to have some fix reference vector over the whole screen.
+   */
+  vec3 tangent = normalize(rand);
+  vec3 bitangent = cross(tangent, n);
+  tangent = cross(bitangent, n);
+
+  /* Make our hemisphere orient around the normal. */
+  return tangent * ph.x + bitangent * ph.y + n * ph.z;
+}
+
+float gold_noise(in vec2 coordinate, in float seed){
+    float phi = 1.61803398874989484820459 * 00000.1; // Golden Ratio
+    float pi  = 3.14159265358979323846264 * 00000.1; // pi
+    float sq2 = 1.41421356237309504880169 * 10000.0; // Square Root of Two
+
+    return (2.0 * fract(sin(dot(coordinate*(seed+phi), vec2(phi, pi)))*sq2)) - 1.0;
 }
 
 vec4 jet (float x_0) {
@@ -137,10 +165,10 @@ void main(void) {
     vec3 color = vec3(0.0,0.0,0.0);
     if (uIBL) {
         for (int i = 1; i <= 16; ++i) {
-            float rand1 = rand(gl_FragCoord.xy * uTime * float(i * 3));
-            float rand2 = rand(gl_FragCoord.xy * uTime * float(i * 5));
-            float rand3 = rand(gl_FragCoord.xy * uTime * float(i * 7));
-            vec3 L = normalize(vWorldNormal + normalize(vec3(rand1, rand2, rand3)));
+            float rand1 = gold_noise(gl_FragCoord.xy, uTime * float(i * 3));
+            float rand2 = gold_noise(gl_FragCoord.xy, uTime * float(i * 5));
+            float rand3 = gold_noise(gl_FragCoord.xy, uTime * float(i * 7));
+            vec3 L = normalize(randomCosineWeightedHemispherePoint(vec3(rand1, rand2, rand3), (vWorldNormal)));
             vec3 color_inc = (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0)  * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
             if(NdotL){
               color_inc *= clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0);

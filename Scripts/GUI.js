@@ -20,6 +20,7 @@ export default function GUI(inModel){
     incidentThetaEnvelope,
     incidentPhiEnvelope,
     intensityEnvelope,
+    convergenceEnvelope,
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
@@ -84,6 +85,9 @@ export default function GUI(inModel){
 
       intensityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Intens.",
         "slider_intensity", 0, 5, 2.5);
+
+      convergenceEnvelope = addEnvelopeControl(ptLightSliderDiv, "Conv.",
+        "slider_convergence", 0, 1, .5);
 
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);
@@ -164,6 +168,10 @@ export default function GUI(inModel){
 
       intensityEnvelope.addEventListener('change', (event) => {
         model.setIntensity(event.target.value);
+      });
+
+      convergenceEnvelope.addEventListener('change', (event) => {
+        model.setMaxConvergence(event.target.value);
       });
 
       // document.getElementById("slider_camRot").oninput = (event) => {

@@ -219,6 +219,7 @@ export default function GUI(inModel){
             uniform_update_funcs.get(name).forEach(f => {
               f(event.target.value);
             });
+            model.resetIBL()
           });
         } else if (curr_u.type === "bool") {
           let checkboxDiv = checkboxContainer.append("div");
@@ -244,6 +245,7 @@ export default function GUI(inModel){
             //console.log(event.target.checked);
             uniform_update_funcs.get(name).forEach(f => {
               f(event.target.checked);
+              model.resetIBL();
             });
           });
 

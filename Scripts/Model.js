@@ -63,6 +63,14 @@ export default function Model(){
       });
     },
 
+    resetIBL = function(){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "resetIBL" in v) {
+          v.resetIBL();
+        }
+      });
+    },
+
     setIntensity = function(intensity){
       viewers.forEach(function(v) {
         if (v.getInputByModel() === true && "setIntensity" in v) {
@@ -119,6 +127,7 @@ export default function Model(){
     setCamRot,
     setHeatmap,
     setIBL,
+    resetIBL,
     setIntensity,
     setMaxConvergence,
     setQuality,

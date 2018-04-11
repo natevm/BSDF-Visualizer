@@ -1094,6 +1094,7 @@ export default function ModelViewport(spec) {
     getTemplateInfo,
     addUniformsFunc,
     setIBL,
+    resetIBL,
     setHeatmap,
     setIntensity,
     setMaxConvergence,

@@ -52,7 +52,7 @@ export default function ModelViewport(spec) {
     },
 
     setQuality = function(newQuality){
-      quality = Math.max(newQuality, .01);
+      quality = Math.max(newQuality, 0.01);
       queueRefresh1 = true;
       queueRefresh2 = true;
     };

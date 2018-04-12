@@ -37,34 +37,20 @@ export default function BRDFViewport(spec) {
     oldCamrotDeg = 0.0,
 
     get_initial_V = function(){
-       //gl-matrix stores matrices in column-major order
-       //Therefore, the following matrix:
-
-       //[1, 0, 0, 0,
-       //0, 1, 0, 0,
-       //0, 0, 1, 0,
-       //x, y, z, 0]
-
-       //Is equivalent to this in the OpenGL docs:
-
-       //1 0 0 x
-       //0 1 0 y
-       //0 0 1 z
-       //0 0 0 0
-
-      // BRDF is in tangent space. Tangent space is Z-up.
-      // Also, we need to move the camera so that it's not at the origin
       var cam_z = 1.5; // z-position of camera in camera space
       var cam_y = 0.5; // altitude of camera
-      var init_V = [0,      0,     1, 0,
-                    1,      0,     0, 0,
+      var init_V = [1,      0,     0, 0,
                     0,      1,     0, 0,
+                    0,      0,     1, 0,
                     0, -cam_y,-cam_z, 1];
       return init_V;
     },
     initial_V = get_initial_V(),
+    Tangent2World = mat4.fromValues(0, 0, 1, 0,
+                                    1, 0, 0, 0,
+                                    0, 1, 0, 0,
+                                    0, 0, 0, 1),
     V = mat4.clone(initial_V),
-    M,
     P,
     num_lobe_verts = 0,
     num_line_verts = 0,
@@ -393,7 +379,7 @@ export default function BRDFViewport(spec) {
     // (called when we load a BRDF)
     /////////////////////
     addUniformsFunc = function(addUniformsHelper){
-      lobe_renderer.addUniformsFunc(addUniformsHelper, M, V, P);
+      lobe_renderer.addUniformsFunc(addUniformsHelper, Tangent2World, V, P);
     },
 
     /////////////////////
@@ -415,10 +401,10 @@ export default function BRDFViewport(spec) {
     //Go from BRDF's coordinate system to world space.
     //See https://github.com/n8vm/BSDF-Visualizer/wiki/BxDF-and-camera-coordinate-systems
     //TODO: The above page may need to be updated...
-    M = mat4.fromValues(0, 1, 0, 0,
-                        1, 0, 0, 0,
-                        0, 0, 1, 0,
-                        0, 0, 0, 1);
+    //M = mat4.fromValues(0, 1, 0, 0,
+                        //1, 0, 0, 0,
+                        //0, 0, 1, 0,
+                        //0, 0, 0, 1);
 
     let fov = Math.PI * 0.5;
     let aspectRatio = canvas.width/canvas.height;
@@ -428,7 +414,7 @@ export default function BRDFViewport(spec) {
 
     lobe_renderer = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
       lobe_vert_shader_name: lobe_vert_shader_name, lobe_frag_shader_name: lobe_frag_shader_name,
-      shdrDir: shdrDir, initial_M: M, initial_V: initial_V, initial_P: P});
+      shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: initial_V, initial_P: P});
   }
   //************* End "constructor" **************
 

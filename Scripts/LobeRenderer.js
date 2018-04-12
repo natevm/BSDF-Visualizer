@@ -15,7 +15,7 @@ import {calc_delTheta, calc_delPhi, polar_to_cartesian, get_reflected,
 export default function LobeRenderer(spec) {
   let
     {gl, starting_theta, starting_phi, lobe_vert_shader_name, lobe_frag_shader_name,
-      shdrDir, initial_M, initial_V, initial_P} = spec,
+      shdrDir, initial_Tangent2World, initial_V, initial_P} = spec,
 
     // Programs are initialized in createShaders
     lobeProgram,
@@ -49,39 +49,77 @@ export default function LobeRenderer(spec) {
     in_phi_deg = starting_phi,
 
     //called when user loads a BRDF
-    addUniformsFunc = function(addUniformsHelper, M, V, P){
+    addUniformsFunc = function(addUniformsHelper, Tangent2World, V, P){
       lobeProgram = addUniformsHelper(gl);
       //we need to set up our uniforms again because
       //the above function returned a new lobeProgram.
       setupUniformsLobe();
       setupGeometry();
-      setMVP(M, V, P);
+      //setMVP(M, V, P);
+      setTangent2World(Tangent2World);
+      setV(V);
+      setP(P);
       renderReady = true;
     },
 
-    setV_helper = function(V,vUniformLoc){
-      gl.uniformMatrix4fv(vUniformLoc, false, V);
-    },
+    //setV_helper = function(V,uniformLoc){
+      //gl.uniformMatrix4fv(uniformLoc, false, V);
+    //},
 
     setV = function(V){
       gl.useProgram(lobeProgram);
-      setV_helper(V, lobe_vUniformLoc);
+      gl.uniformMatrix4fv(lobe_vUniformLoc, false, V);
+      //setV_helper(V, lobe_vUniformLoc);
       gl.useProgram(lineProgram);
-      setV_helper(V, line_vUniformLoc);
+      gl.uniformMatrix4fv(line_vUniformLoc, false, V);
+      //setV_helper(V, line_vUniformLoc);
     },
 
-    setMVP = function(M, V, P){
-      let set = (program, mUniformLoc, vUniformLoc, pUniformLoc) => {
-        gl.useProgram(program);
+    //setMVP = function(M, V, P){
+      //let set = (program, mUniformLoc, vUniformLoc, pUniformLoc) => {
+        //gl.useProgram(program);
 
-        //gl.uniformMatrix4fv(vUniformLoc, false, V); //View
-        setV_helper(V, vUniformLoc);
-        gl.uniformMatrix4fv(mUniformLoc, false, M); //Model
-        gl.uniformMatrix4fv(pUniformLoc, false, P); //Projection
+        ////gl.uniformMatrix4fv(vUniformLoc, false, V); //View
+        //setV_helper(V, vUniformLoc);
+        //gl.uniformMatrix4fv(mUniformLoc, false, M); //Model
+        //gl.uniformMatrix4fv(pUniformLoc, false, P); //Projection
+      //};
+
+      //set(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
+      //set(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+    //},
+
+    setM = function(M){
+      gl.useProgram(lobeProgram);
+      gl.uniformMatrix4fv(lobe_mUniformLoc, false, M);
+      gl.useProgram(lineProgram);
+      gl.uniformMatrix4fv(line_mUniformLoc, false, M);
+    },
+
+    setP = function(P){
+      gl.useProgram(lobeProgram);
+      gl.uniformMatrix4fv(lobe_pUniformLoc, false, P);
+      gl.useProgram(lineProgram);
+      gl.uniformMatrix4fv(line_pUniformLoc, false, P);
+    },
+
+
+    setTangent2World = function(Tangent2World){
+      let M = mat4.create();
+      let BRDF2Tangent = mat4.fromValues(0, 1, 0, 0,
+                                         1, 0, 0, 0,
+                                         0, 0, 1, 0,
+                                         0, 0, 0, 1);
+      mat4.multiply(M, Tangent2World, BRDF2Tangent);
+
+      let setM = () => {
+        gl.useProgram(lobeProgram);
+        gl.uniformMatrix4fv(lobe_mUniformLoc, false, M);
+        gl.useProgram(lineProgram);
+        gl.uniformMatrix4fv(line_mUniformLoc, false, M);
       };
 
-      set(lobeProgram, lobe_mUniformLoc, lobe_vUniformLoc, lobe_pUniformLoc);
-      set(lineProgram, line_mUniformLoc, line_vUniformLoc, line_pUniformLoc);
+      setM();
     },
 
     setupUniformsLobe = function() {
@@ -407,7 +445,10 @@ export default function LobeRenderer(spec) {
       // you can process it here
       setupShaders(lobeVertSrc, lobeFragSrc, lineVertSrc, lineFragSrc);
       setupGeometry();
-      setMVP(initial_M, initial_V, initial_P);
+      //setMVP(initial_M, initial_V, initial_P);
+      setTangent2World(initial_Tangent2World);
+      setV(initial_V);
+      setP(initial_P);
       renderReady = true;
     }, function(err) {
         throw "Shader load error: " + err;
@@ -422,6 +463,7 @@ export default function LobeRenderer(spec) {
     updatePhi,
     addUniformsFunc,
     setV,
-    setMVP
+    //setMVP
+    setTangent2World
   });
 }

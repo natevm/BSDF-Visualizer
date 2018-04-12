@@ -1039,12 +1039,14 @@ export default function ModelViewport(spec) {
 
       loadModels();
       loadEnvironmentMap();
+
+
     }, function(err) {
         console.log("Shader Load Error: " + err);
     });
 
     //mouse events
-    //TODO: these mouse events should really go into GUI.js
+    //TODO: these mouse handlers should really go into GUI.js
     document.getElementById(canvasName).ondblclick = (event) => {
         if (pickPointNDC[0] < 500){
             pickPointNDCStored = vec3.clone(pickPointNDC);

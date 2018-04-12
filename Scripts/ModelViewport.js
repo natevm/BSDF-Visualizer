@@ -801,9 +801,8 @@ export default function ModelViewport(spec) {
     },
 
     getLinkedCamRotMatrix = function(){
-       //let res = mat3.create();
-       //return mat3.multiply(res, camRotMatrix, normalRotMatrix);
-      return normalRotMatrix;
+       let res = mat3.create();
+       return mat3.multiply(res, camRotMatrix, normalRotMatrix);
     },
 
 

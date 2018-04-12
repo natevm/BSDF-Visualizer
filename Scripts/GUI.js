@@ -88,7 +88,7 @@ export default function GUI(inModel){
         "slider_intensity", 0, 5, 2.5);
 
       convergenceEnvelope = addEnvelopeControl(ptLightSliderDiv, "Conv.",
-        "slider_convergence", 0, 1, .5);
+        "slider_convergence", 0, 1, 0.5);
 
       qualityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Qual.",
         "slider_quality", 0, 3, 1.0);
@@ -113,7 +113,7 @@ export default function GUI(inModel){
     },
 
     loadAnalytical = function(file){
-      model.loadAnalyticalBRDF(file).then(returnResult => {
+      return model.loadAnalyticalBRDF(file).then(returnResult => {
         //console.log(returnResult);
         const {uniforms, uniform_update_funcs} = returnResult;
         spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
@@ -215,7 +215,7 @@ export default function GUI(inModel){
             uniform_update_funcs.get(name).forEach(f => {
               f(event.target.value);
             });
-            model.resetIBL()
+            model.resetIBL();
           });
         } else if (curr_u.type === "bool") {
           let checkboxDiv = checkboxContainer.append("div");

@@ -249,7 +249,6 @@ function uniformsInfo_toString(uniformsInfo){
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
 function brdfTemplSubst(templShdrSrc, brdfYaml){
   let brdf_t = jsyaml.load(brdfYaml);
-  //console.log(brdf_t);
   let uniformsInfo = brdf_t.uniforms;
   if( !uniformsInfo.hasOwnProperty('NdotL') ){
     uniformsInfo.NdotL = {type: "bool", default: true};
@@ -266,7 +265,7 @@ function brdfTemplSubst(templShdrSrc, brdfYaml){
     let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
                                      .replace(brdfFuncHook, brdfFuncStr);
 
-    console.log(substitutedSrc);
+    //console.log(substitutedSrc);
     return {uInfo: uniformsInfo, substSrc: substitutedSrc};
   }
 }

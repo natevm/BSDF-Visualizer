@@ -395,9 +395,9 @@ export default function BRDFViewport(spec) {
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a BRDF)
     /////////////////////
-    addUniformsFunc = function(addUniformsHelper){
-      lobe_renderer.addUniformsFunc(addUniformsHelper);
-    },
+    //addUniformsFunc = function(addUniformsHelper){
+      //lobe_renderer.addUniformsFunc(addUniformsHelper);
+    //},
 
     /////////////////////
     // DRAW
@@ -442,7 +442,7 @@ export default function BRDFViewport(spec) {
     updatePhi,
     updateCamRot,
     updateLinkedCamRot,
-    addUniformsFunc,
+    //addUniformsFunc,
     getInputByModel, //TODO: confusing name. refactor this.
     getTemplateInfo
   });

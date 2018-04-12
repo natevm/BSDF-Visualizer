@@ -63,6 +63,14 @@ export default function Model(){
       });
     },
 
+    resetIBL = function(){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "resetIBL" in v) {
+          v.resetIBL();
+        }
+      });
+    },
+
     setIntensity = function(intensity){
       viewers.forEach(function(v) {
         if (v.getInputByModel() === true && "setIntensity" in v) {
@@ -75,6 +83,14 @@ export default function Model(){
       viewers.forEach(function(v) {
         if (v.getInputByModel() === true && "setMaxConvergence" in v) {
           v.setMaxConvergence(maxConvergence);
+        }
+      });
+    },
+
+    setQuality = function(newQuality){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setQuality" in v) {
+          v.setQuality(newQuality);
         }
       });
     },
@@ -111,8 +127,10 @@ export default function Model(){
     setCamRot,
     setHeatmap,
     setIBL,
+    resetIBL,
     setIntensity,
     setMaxConvergence,
+    setQuality,
     loadAnalyticalBRDF,
   });
 }

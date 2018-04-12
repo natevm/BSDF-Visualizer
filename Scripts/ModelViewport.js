@@ -444,7 +444,7 @@ export default function ModelViewport(spec) {
       /* IBR stuff */
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer == 0) ? iblTexture1 : iblTexture2);
+      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer === 0) ? iblTexture1 : iblTexture2);
       gl.uniform1i(shaderProgram.prevFrameSamplerUniform, 1);
       gl.uniform1f(shaderProgram.timeUniform, Math.random());
       gl.uniform1f(shaderProgram.totalFramesUniform, totalFrames);

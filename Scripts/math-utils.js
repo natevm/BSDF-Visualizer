@@ -1,5 +1,30 @@
 "use strict";
 
+// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
+export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
+
+  var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
+  var rangeInv = 1 / (near - far);
+
+  return [
+    f / aspectRatio, 0,                          0,   0,
+    0,               f,                          0,   0,
+    0,               0,    (near + far) * rangeInv,  -1,
+    0,               0,  near * far * rangeInv * 2,   0
+  ];
+}
+
+//output is unit reflected vector
+//var get_reflected = function(L_hat,N_hat){
+export function get_reflected(L_hat,N_hat){
+  var L_plus_R = vec3.create();
+  vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
+  var R_hat = vec3.create();
+  vec3.sub(R_hat, L_plus_R, L_hat);
+  vec3.normalize(R_hat,R_hat); //I don't think this is needed?
+  return R_hat;
+}
+
 // Conversion code snippets from:
 // http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion//
 

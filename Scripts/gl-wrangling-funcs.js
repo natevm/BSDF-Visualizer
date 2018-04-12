@@ -1,6 +1,6 @@
 "use strict";
 
-import {deg2rad, rotY, rotZ} from './math-utils.js';
+import {deg2rad, rotY, rotZ, get_reflected} from './math-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
 
 //TODO: we want to pass the templatePath / vertPath / fragPath / templateType in as parameters.
@@ -306,19 +306,6 @@ export function init_gl_context(canvas){
   return gl;
 }
 
-// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
-export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
-
-  var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
-  var rangeInv = 1 / (near - far);
-
-  return [
-    f / aspectRatio, 0,                          0,   0,
-    0,               f,                          0,   0,
-    0,               0,    (near + far) * rangeInv,  -1,
-    0,               0,  near * far * rangeInv * 2,   0
-  ];
-}
 
 //TODO: move this into BRDFViewport.js, since it's specific to that viewer.
 //export function get_initial_V(){
@@ -379,19 +366,6 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 
   return program;
 }
-
-//output is unit reflected vector
-//var get_reflected = function(L_hat,N_hat){
-export function get_reflected(L_hat,N_hat){
-  var L_plus_R = vec3.create();
-  vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create();
-  vec3.sub(R_hat, L_plus_R, L_hat);
-  vec3.normalize(R_hat,R_hat); //I don't think this is needed?
-  return R_hat;
-}
-
-//incident angle is the angle between the incident light vector and the normal
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);

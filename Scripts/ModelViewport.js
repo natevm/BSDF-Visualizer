@@ -1045,6 +1045,7 @@ export default function ModelViewport(spec) {
     });
 
     //mouse events
+    //TODO: these mouse events should really go into GUI.js
     document.getElementById(canvasName).ondblclick = (event) => {
         if (pickPointNDC[0] < 500){
             pickPointNDCStored = vec3.clone(pickPointNDC);
@@ -1057,13 +1058,13 @@ export default function ModelViewport(spec) {
     document.getElementById(canvasName).onmousedown = (event) => {
       //console.log("detected!\n");
       mouseDown = true;
-      resetIBL();
       if( event.which === 2 || event.ctrlKey ) {
           selectPointEventFunction(event);
       }
       else {
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
+        resetIBL();
       }
     };
 
@@ -1073,7 +1074,6 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-        resetIBL();
         if( event.which === 2 || event.ctrlKey ) {
             selectPointEventFunction(event);
         }
@@ -1091,6 +1091,7 @@ export default function ModelViewport(spec) {
 
             lastMouseX = newX;
             lastMouseY = newY;
+            resetIBL();
         }
       }
     };

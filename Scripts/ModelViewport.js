@@ -1,5 +1,4 @@
 "use strict";
-
 /*jshint esversion: 6 */
 
 //Requires gl-matrix.js
@@ -225,9 +224,9 @@ export default function ModelViewport(spec) {
 
       /* Skybox triangle */
       let skyboxVerts = new Float32Array([
-        -1.0, -1.0, .99999,
-        -1.0, 3.0, .99999,
-        3.0, -1.0, .99999
+        -1.0, -1.0, 0.99999,
+        -1.0, 3.0, 0.99999,
+        3.0, -1.0, 0.99999
         ]);
       skyboxVertexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
@@ -253,9 +252,9 @@ export default function ModelViewport(spec) {
 
       /* Skybox triangle */
       let finalRenderVerts = new Float32Array([
-        -1.0, -1.0, .9,
-        -1.0, 3.0, .9,
-        3.0, -1.0, .9
+        -1.0, -1.0, 0.9,
+        -1.0, 3.0, 0.9,
+        3.0, -1.0, 0.9
         ]);
       finalRenderVertexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, finalRenderVertexBuffer);
@@ -338,8 +337,8 @@ export default function ModelViewport(spec) {
     },
 
     initIBLFramebuffers = function() {
-        if (iblRenderBuffer == null) iblRenderBuffer = gl.createFramebuffer();
-        if (iblColorBuffer == null) iblColorBuffer = gl.createFramebuffer();
+        if (iblRenderBuffer === null) iblRenderBuffer = gl.createFramebuffer();
+        if (iblColorBuffer === null) iblColorBuffer = gl.createFramebuffer();
 
         iblRenderBuffer.width = canvas.width * quality;
         iblRenderBuffer.height = canvas.height * quality;
@@ -348,14 +347,14 @@ export default function ModelViewport(spec) {
         iblColorBuffer.height = canvas.height * quality;
 
         /* Setup texture to blit to  */
-        if (iblTexture1 == null)  {
+        if (iblTexture1 === null)  {
           iblTexture1 = gl.createTexture();
           gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
         }
-        if (iblTexture2 == null)  {
+        if (iblTexture2 === null)  {
           iblTexture2 = gl.createTexture();
           gl.bindTexture(gl.TEXTURE_2D, iblTexture2);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -363,8 +362,8 @@ export default function ModelViewport(spec) {
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, iblRenderBuffer.width, iblRenderBuffer.height, 0, gl.RGBA, gl.FLOAT, null);
         }
 
-        if( depthBuffer==null) depthBuffer = gl.createRenderbuffer();
-        if( colorBuffer==null) colorBuffer = gl.createRenderbuffer();
+        if( depthBuffer === null) depthBuffer = gl.createRenderbuffer();
+        if( colorBuffer === null) colorBuffer = gl.createRenderbuffer();
 
         /* Setup render buffers */
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
@@ -392,7 +391,7 @@ export default function ModelViewport(spec) {
       iblColorBuffer.width = canvas.width * quality;
       iblColorBuffer.height = canvas.height * quality;
 
-      if (texIdx == 0) {
+      if (texIdx === 0) {
         /* Setup texture to blit to  */
         gl.bindTexture(gl.TEXTURE_2D, iblTexture1);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -473,7 +472,7 @@ export default function ModelViewport(spec) {
     setFinalRenderUniforms = function(shaderProgram) {
       gl.useProgram(shaderProgram);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer == 0) ? iblTexture1 : iblTexture2);
+      gl.bindTexture(gl.TEXTURE_2D, (iblCurrentBuffer === 0) ? iblTexture1 : iblTexture2);
       gl.uniform1i(shaderProgram.uTex, 0);
       gl.uniform2fv(shaderProgram.uResolution, new Float32Array([canvas.width, canvas.height]));
     },
@@ -495,7 +494,7 @@ export default function ModelViewport(spec) {
     },
 
     isPowerOf2 = function(value) {
-      return (value & (value - 1)) == 0;
+      return (value & (value - 1)) === 0;
     },
 
     setEnvironmentColor = function(red = 255, blue = 255, green = 255, alpha = 255) {
@@ -593,7 +592,7 @@ export default function ModelViewport(spec) {
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
 
-      iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+      iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
     },
 
     drawNormalDepthTexture = function(model){
@@ -623,7 +622,7 @@ export default function ModelViewport(spec) {
       mat4.rotate(teapotToWorld, teapotToWorld, -0.5 * Math.PI, [1, 0, 0]);
 
       /* Use this as our model matrix */
-      mMatrix = mat4.clone(teapotToWorld)
+      mMatrix = mat4.clone(teapotToWorld);
 
       /* World to Camera */
       mat4.identity(worldToCamera);
@@ -658,7 +657,7 @@ export default function ModelViewport(spec) {
       /* Swap blitted texture */
       gl.bindFramebuffer(gl.FRAMEBUFFER, iblColorBuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
-        (iblCurrentBuffer == 0) ? iblTexture2 : iblTexture1, 0);
+        (iblCurrentBuffer === 0) ? iblTexture2 : iblTexture1, 0);
       gl.clearColor(0, 0, 0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -686,16 +685,16 @@ export default function ModelViewport(spec) {
 
 
       if (queueRefresh1) {
-        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         updateIBLTextures(iblCurrentBuffer);
-        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         queueRefresh1 = false;
         resetIBL();
       }
       else if (queueRefresh2) {
-        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         updateIBLTextures(iblCurrentBuffer);
-        iblCurrentBuffer = (iblCurrentBuffer == 0) ? 1 : 0;
+        iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         queueRefresh2 = false;
         resetIBL();
       }
@@ -800,11 +799,9 @@ export default function ModelViewport(spec) {
     },
 
     getLinkedCamRotMatrix = function(){
-       let res = mat3.create();
-       //console.log(camRotMatrix);
-        //console.log(normalRotMatrix);
-       return mat3.multiply(res, camRotMatrix, normalRotMatrix);
-        //return normalRotMatrix;
+       //let res = mat3.create();
+       //return mat3.multiply(res, camRotMatrix, normalRotMatrix);
+      return normalRotMatrix;
     },
 
 
@@ -841,7 +838,6 @@ export default function ModelViewport(spec) {
         //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
         normalDir = vec3.fromValues(pixels[0], pixels[2], -pixels[1]);
         let pickPointNDC = vec3.fromValues(2*(pos.x/canvas.width)-1, 2*(pos.y/canvas.height)-1, 2*pixels[3]-1);
-        //let pickPointClip =
 
         pickProjMatrix = pMatrix;
         let mvMatrix = mat4.create();
@@ -882,16 +878,35 @@ export default function ModelViewport(spec) {
             vec3.cross(tangent, bitangent, projNormal);
             vec3.normalize(tangent, tangent);
         }
-
         vec3.cross(bitangent, tangent, normalDir);
+
+        vec3.normalize(bitangent,bitangent);
+        vec3.normalize(tangent,tangent);
+        vec3.normalize(normalDir,normalDir);
+
+        //DEBUG. Make sure that bitangent, tangent, and normal are orthonormal.
+        //console.log("Bitangent:");
+        //console.log(bitangent);
+        //console.log("Bitangent length:");
+        //console.log("Bitangent length:" + vec3.length(bitangent));
+        //console.log("Tangent:");
+        //console.log(tangent);
+        //console.log("Tangent length:" + vec3.length(tangent));
+        //console.log("Normal:");
+        //console.log(normalDir);
+        //console.log("Normal length:" + vec3.length(normalDir));
+        //console.log("Normal length:");
+        //console.log("bitangent dot tangent:");
+        //console.log(vec3.dot(bitangent,tangent));
+        //console.log("bitangent dot normal:");
+        //console.log(vec3.dot(bitangent,normalDir));
+        //console.log("tangent dot normal:");
+        //console.log(vec3.dot(tangent,normalDir));
+
         normalRotMatrix = mat3.fromValues(tangent[0], tangent[1], tangent[2], normalDir[0], normalDir[1],  normalDir[2],
             bitangent[0], bitangent[1], bitangent[2]);
 
 
-        //normalRotMatrix = mat3.fromValues(1,0,0, 0, 1,
-          //  0, 0,0,1);
-
-        //normalRotMatrix = mat3.creat
         let scaledNormal = vec3.create();
         vec3.scale(scaledNormal, normalDir, dot);
         let projLightDirection = vec3.create();

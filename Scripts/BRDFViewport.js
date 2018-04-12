@@ -337,9 +337,6 @@ export default function BRDFViewport(spec) {
       //gl.uniformMatrix4fv(vUniformLoc, false, V);
     //},
 
-    /////////////////////
-    // SET UP UI CALLBACKS
-    /////////////////////
     updateLinkedCamRot = function(lvm){
       let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
       //console.log(linkedViewMatrix4);

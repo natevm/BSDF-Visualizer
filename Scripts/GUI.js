@@ -13,8 +13,7 @@ import {addEnvelopeControl} from "./ui-wranglers.js";
 
 //Constructor with one argument - the Model that we hook this controller to.
 export default function GUI(inModel){
-  //Declare our object's properties and methods below.
-  //They are private by default, unless we put them
+  //Declare our object's properties and methods below.  They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
     incidentThetaEnvelope,
@@ -160,14 +159,17 @@ export default function GUI(inModel){
       //now this slider only controls light theta and phi
       incidentThetaEnvelope.addEventListener('change', (event) => {
         model.setTheta(event.target.value);
+        model.resetIBL();
       });
 
       incidentPhiEnvelope.addEventListener('change', (event) => {
         model.setPhi(event.target.value);
+        model.resetIBL();
       });
 
       intensityEnvelope.addEventListener('change', (event) => {
         model.setIntensity(event.target.value);
+        model.resetIBL();
       });
 
       convergenceEnvelope.addEventListener('change', (event) => {

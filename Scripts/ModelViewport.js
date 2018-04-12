@@ -606,7 +606,9 @@ export default function ModelViewport(spec) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
       gl.useProgram(rttShaderProgram);
       setMainUniforms(rttShaderProgram);
+      gl.disable(gl.BLEND);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+      gl.enable(gl.BLEND);
     },
 
     drawScene = function() {

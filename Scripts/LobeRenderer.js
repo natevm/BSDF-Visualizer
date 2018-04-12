@@ -49,12 +49,13 @@ export default function LobeRenderer(spec) {
     in_phi_deg = starting_phi,
 
     //called when user loads a BRDF
-    addUniformsFunc = function(addUniformsHelper){
+    addUniformsFunc = function(addUniformsHelper, M, V, P){
       lobeProgram = addUniformsHelper(gl);
       //we need to set up our uniforms again because
       //the above function returned a new lobeProgram.
       setupUniformsLobe();
       setupGeometry();
+      setMVP(M, V, P);
       renderReady = true;
     },
 

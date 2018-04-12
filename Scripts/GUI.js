@@ -21,10 +21,11 @@ export default function GUI(inModel){
     incidentPhiEnvelope,
     intensityEnvelope,
     convergenceEnvelope,
+    qualityEnvelope,
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
-		heatmapEnabled = false,
+    	heatmapEnabled = false,
     iblCheckboxDiv,
     iblEnabled = true;
 
@@ -89,6 +90,9 @@ export default function GUI(inModel){
       convergenceEnvelope = addEnvelopeControl(ptLightSliderDiv, "Conv.",
         "slider_convergence", 0, 1, .5);
 
+      qualityEnvelope = addEnvelopeControl(ptLightSliderDiv, "Qual.",
+        "slider_quality", 0, 3, 1.0);
+
       // let camRotSlider = document.getElementById("slider_camRot");
       // camRotSlider.setAttribute("min", -180);
       // camRotSlider.setAttribute("max", 180);
@@ -98,7 +102,7 @@ export default function GUI(inModel){
       heatCheckboxDiv = document.getElementById("heatmap-toggle");
       heatCheckboxDiv.addEventListener("change", event => {
         model.setHeatmap(event.target.checked);
-				heatmapEnabled = event.target.checked;
+    			heatmapEnabled = event.target.checked;
       });
 
       iblCheckboxDiv = document.getElementById("ibl-toggle");
@@ -114,14 +118,14 @@ export default function GUI(inModel){
         const {uniforms, uniform_update_funcs} = returnResult;
         spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
           brdfCheckboxDiv);
-			}).then( () => {
-				//console.log(heatCheckboxDiv.getAttribute("checked"));
-				//let checkboxValStr = heatCheckboxDiv.getAttribute("checked");
-				////"cast" bool to str: http://stackoverflow.com/questions/263965/ddg#264037
-				//let checkboxValBool = (checkboxValStr === 'true');
-				//console.log(checkboxValStr);
+    		}).then( () => {
+    			//console.log(heatCheckboxDiv.getAttribute("checked"));
+    			//let checkboxValStr = heatCheckboxDiv.getAttribute("checked");
+    			////"cast" bool to str: http://stackoverflow.com/questions/263965/ddg#264037
+    			//let checkboxValBool = (checkboxValStr === 'true');
+    			//console.log(checkboxValStr);
         model.setHeatmap(heatmapEnabled);
-			});
+    		});
     },
 
     setupButtonCallback = function(button, url) {
@@ -136,13 +140,9 @@ export default function GUI(inModel){
           if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-            loadAnalytical(blob);
-            //model.loadAnalyticalBRDF([blob]).then(returnResult => {
-              ////console.log(returnResult);
-              //const {uniforms, uniform_update_funcs} = returnResult;
-              //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
-                //brdfCheckboxDiv);
-            //});
+            loadAnalytical(blob).then(resetIBL => {
+              model.resetIBL();
+            });
           }
         };
         xhr.send();
@@ -172,6 +172,10 @@ export default function GUI(inModel){
 
       convergenceEnvelope.addEventListener('change', (event) => {
         model.setMaxConvergence(event.target.value);
+      });
+
+      qualityEnvelope.addEventListener('change', (event) => {
+        model.setQuality(event.target.value);
       });
 
       // document.getElementById("slider_camRot").oninput = (event) => {
@@ -211,6 +215,7 @@ export default function GUI(inModel){
             uniform_update_funcs.get(name).forEach(f => {
               f(event.target.value);
             });
+            model.resetIBL()
           });
         } else if (curr_u.type === "bool") {
           let checkboxDiv = checkboxContainer.append("div");
@@ -236,6 +241,7 @@ export default function GUI(inModel){
             //console.log(event.target.checked);
             uniform_update_funcs.get(name).forEach(f => {
               f(event.target.checked);
+              model.resetIBL();
             });
           });
 

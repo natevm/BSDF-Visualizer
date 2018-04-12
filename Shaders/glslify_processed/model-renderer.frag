@@ -165,12 +165,12 @@ void main(void) {
 
     vec3 color = vec3(0.0,0.0,0.0);
     if (uIBL) {
-        for (int i = 1; i <= 16; ++i) {
+        for (int i = 1; i <= 64; ++i) {
             float rand1 = gold_noise(gl_FragCoord.xy, uTime * float(i * 3));
             float rand2 = gold_noise(gl_FragCoord.xy, uTime * float(i * 5));
             float rand3 = gold_noise(gl_FragCoord.xy, uTime * float(i * 7));
             vec3 L = normalize(randomCosineWeightedHemispherePoint(vec3(rand1, rand2, rand3), vWorldNormal));
-            color += (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0) * clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 16.0;
+            color += (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0) * clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0) * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 64.0;
         }
     } else {
         vec3 L = mat3(uVMatrix) * normalize(uLightDirection);

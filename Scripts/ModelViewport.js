@@ -4,7 +4,7 @@
 //Requires gl-matrix.js
 //Requires webgl-obj-loader.js
 
-import {deg2rad} from './math-utils.js';
+import {deg2rad, unproject} from './math-utils.js';
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 import LobeRenderer from "./LobeRenderer.js";
 
@@ -66,7 +66,7 @@ export default function ModelViewport(spec) {
     finalRenderShaderProgram,
 
     lobeRdr,
-    dispLobe = false,
+    lobeRdrEnabled = false,
 
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
@@ -80,7 +80,11 @@ export default function ModelViewport(spec) {
     mMatrix = mat4.create(),
     vMatrix = mat4.create(),
     pMatrix = mat4.create(),
-    Tangent2World = mat4.create(),
+    //Tangent2World = mat4.create(),
+    Tangent2World = mat4.fromValues(0, 0, 1, 0,
+                                    1, 0, 0, 0,
+                                    0, 1, 0, 0,
+                                    0, 0, 0, 1),
     normalMatrix = mat4.create(),
     camRotMatrix = mat3.create(),
     normalRotMatrix = mat3.create(),
@@ -746,13 +750,18 @@ export default function ModelViewport(spec) {
     // DRAW
     /////////////////////
     render = function(time) {
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      if (modelsLoaded) {
-        drawScene();
-        animate();
-      }
-      if(dispLobe){
+      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      //if (modelsLoaded) {
+        //drawScene();
+        //animate();
+      //}
+      if(lobeRdrEnabled){
+        //TODO: cache and restore VAO/program
+        //cache current VAO
+        //cache current program
         lobeRdr.render(time);
+        //restore current VAO
+        //restore current program
       }
     },
 
@@ -960,10 +969,29 @@ export default function ModelViewport(spec) {
           lobeRdr.setV(linkedView4x4);
         }
 
-        //TODO: Implement the below:
         //1) Convert NDC back into world space.
+        //See http://stack.gl/packages/#Jam3/camera-unproject
+        //projection * view matrix
+        let combinedProjView = mat4.multiply([],pMatrix,vMatrix);
+        //now invert it
+        var invProjView = mat4.invert([], combinedProjView);
+        //viewport bounds
+        let viewport = [0, 0, canvas.width, canvas.height];
+        //2D point in screen space
+        //z=0 means "near plane"
+        var point = [pos.x, pos.y, pixels[3]];
+        //vec3 output
+        var output = [];
+
+        unproject(output, point, viewport, invProjView);
+
         //2) Modify Tangent2World
+        Tangent2World[12] = output[0];
+        Tangent2World[13] = output[1];
+        Tangent2World[14] = output[2];
         //3) Pass modified Tangent2World to lobeRdr
+        //lobeRdr.setTangent2World(Tangent2World);
+        lobeRdrEnabled = true;
     };
 
   //************* Start "constructor" **************
@@ -1072,6 +1100,8 @@ export default function ModelViewport(spec) {
         lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
         shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: vMatrix,
         initial_P: pMatrix});
+
+      lobeRdrEnabled = true;
 
     }, function(err) {
         console.log("Shader Load Error: " + err);

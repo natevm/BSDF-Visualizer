@@ -1,6 +1,6 @@
 "use strict";
 
-import {deg2rad, get_reflected, perspectiveMatrix} from './math-utils.js';
+import {deg2rad, get_reflected} from './math-utils.js';
 import {init_gl_context} from './gl-wrangling-funcs.js';
 import LobeRenderer from "./LobeRenderer.js";
 
@@ -159,11 +159,13 @@ export default function BRDFViewport(spec) {
                         //0, 0, 1, 0,
                         //0, 0, 0, 1);
 
-    let fov = Math.PI * 0.5;
+    let fov = 45 * Math.PI / 180;
     let aspectRatio = canvas.width/canvas.height;
     let nearClip = 0.5;
     let farClip  = 50;
-    P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+    //P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
+    P = mat4.create();
+    mat4.perspective(P, fov, aspectRatio, nearClip, farClip);
 
     lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
       lobe_vert_shader_name: lobe_vert_shader_name, lobe_frag_shader_name: lobe_frag_shader_name,

@@ -4,7 +4,7 @@
 //Requires gl-matrix.js
 //Requires webgl-obj-loader.js
 
-import {deg2rad, unproject} from './math-utils.js';
+import {deg2rad, unproject, perspectiveMatrix} from './math-utils.js';
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
 import LobeRenderer from "./LobeRenderer.js";
 
@@ -604,6 +604,17 @@ export default function ModelViewport(spec) {
       iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
     },
 
+    drawLobe = function() {
+      //TODO: cache and restore VAO/program
+      //cache current VAO
+      //cache current program
+      if(lobeRdrEnabled){
+        lobeRdr.render(time);
+      }
+      //restore current VAO
+      //restore current program
+    },
+
     drawNormalDepthTexture = function(model){
       gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -654,7 +665,9 @@ export default function ModelViewport(spec) {
 
       /* Projection matrix */
       //these values are hardcoded now for demo purpose, will change later
-      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
+      //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
+      //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
 
       /* Find normal matrix */
       let mvMatrix = mat4.create();
@@ -693,6 +706,9 @@ export default function ModelViewport(spec) {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       drawFinalRender();
+      if(lobeRdrEnabled){
+        drawLobe();
+      }
 
 
       if (queueRefresh1) {
@@ -750,18 +766,15 @@ export default function ModelViewport(spec) {
     // DRAW
     /////////////////////
     render = function(time) {
-      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      //if (modelsLoaded) {
-        //drawScene();
-        //animate();
-      //}
+      /*
+       *gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+       *if (modelsLoaded) {
+       *  drawScene();
+       *  animate();
+       *}
+       */
       if(lobeRdrEnabled){
-        //TODO: cache and restore VAO/program
-        //cache current VAO
-        //cache current program
         lobeRdr.render(time);
-        //restore current VAO
-        //restore current program
       }
     },
 
@@ -1094,12 +1107,28 @@ export default function ModelViewport(spec) {
       loadModels();
       loadEnvironmentMap();
 
+      //following snippet for DEBUG ONLY!
+      //let fov = Math.PI * 0.5;
+      //let aspectRatio = canvas.width/canvas.height;
+      //let nearClip = 0.5;
+      //let farClip  = 50;
+      //let P = mat4.create();
+      //mat4.perspective(P, fov, aspectRatio, nearClip, farClip);
+      let cam_z = 1.5; // z-position of camera in camera space
+      let cam_y = 0.5; // altitude of camera
+      let init_V = [1,      0,     0, 0,
+                    0,      1,     0, 0,
+                    0,      0,     1, 0,
+                    0, -cam_y,-cam_z, 1];
+
       //TODO: We should not be hardcoding the lobe_vert_shader_name
       //TODO: We should not be hardoding starting_theta / starting_phi
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
       lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
         lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
-        shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: vMatrix,
+        shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: init_V,
         initial_P: pMatrix});
+        //initial_P: P});
 
       lobeRdrEnabled = true;
 

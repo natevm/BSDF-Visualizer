@@ -6,6 +6,7 @@
 
 import {deg2rad} from './math-utils.js';
 import {init_gl_context, compile_and_link_shdr} from './gl-wrangling-funcs.js';
+import LobeRenderer from "./LobeRenderer.js";
 
 //************************
 //"Class" ModelViewport
@@ -64,6 +65,9 @@ export default function ModelViewport(spec) {
     skyboxShaderProgram,
     finalRenderShaderProgram,
 
+    lobeRdr,
+    dispLobe = false,
+
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "glslify_processed/model-renderer.frag",
@@ -76,6 +80,7 @@ export default function ModelViewport(spec) {
     mMatrix = mat4.create(),
     vMatrix = mat4.create(),
     pMatrix = mat4.create(),
+    Tangent2World = mat4.create(),
     normalMatrix = mat4.create(),
     camRotMatrix = mat3.create(),
     normalRotMatrix = mat3.create(),
@@ -733,6 +738,8 @@ export default function ModelViewport(spec) {
       //the above function returned a new lobeProgram.
       initShaders(defaultShaderProgram);
       initBuffers();
+
+      lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
     },
 
     /////////////////////
@@ -743,6 +750,9 @@ export default function ModelViewport(spec) {
       if (modelsLoaded) {
         drawScene();
         animate();
+      }
+      if(dispLobe){
+        lobeRdr.render(time);
       }
     },
 
@@ -761,6 +771,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
+      lobeRdr.updateTheta(getNormalTheta());
+      lobeRdr.updatePhi(getNormalPhi());
     },
 
     updatePhi = function(newPhiDeg){
@@ -769,6 +781,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
+      lobeRdr.updateTheta(getNormalTheta());
+      lobeRdr.updatePhi(getNormalPhi());
     },
 
     getNormalTheta = function(){
@@ -934,10 +948,22 @@ export default function ModelViewport(spec) {
         //normalThetaElement.dispatchEvent(evt);
         //normalPhiElement.dispatchEvent(evt);
         if (linkedViewport !== undefined) {
+          let lvm = getLinkedCamRotMatrix(); //3x3
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
-          linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+          linkedViewport.updateLinkedCamRot(lvm);
+
+          lobeRdr.updateTheta(normalTheta);
+          lobeRdr.updatePhi(normalPhi + 180);
+          let linkedView4x4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],
+            lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,0,0,1);
+          lobeRdr.setV(linkedView4x4);
         }
+
+        //TODO: Implement the below:
+        //1) Convert NDC back into world space.
+        //2) Modify Tangent2World
+        //3) Pass modified Tangent2World to lobeRdr
     };
 
   //************* Start "constructor" **************
@@ -1040,10 +1066,17 @@ export default function ModelViewport(spec) {
       loadModels();
       loadEnvironmentMap();
 
+      //TODO: We should not be hardcoding the lobe_vert_shader_name
+      //TODO: We should not be hardoding starting_theta / starting_phi
+      lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
+        lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
+        shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: vMatrix,
+        initial_P: pMatrix});
 
     }, function(err) {
         console.log("Shader Load Error: " + err);
     });
+
 
     //mouse events
     //TODO: these mouse handlers should really go into GUI.js

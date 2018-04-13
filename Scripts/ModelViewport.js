@@ -68,6 +68,8 @@ export default function ModelViewport(spec) {
     lobeRdr,
     lobeRdrEnabled = false,
 
+    firstDrawComplete = false,
+
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "glslify_processed/model-renderer.frag",
@@ -773,7 +775,12 @@ export default function ModelViewport(spec) {
        *  animate();
        *}
        */
+      if(modelsLoaded && !firstDrawComplete){ //DEBUG ONLY!
+        drawScene();
+        firstDrawComplete = true;
+      }
       if(lobeRdrEnabled){
+        lobeRdr.setV(vMatrix);
         lobeRdr.render(time);
       }
     },
@@ -1107,28 +1114,25 @@ export default function ModelViewport(spec) {
       loadModels();
       loadEnvironmentMap();
 
-      //following snippet for DEBUG ONLY!
-      //let fov = Math.PI * 0.5;
-      //let aspectRatio = canvas.width/canvas.height;
-      //let nearClip = 0.5;
-      //let farClip  = 50;
-      //let P = mat4.create();
-      //mat4.perspective(P, fov, aspectRatio, nearClip, farClip);
-      let cam_z = 1.5; // z-position of camera in camera space
-      let cam_y = 0.5; // altitude of camera
-      let init_V = [1,      0,     0, 0,
-                    0,      1,     0, 0,
-                    0,      0,     1, 0,
-                    0, -cam_y,-cam_z, 1];
+      /*
+       *let cam_z = 1.5; // z-position of camera in camera space
+       *let cam_y = 0.5; // altitude of camera
+       *let init_V = [1,      0,     0, 0,
+       *              0,      1,     0, 0,
+       *              0,      0,     1, 0,
+       *              0, -cam_y,-cam_z, 1];
+       */
 
       //TODO: We should not be hardcoding the lobe_vert_shader_name
       //TODO: We should not be hardoding starting_theta / starting_phi
       mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
+      //console.log(vMatrix);
       lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
         lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
-        shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: init_V,
+        shdrDir: shdrDir, initial_Tangent2World: Tangent2World,
+        //initial_V: init_V,
+        initial_V: vMatrix,
         initial_P: pMatrix});
-        //initial_P: P});
 
       lobeRdrEnabled = true;
 

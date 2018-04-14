@@ -607,14 +607,9 @@ export default function ModelViewport(spec) {
     },
 
     drawLobe = function() {
-      //TODO: cache and restore VAO/program
-      //cache current VAO
-      //cache current program
       if(lobeRdrEnabled){
         lobeRdr.render(time);
       }
-      //restore current VAO
-      //restore current program
     },
 
     drawNormalDepthTexture = function(model){
@@ -708,6 +703,7 @@ export default function ModelViewport(spec) {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       drawFinalRender();
+
       if(lobeRdrEnabled){
         drawLobe();
       }
@@ -768,21 +764,20 @@ export default function ModelViewport(spec) {
     // DRAW
     /////////////////////
     render = function(time) {
-      /*
-       *gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-       *if (modelsLoaded) {
-       *  drawScene();
-       *  animate();
-       *}
-       */
-      if(modelsLoaded && !firstDrawComplete){ //DEBUG ONLY!
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      if (modelsLoaded) {
         drawScene();
-        firstDrawComplete = true;
+        animate();
       }
-      if(lobeRdrEnabled){
-        lobeRdr.setV(vMatrix);
-        lobeRdr.render(time);
-      }
+      //if(modelsLoaded && !firstDrawComplete){ //DEBUG ONLY!
+        //drawScene();
+        //firstDrawComplete = true;
+      //}
+      //if(lobeRdrEnabled){
+        //lobeRdr.setV(vMatrix);
+        //lobeRdr.setP(pMatrix);
+        //lobeRdr.render(time);
+      //}
     },
 
     resetIBL = function() {
@@ -1125,7 +1120,7 @@ export default function ModelViewport(spec) {
 
       //TODO: We should not be hardcoding the lobe_vert_shader_name
       //TODO: We should not be hardoding starting_theta / starting_phi
-      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
+      //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
       //console.log(vMatrix);
       lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
         lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
@@ -1134,7 +1129,7 @@ export default function ModelViewport(spec) {
         initial_V: vMatrix,
         initial_P: pMatrix});
 
-      lobeRdrEnabled = true;
+      //lobeRdrEnabled = true;
 
     }, function(err) {
         console.log("Shader Load Error: " + err);

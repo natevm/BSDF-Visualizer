@@ -463,6 +463,7 @@ export default function LobeRenderer(spec) {
     updatePhi,
     addUniformsFunc,
     setV,
+    setP,
     //setMVP
     setTangent2World
   });

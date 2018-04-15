@@ -29,7 +29,7 @@ export default function LobeRenderer(spec) {
     //lobe_vert_shader_name = "lobe.vert",
     //lobe_frag_shader_name = "phong.frag",
     lobeVAO,
-    positionBuffer,
+    line_positionBuffer,
     num_lobe_verts,
 
     lineProgram,
@@ -163,6 +163,7 @@ export default function LobeRenderer(spec) {
       //TODO: we should just be modifying uniforms, not setting up
       //the geometry again.
       //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+      updateLineGeometry(L_hat, N_hat);
     },
 
     updatePhi = function(newPhiDeg){
@@ -179,23 +180,22 @@ export default function LobeRenderer(spec) {
       //TODO: we should just be modifying uniforms, not setting up
       //the geometry again.
       //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+      updateLineGeometry(L_hat, N_hat);
     },
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
-    line_setupGeometry = function(lineVAO, L_hat, N_hat){
+    line_setupGeometry = function(vao, L_hat, N_hat){
       const pos_dim = 3; //dimensionality of position vectors
       const color_dim = 3; //dimensionality of color vectors
 
       const posAttribLoc = 0;
-      positionBuffer = gl.createBuffer();
+      line_positionBuffer = gl.createBuffer();
       const colorAttribLoc = 1;
       const colorBuffer = gl.createBuffer();
 
       let R_hat = get_reflected(L_hat, N_hat);
       let positions = [];
       let colors = [];
-
-      gl.bindVertexArray(lineVAO);
 
       //Incoming ray (cyan)
       positions.push(L_hat[0], L_hat[1], L_hat[2]); colors.push(0,1,1);
@@ -213,17 +213,45 @@ export default function LobeRenderer(spec) {
       positions.push(0, 0, 0); colors.push(0, 0, 1);
       positions.push(0, 0, 1); colors.push(0, 0, 1);
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
-      gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(posAttribLoc);
+      gl.bindVertexArray(vao);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(colorAttribLoc);
 
+      //For some reason, things break if we leave colorBuffer bound as gl.ARRAY_BUFFER.
+      gl.bindBuffer(gl.ARRAY_BUFFER, line_positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(posAttribLoc);
+
+      gl.bindVertexArray(null);
+
       return positions.length/pos_dim;
+    },
+
+    //Assumes line_setupGeometry() has been called
+    updateLineGeometry = function(L_hat, N_hat){
+      let positions = [];
+
+      //Incoming ray (cyan)
+      positions.push(L_hat[0], L_hat[1], L_hat[2]);
+      positions.push(0, 0, 0);
+
+      //Outgoing ray (magenta)
+      let R_hat = get_reflected(L_hat, N_hat);
+      positions.push(0, 0, 0);
+      positions.push(R_hat[0], R_hat[1], R_hat[2]);
+
+      let posFlt32Array = new Float32Array(positions);
+      let dstByteOffset = 0;
+      let srcOffset = 0;
+      gl.bindVertexArray(lineVAO);
+      //gl.bindBuffer(gl.ARRAY_BUFFER, line_positionBuffer);
+      //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, dstByteOffset, posFlt32Array, srcOffset, positions.length);
+      gl.bindVertexArray(null);
     },
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1,
@@ -254,7 +282,6 @@ export default function LobeRenderer(spec) {
       let delTheta = calc_delTheta(numThetaDivisions);
       let delPhi = calc_delPhi(numPhiDivisions);
 
-      gl.bindVertexArray(lobeVAO);
 
       for(let i = 0; i < numThetaDivisions; i++){
         for(let j = 0; j < numPhiDivisions; j++){
@@ -320,6 +347,8 @@ export default function LobeRenderer(spec) {
         }
       }
 
+      gl.bindVertexArray(lobeVAO);
+
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
       gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
@@ -340,6 +369,8 @@ export default function LobeRenderer(spec) {
         new Float32Array(polar_coords), gl.STATIC_DRAW);
       gl.vertexAttribPointer(polar_coordAttribLoc, polar_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(polar_coordAttribLoc);
+
+      gl.bindVertexArray(null);
 
       return num_verts;
     },
@@ -389,6 +420,7 @@ export default function LobeRenderer(spec) {
         gl.useProgram(lineProgram);
         first = 0;
         gl.drawArrays(gl.LINES, first, num_line_verts);
+        gl.bindVertexArray(null);
       }
     };
   //************* Start "constructor" **************

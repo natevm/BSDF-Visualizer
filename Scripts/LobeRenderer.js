@@ -29,6 +29,7 @@ export default function LobeRenderer(spec) {
     //lobe_vert_shader_name = "lobe.vert",
     //lobe_frag_shader_name = "phong.frag",
     lobeVAO,
+    positionBuffer,
     num_lobe_verts,
 
     lineProgram,
@@ -161,7 +162,7 @@ export default function LobeRenderer(spec) {
 
       //TODO: we should just be modifying uniforms, not setting up
       //the geometry again.
-      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+      //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
     },
 
     updatePhi = function(newPhiDeg){
@@ -177,7 +178,7 @@ export default function LobeRenderer(spec) {
 
       //TODO: we should just be modifying uniforms, not setting up
       //the geometry again.
-      num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
+      //num_line_verts = line_setupGeometry(lineVAO, L_hat, N_hat);
     },
 
     //ASSSUMES THAT POSITIONS ARE AT ATTRIBUTE 0, COLORS AT ATTRIBUTE 1 IN SHADER.
@@ -186,7 +187,7 @@ export default function LobeRenderer(spec) {
       const color_dim = 3; //dimensionality of color vectors
 
       const posAttribLoc = 0;
-      const positionBuffer = gl.createBuffer();
+      positionBuffer = gl.createBuffer();
       const colorAttribLoc = 1;
       const colorBuffer = gl.createBuffer();
 

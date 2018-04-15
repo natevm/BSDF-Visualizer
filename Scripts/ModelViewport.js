@@ -607,9 +607,9 @@ export default function ModelViewport(spec) {
     },
 
     drawLobe = function() {
-      if(lobeRdrEnabled){
-        lobeRdr.render(time);
-      }
+      //if(lobeRdrEnabled){
+        //lobeRdr.render(time);
+      //}
     },
 
     drawNormalDepthTexture = function(model){

@@ -220,7 +220,6 @@ export default function LobeRenderer(spec) {
       gl.vertexAttribPointer(colorAttribLoc, color_dim, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(colorAttribLoc);
 
-      //For some reason, things break if we leave colorBuffer bound as gl.ARRAY_BUFFER.
       gl.bindBuffer(gl.ARRAY_BUFFER, line_positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(posAttribLoc, pos_dim, gl.FLOAT, false, 0, 0);
@@ -248,8 +247,10 @@ export default function LobeRenderer(spec) {
       let dstByteOffset = 0;
       let srcOffset = 0;
       gl.bindVertexArray(lineVAO);
-      //gl.bindBuffer(gl.ARRAY_BUFFER, line_positionBuffer);
-      //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      //ASSUMES that line_positionBuffer is still bound to gl.ARRAY_BUFFER.
+      //
+      //For some resaon, if we call gl.bindBuffer here while dragging across the teapot,
+      //things break. TODO: Figure out exactly why this is.
       gl.bufferSubData(gl.ARRAY_BUFFER, dstByteOffset, posFlt32Array, srcOffset, positions.length);
       gl.bindVertexArray(null);
     },
@@ -437,20 +438,20 @@ export default function LobeRenderer(spec) {
     let promises = [];
 
     promises.push($.ajax({
-      url: shdrDir + "color_only.vert",
+      url: shdrDir + "line.vert",
       success: function(result){
         lineVertSrc = result.trim();
       }, error: function(result) {
-        console.log("failed to load mcolor_only.vert with error ");
+        console.log("failed to load line.vert with error ");
         console.log(result);
       }
     }));
     promises.push($.ajax({
-      url: shdrDir + "color_only.frag",
+      url: shdrDir + "line.frag",
       success: function(result){
         lineFragSrc = result.trim();
       }, error: function(result) {
-        console.log("failed to load color_only.frag with error ");
+        console.log("failed to load line.frag with error ");
         console.log(result);
       }
     }));

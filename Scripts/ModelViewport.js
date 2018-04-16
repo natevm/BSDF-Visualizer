@@ -66,7 +66,7 @@ export default function ModelViewport(spec) {
     finalRenderShaderProgram,
 
     lobeRdr,
-    lobeRdrEnabled = false,
+    lobeRdrEnabled = true,
 
     firstDrawComplete = false,
 
@@ -606,13 +606,6 @@ export default function ModelViewport(spec) {
       iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
     },
 
-    drawLobe = function() {
-      //if(lobeRdrEnabled){
-        //gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
-        //lobeRdr.render(time);
-      //}
-    },
-
     drawNormalDepthTexture = function(model){
       gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -627,6 +620,7 @@ export default function ModelViewport(spec) {
       gl.disable(gl.BLEND);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
       gl.enable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
     drawScene = function() {
@@ -705,10 +699,6 @@ export default function ModelViewport(spec) {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       drawFinalRender();
 
-      if(lobeRdrEnabled){
-        drawLobe();
-      }
-
       if (queueRefresh1) {
         iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         updateIBLTextures(iblCurrentBuffer);
@@ -768,16 +758,12 @@ export default function ModelViewport(spec) {
       if (modelsLoaded) {
         drawScene();
         animate();
-      }
-      //if(modelsLoaded && !firstDrawComplete){ //DEBUG ONLY!
-        //drawScene();
-        //firstDrawComplete = true;
-      //}
-      if(lobeRdrEnabled){
-        lobeRdr.setV(vMatrix);
-        lobeRdr.setP(pMatrix);
-        gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
-        lobeRdr.render(time);
+        if(lobeRdrEnabled){
+          lobeRdr.setV(vMatrix);
+          lobeRdr.setP(pMatrix);
+          gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+          lobeRdr.render(time);
+        }
       }
     },
 
@@ -796,8 +782,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
-      lobeRdr.updateTheta(getNormalTheta());
-      lobeRdr.updatePhi(getNormalPhi());
+      //lobeRdr.updateTheta(getNormalTheta());
+      //lobeRdr.updatePhi(getNormalPhi());
     },
 
     updatePhi = function(newPhiDeg){
@@ -806,8 +792,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
-      lobeRdr.updateTheta(getNormalTheta());
-      lobeRdr.updatePhi(getNormalPhi());
+      //lobeRdr.updateTheta(getNormalTheta());
+      //lobeRdr.updatePhi(getNormalPhi());
     },
 
     getNormalTheta = function(){
@@ -873,6 +859,7 @@ export default function ModelViewport(spec) {
         let pixels = new Float32Array(4);
         gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
         gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
+        console.log(pixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         //console.log([pos.x, pos.y]);
         //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
@@ -977,13 +964,9 @@ export default function ModelViewport(spec) {
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
           linkedViewport.updateLinkedCamRot(lvm);
-
-          lobeRdr.updateTheta(normalTheta);
-          lobeRdr.updatePhi(normalPhi + 180);
-          let linkedView4x4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],
-            lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,0,0,1);
-          lobeRdr.setV(linkedView4x4);
         }
+        lobeRdr.updateTheta(normalTheta);
+        lobeRdr.updatePhi(normalPhi + 180);
 
         //1) Convert NDC back into world space.
         //See http://stack.gl/packages/#Jam3/camera-unproject
@@ -1005,6 +988,7 @@ export default function ModelViewport(spec) {
         Tangent2World[12] = output[0];
         Tangent2World[13] = output[1];
         Tangent2World[14] = output[2];
+        //console.log(output[0] + " " + output[1] + " " + output[2]);
         //3) Pass modified Tangent2World to lobeRdr
         lobeRdr.setTangent2World(Tangent2World);
         lobeRdrEnabled = true;
@@ -1123,14 +1107,14 @@ export default function ModelViewport(spec) {
       //TODO: We should not be hardoding starting_theta / starting_phi
       //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
       //console.log(vMatrix);
-      lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
-        lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
-        shdrDir: shdrDir, initial_Tangent2World: Tangent2World,
-        //initial_V: init_V,
-        initial_V: vMatrix,
-        initial_P: pMatrix});
-
-      //lobeRdrEnabled = true;
+      if(lobeRdrEnabled){
+        lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
+          lobe_vert_shader_name: "lobe.vert", lobe_frag_shader_name: "phong.frag",
+          shdrDir: shdrDir, initial_Tangent2World: Tangent2World,
+          //initial_V: init_V,
+          initial_V: vMatrix,
+          initial_P: pMatrix});
+      }
 
     }, function(err) {
         console.log("Shader Load Error: " + err);

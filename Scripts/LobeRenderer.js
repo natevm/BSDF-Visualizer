@@ -251,6 +251,7 @@ export default function LobeRenderer(spec) {
       //
       //For some resaon, if we call gl.bindBuffer here while dragging across the teapot,
       //things break. TODO: Figure out exactly why this is.
+      gl.bindBuffer(gl.ARRAY_BUFFER, line_positionBuffer);
       gl.bufferSubData(gl.ARRAY_BUFFER, dstByteOffset, posFlt32Array, srcOffset, positions.length);
       gl.bindVertexArray(null);
     },

@@ -8,7 +8,7 @@ let modelViewport;
 let model;
 
 const render = function(time) {
-  brdfViewport.render(time);
+  //brdfViewport.render(time);
   modelViewport.render(time);
   requestAnimationFrame(render);
 };
@@ -21,14 +21,14 @@ document.addEventListener('DOMContentLoaded', function () {
   model = Model();
   let canvas = document.getElementById('brdf-canvas');
 
-  brdfViewport = BRDFViewport({canvasName: "brdf-canvas", shdrDir: shdrPath,
-    width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: false});
+  //brdfViewport = BRDFViewport({canvasName: "brdf-canvas", shdrDir: shdrPath,
+    //width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: false});
   modelViewport = ModelViewport({canvasName: "model-canvas", shdrDir: shdrPath,
     width: canvas.clientWidth, height: canvas.clientHeight, inputByModel: true});
 
-  modelViewport.registerLinkedViewport(brdfViewport);
+  //modelViewport.registerLinkedViewport(brdfViewport);
 
-  model.registerViewer(brdfViewport);
+  //model.registerViewer(brdfViewport);
   model.registerViewer(modelViewport);
 
   GUI(model); //construct a GUI.

@@ -995,7 +995,7 @@ export default function ModelViewport(spec) {
         let viewport = [0, 0, canvas.width, canvas.height];
         //2D point in screen space
         //z=0 means "near plane"
-        var point = [pos.x, pos.y, pixels[3]];
+        var point = [pos.x, canvas.height - pos.y, pixels[3]];
         //vec3 output
         var output = [];
 

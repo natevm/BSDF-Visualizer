@@ -408,8 +408,6 @@ export default function LobeRenderer(spec) {
       if(renderReady === true){
         let first;
 
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
         //Draw lobe
         gl.bindVertexArray(lobeVAO);
         gl.useProgram(lobeProgram);

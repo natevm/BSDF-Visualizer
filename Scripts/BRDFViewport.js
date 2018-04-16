@@ -139,6 +139,7 @@ export default function BRDFViewport(spec) {
     // DRAW
     /////////////////////
     render = function(time){
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       lobeRdr.render(time);
     };
 

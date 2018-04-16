@@ -608,6 +608,7 @@ export default function ModelViewport(spec) {
 
     drawLobe = function() {
       //if(lobeRdrEnabled){
+        //gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
         //lobeRdr.render(time);
       //}
     },
@@ -708,7 +709,6 @@ export default function ModelViewport(spec) {
         drawLobe();
       }
 
-
       if (queueRefresh1) {
         iblCurrentBuffer = (iblCurrentBuffer === 0) ? 1 : 0;
         updateIBLTextures(iblCurrentBuffer);
@@ -773,11 +773,12 @@ export default function ModelViewport(spec) {
         //drawScene();
         //firstDrawComplete = true;
       //}
-      //if(lobeRdrEnabled){
-        //lobeRdr.setV(vMatrix);
-        //lobeRdr.setP(pMatrix);
-        //lobeRdr.render(time);
-      //}
+      if(lobeRdrEnabled){
+        lobeRdr.setV(vMatrix);
+        lobeRdr.setP(pMatrix);
+        gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+        lobeRdr.render(time);
+      }
     },
 
     resetIBL = function() {
@@ -1005,7 +1006,7 @@ export default function ModelViewport(spec) {
         Tangent2World[13] = output[1];
         Tangent2World[14] = output[2];
         //3) Pass modified Tangent2World to lobeRdr
-        //lobeRdr.setTangent2World(Tangent2World);
+        lobeRdr.setTangent2World(Tangent2World);
         lobeRdrEnabled = true;
     };
 

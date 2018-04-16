@@ -64,6 +64,8 @@ export default function ModelViewport(spec) {
     defaultShaderProgram,
     skyboxShaderProgram,
     finalRenderShaderProgram,
+    modelVAO,
+    rttVAO,
 
     lobeRdr,
     lobeRdrEnabled = true,
@@ -323,6 +325,7 @@ export default function ModelViewport(spec) {
         // model objects and setting their mesh to the current mesh
         //models[modelKey] = {};
         //models[modelKey].mesh = models[modelKey];
+        gl.bindVertexArray(null);
       });
 
 
@@ -579,6 +582,7 @@ export default function ModelViewport(spec) {
       //    gl2.useProgram(shaderProgram);
 
       //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindVertexArray(modelVAO);
       gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
       defaultShaderProgram.applyAttributePointers(model);
 
@@ -586,6 +590,7 @@ export default function ModelViewport(spec) {
       gl.useProgram(defaultShaderProgram);
       setMainUniforms(defaultShaderProgram);
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+      gl.bindVertexArray(null);
     },
 
     drawSkybox = function() {
@@ -607,11 +612,13 @@ export default function ModelViewport(spec) {
     },
 
     drawNormalDepthTexture = function(model){
+      gl.bindVertexArray(modelVAO);
       gl.viewport(0, 0, canvas.width, canvas.height);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
       gl.clearColor(0.0,0.0,0.0,0.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
       rttShaderProgram.applyAttributePointers(model);
 
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
@@ -621,6 +628,7 @@ export default function ModelViewport(spec) {
       gl.drawElements(gl.TRIANGLES, model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
       gl.enable(gl.BLEND);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindVertexArray(null);
     },
 
     drawScene = function() {
@@ -1079,10 +1087,19 @@ export default function ModelViewport(spec) {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
 
+      modelVAO = gl.createVertexArray();
+      //rttVAO = gl.createVertexArray();
+
       defaultShaderProgram = compile_and_link_shdr(gl, defaultVertSrc, defaultFragSrc);
+      gl.bindVertexArray(modelVAO);
       initShaders(defaultShaderProgram);
+      gl.bindVertexArray(null);
+
       rttShaderProgram = compile_and_link_shdr(gl, rttVertSrc, rttFragSrc);
+      gl.bindVertexArray(modelVAO);
       initShaders(rttShaderProgram);
+      gl.bindVertexArray(null);
+
       skyboxShaderProgram = compile_and_link_shdr(gl, skyboxVertSrc, skyboxFragSrc);
       initSkyboxShaderProgram();
       finalRenderShaderProgram = compile_and_link_shdr(gl, finalRenderVertSrc, finalRenderFragSrc);

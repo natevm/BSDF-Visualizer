@@ -1,7 +1,6 @@
 "use strict";
 
-import {deg2rad, rotY, rotZ} from './math-utils.js';
-import {getNextLine_brdfFile} from './text-utils.js';
+import {deg2rad, rotY, rotZ, get_reflected} from './math-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
 
 //TODO: we want to pass the templatePath / vertPath / fragPath / templateType in as parameters.
@@ -13,7 +12,7 @@ import {map_insert_chain} from './collections-wranglers.js';
 //pass in the viewer's addUniformfunc so we can call it on the viewer.
 //
 //The viewer should have a getter that returns the appropriate shader paths.
-export function loadAnalytical_getUniforms(fileList, viewers){
+export function loadAnalytical_getUniforms(file, viewers){
   let reader = new FileReader();
   //key: uniform name. value: function for updating the uniform.
   let uniform_update_funcs = new Map();
@@ -150,7 +149,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   //*******************************************************
 
   //onload will be invoked when this is done
-  reader.readAsText(fileList[0]);
+  reader.readAsText(file);
 
   //We can wrap onload with a promise, and set reader.onload = resolve.
   //We can call .then() on the new promise and call the below code there.
@@ -162,7 +161,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
     viewers.forEach( v => {
       if (v.hasOwnProperty("getTemplateInfo") && v.hasOwnProperty("addUniformsFunc")){
         let templInfo = v.getTemplateInfo();
-        let loadBRDFPromise = loadBRDF_disneyFormat({brdfFileStr: reader.result,
+        let loadBRDFPromise = loadBRDF({brdfFileStr: reader.result,
           shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
           vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
           templateType: templInfo.templateType});
@@ -177,7 +176,7 @@ export function loadAnalytical_getUniforms(fileList, viewers){
   });
 }
 
-export function loadBRDF_disneyFormat(spec){
+export function loadBRDF(spec){
   let { brdfFileStr, shdrDir, templatePath, vertPath, fragPath,
         templateType } = spec;
   let templStr; //template shader as string
@@ -209,32 +208,13 @@ export function loadBRDF_disneyFormat(spec){
     }
   }));
 
-  //"Asynchronous return"
-  //see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-  //return new Promise(resolve => {
-    //Promise.all(promises).then(function() {
-      //// returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
-      //// you can process it here
-      //console.log("Loading BRDF in Disney format");
-
-      //let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
-        //rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
-        //disneyBrdf: brdfFileStr, whichTemplate: templateType});
-
-      //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
-    //}, function(err) {
-        //console.log("Shader Load Error: " + err);
-    //});
-  //});
-
   return Promise.all(promises).then(function() {
       // returned data is in arguments[0][0], arguments[1][0], ... arguments[9][0]
       // you can process it here
-      //console.log("Loading BRDF in Disney format");
 
       let { uniformsInfo, finalFragSrc, finalVtxSrc } = brdfShaderFromTemplate({
         rawVtxShdr: vertStr, rawFragShdr: fragStr, templShdr: templStr,
-        disneyBrdf: brdfFileStr, whichTemplate: templateType});
+        brdfSrc: brdfFileStr, whichTemplate: templateType});
 
       //resolve({uniformsInfo, finalVtxSrc, finalFragSrc});
       return {uniformsInfo, finalVtxSrc, finalFragSrc};
@@ -260,68 +240,20 @@ function uniformsInfo_toString(uniformsInfo){
   return uniformsStr;
 }
 
+//Requires js-yaml: https://github.com/nodeca/js-yaml
+//
 //Consumes a template shader with:
-// 1) Analytical BRDF in Disney's .brdf format.
+// 1) Analytical BRDF in our YAML format.
 // 2) A "template shader" that contains the strings:
 //   a) <INLINE_UNIFORMS_HERE> where additional uniforms should be inlined.
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
-function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
-  let uniformsInfo = {};
-  let brdfLines = disneyBrdfSrc.split('\n');
-  //JS iterators: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/@@iterator
-  let brdfFile_it = brdfLines[Symbol.iterator]();
-  //let currLine = brdfFile_it.next().value;
-  let currLine = getNextLine_brdfFile(brdfFile_it);
-  let brdfFuncStr = "";
-
-  //Parsing files line-by-line: https://stackoverflow.com/a/42316936
-
-  //console.log("Printing line by line");
-  //templateShdrLines.map((line) => {
-    //console.log(line);
-  //});
-
-  //Go until we reach the parameters
-  while (currLine.search("::begin parameters") === -1) {
-    currLine = getNextLine_brdfFile(brdfFile_it);
+function brdfTemplSubst(templShdrSrc, brdfYaml){
+  let brdf_t = jsyaml.load(brdfYaml);
+  let uniformsInfo = brdf_t.uniforms;
+  if( !uniformsInfo.hasOwnProperty('NdotL') ){
+    uniformsInfo.NdotL = {type: "bool", default: true};
   }
-
-  //Ignoring whitespace, read each line into uniformsInfo
-  currLine = getNextLine_brdfFile(brdfFile_it);
-  while (currLine.search("::end parameters") === -1) {
-    if (/\S/.test(currLine)) { //at least one non-whitespace char
-      let tokens = currLine.split(" ");
-      let param_type = tokens[0];
-      let name = tokens[1];
-
-      if (param_type === "float") {
-        uniformsInfo[name] = {type: "float", min: parseFloat(tokens[2]),
-          max: parseFloat(tokens[3]), default: parseFloat(tokens[4])};
-      } else if (param_type === "bool") {
-        uniformsInfo[name] = {type: "bool",
-          default: (parseInt(tokens[2]) ? true : false)};
-      } else if (param_type === "color") {
-        uniformsInfo[name] = {type: "color", defaultR: parseFloat(tokens[2]),
-          defaultG: parseFloat(tokens[3]), defaultB: parseFloat(tokens[4])};
-      } else {
-        throw "Invalid parameter param_type for param '" + name +
-          "' in .brdf file!";
-      }
-    }
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
-  //Go until we reach the BRDF function
-  while (currLine.search("::begin shader") === -1) {
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
-
-  //Copy the BRDF function verbatim
-  //We could use a string buffer if we need better performance
-  currLine = getNextLine_brdfFile(brdfFile_it);
-  while (currLine.search("::end shader") === -1) {
-    brdfFuncStr = brdfFuncStr + currLine + "\n";
-    currLine = getNextLine_brdfFile(brdfFile_it);
-  }
+  let brdfFuncStr = brdf_t.brdf;
 
   {
     //Based on uniformsInfo, generate string that contains the GLSL uniforms
@@ -333,6 +265,7 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
     let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
                                      .replace(brdfFuncHook, brdfFuncStr);
 
+    //console.log(substitutedSrc);
     return {uInfo: uniformsInfo, substSrc: substitutedSrc};
   }
 }
@@ -342,10 +275,10 @@ function brdfTemplSubst(templShdrSrc, disneyBrdfSrc){
 //If which_template === "frag", frag_shdr is the template
 //It is assumed that vtx_shdr and frag_shdr cannot both be templates.
 export function brdfShaderFromTemplate(spec){
-  let {rawVtxShdr, rawFragShdr, templShdr, disneyBrdf, whichTemplate} = spec;
+  let {rawVtxShdr, rawFragShdr, templShdr, brdfSrc, whichTemplate} = spec;
   let finalFragSrc;
   let finalVtxSrc;
-  let {uInfo, substSrc} = brdfTemplSubst(templShdr,disneyBrdf);
+  let {uInfo, substSrc} = brdfTemplSubst(templShdr,brdfSrc);
   let uniformsInfo = uInfo;
 
   if(whichTemplate === "vert"){
@@ -364,7 +297,7 @@ export function brdfShaderFromTemplate(spec){
 }
 
 export function init_gl_context(canvas){
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2", {antialias:true});
     if (gl === null) {
         console.error("WebGL 2 not available");
         document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
@@ -372,19 +305,6 @@ export function init_gl_context(canvas){
   return gl;
 }
 
-// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
-export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
-
-  var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
-  var rangeInv = 1 / (near - far);
-
-  return [
-    f / aspectRatio, 0,                          0,   0,
-    0,               f,                          0,   0,
-    0,               0,    (near + far) * rangeInv,  -1,
-    0,               0,  near * far * rangeInv * 2,   0
-  ];
-}
 
 //TODO: move this into BRDFViewport.js, since it's specific to that viewer.
 //export function get_initial_V(){
@@ -445,19 +365,6 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 
   return program;
 }
-
-//output is unit reflected vector
-//var get_reflected = function(L_hat,N_hat){
-export function get_reflected(L_hat,N_hat){
-  var L_plus_R = vec3.create();
-  vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create();
-  vec3.sub(R_hat, L_plus_R, L_hat);
-  vec3.normalize(R_hat,R_hat); //I don't think this is needed?
-  return R_hat;
-}
-
-//incident angle is the angle between the incident light vector and the normal
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);

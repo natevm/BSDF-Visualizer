@@ -9,5 +9,11 @@ tags
 #tern.js (http://ternjs.net/)
 .tern-port
 
+#node.js
+node_modules
+
 .vs/
 .idea/
+
+#node
+node_modules

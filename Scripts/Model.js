@@ -1,6 +1,6 @@
 "use strict";
 
-import {loadBRDF_disneyFormat, compile_and_link_shdr} from './gl-wrangling-funcs.js';
+import {compile_and_link_shdr} from './gl-wrangling-funcs.js';
 import {loadAnalytical_getUniforms} from './gl-wrangling-funcs.js';
 
 //************************
@@ -47,8 +47,56 @@ export default function Model(){
       });
     },
 
-    loadAnalyticalBRDF = function(in_fileList){
-      return loadAnalytical_getUniforms(in_fileList, viewers);
+    setHeatmap = function(in_bool){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setHeatmap" in v) {
+          v.setHeatmap(in_bool);
+        }
+      });
+    },
+
+    setIBL = function(in_bool){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setIBL" in v) {
+          v.setIBL(in_bool);
+        }
+      });
+    },
+
+    resetIBL = function(){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "resetIBL" in v) {
+          v.resetIBL();
+        }
+      });
+    },
+
+    setIntensity = function(intensity){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setIntensity" in v) {
+          v.setIntensity(intensity);
+        }
+      });
+    },
+
+    setMaxConvergence = function(maxConvergence){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setMaxConvergence" in v) {
+          v.setMaxConvergence(maxConvergence);
+        }
+      });
+    },
+
+    setQuality = function(newQuality){
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setQuality" in v) {
+          v.setQuality(newQuality);
+        }
+      });
+    },
+
+    loadAnalyticalBRDF = function(in_file){
+      return loadAnalytical_getUniforms(in_file, viewers);
     };
 
   //NathanX: What exactly does "debounce" do? Do we need it?
@@ -77,6 +125,12 @@ export default function Model(){
     setTheta,
     setPhi,
     setCamRot,
+    setHeatmap,
+    setIBL,
+    resetIBL,
+    setIntensity,
+    setMaxConvergence,
+    setQuality,
     loadAnalyticalBRDF,
   });
 }

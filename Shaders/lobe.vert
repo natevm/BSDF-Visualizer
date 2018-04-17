@@ -36,26 +36,54 @@ vec3 get_reflected(vec3 L, vec3 N){
   return normalize(L_plus_R - L);
 }
 
-//From Disney's BRDF Explorer:
-//https://www.disneyanimation.com/technology/brdf.html
-//(see DISNEY_LICENSE at the root of this repository
-//for a complete copy of their license).
+//TODO: can we make inVec const?
+//TODO: can we do this with less branching? Possibly inefficient on GPU.
 void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
 {
-    uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
-    uVec = normalize(cross(inVec, uVec));
-    vVec = normalize(cross(inVec, uVec));
-}
+  //inVec is +z in tangent space (the normal direction)
+  //uVec is +x in tangent space.
+  //vVec is +y in tangent space.
 
-//TODO: Disney's tool doesn't incorporate the dot product / cosine weight because
-//that's not part of the BRDF, it's the "form factor" in the rendering equation.
+  //This was created to match Daqi's code in selectPointEventFunction
+  //in ModelViewport.js
+  vec3 normalDir = inVec;
+  vec3 projNormal = vec3(normalDir.x, 0, normalDir.z);
+  vec3 bitangent;
+  vec3 tangent;
+  if (projNormal[2] == 0.0) {
+      if (projNormal[0] > 0.0) {
+          tangent = vec3(0.0,0.0,-1.0);
+          bitangent = vec3(0.0,1.0,0.0);
+      } else if (projNormal[0] < 0.0) {
+          tangent = vec3(0.0,0.0,1.0);
+          bitangent = vec3(0.0,1.0,0.0);
+      } else {
+          tangent = vec3(1.0,0.0,0.0);
+          bitangent = vec3(0.0,0.0,-1.0);
+      }
+  } else {
+      vec3 xdir;
+      if(projNormal[2] > 0.0) {
+          xdir = vec3(1.0,0.0,0.0);
+      } else { // projNormal[2] < 0
+          xdir = vec3(-1.0,0.0,0.0);
+      }
+      bitangent = cross(projNormal, xdir);
+      bitangent = normalize(bitangent);
+      tangent = cross(bitangent, projNormal);
+      tangent = normalize(tangent);
+  }
+
+  bitangent = cross(tangent, normalDir);
+  tangent = normalize(tangent);
+  bitangent = normalize(bitangent);
+
+  uVec = tangent;
+  vVec = bitangent;
+}
 
 //L, V, N assumed to be unit vectors
 //X, Y assumed to be (1, 0, 0) and (0, 1, 0), respectively
-
-//*************** START INLINED BRDF ******************
-// <INLINE_BRDF_HERE>
-//*************** END INLINED BRDF ********************
 
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
   //TODO: These should actually be uniforms.

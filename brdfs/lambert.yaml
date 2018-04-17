@@ -1,0 +1,12 @@
+uniforms:
+  reflectance:
+    type: "float"
+    min: 0
+    max: 1
+    default: 1
+brdf: >
+  #define M_PI 3.1415926535897932384626433832795
+
+  vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+    return vec3(reflectance/M_PI);
+  }

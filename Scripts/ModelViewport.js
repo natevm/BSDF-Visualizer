@@ -834,8 +834,9 @@ export default function ModelViewport(spec) {
     },
 
     getLinkedCamRotMatrix = function(){
-       let res = mat3.create();
-       return mat3.multiply(res, camRotMatrix, normalRotMatrix);
+       //let res = mat3.create();
+       //return mat3.multiply(res, camRotMatrix, normalRotMatrix);
+      return camRotMatrix;
     },
 
 
@@ -999,10 +1000,15 @@ export default function ModelViewport(spec) {
         let t = tangent;
         let b = bitangent;
         let n = normalDir;
-        Tangent2World = mat4.fromValues(t[0],      t[1],      t[2],      0,
-                                        b[0],      b[1],      b[2],      0,
+        Tangent2World = mat4.fromValues(b[0],      b[1],      b[2],      0,
+                                        t[0],      t[1],      t[2],      0,
                                         n[0],      n[1],      n[2],      0,
                                         output[0], output[1], output[2], 1);
+        //let nr = normalRotMatrix;
+        //Tangent2World = mat4.fromValues(nr[0],     nr[1],      nr[2],      0,
+                                        //nr[0],     nr[1],      nr[2],      0,
+                                        //nr[0],     nr[1],      nr[2],      0,
+                                        //output[0], output[1], output[2], 1);
 
         //3) Pass modified Tangent2World to lobeRdr
         lobeRdr.setTangent2World(Tangent2World);

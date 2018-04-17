@@ -790,8 +790,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
-      //lobeRdr.updateTheta(getNormalTheta());
-      //lobeRdr.updatePhi(getNormalPhi());
+      lobeRdr.updateTheta(getNormalTheta());
+      lobeRdr.updatePhi(getNormalPhi());
     },
 
     updatePhi = function(newPhiDeg){
@@ -800,8 +800,8 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
-      //lobeRdr.updateTheta(getNormalTheta());
-      //lobeRdr.updatePhi(getNormalPhi());
+      lobeRdr.updateTheta(getNormalTheta());
+      lobeRdr.updatePhi(getNormalPhi());
     },
 
     getNormalTheta = function(){

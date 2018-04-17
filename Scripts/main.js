@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
   //setupUI();
   //setupUICallbacks();
 
+
+  $('body').on('contextmenu', '#model-canvas', function(e){ return false; });
+  $('body').on('contextmenu', '#brdf-canvas', function(e){ return false; });
+
   $( "#link_button" ).on({
     click: function() {
       if(linked) {

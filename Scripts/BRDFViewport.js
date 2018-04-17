@@ -34,6 +34,7 @@ export default function BRDFViewport(spec) {
     lobe_frag_shader_name = "phong.frag",
 
     current_lvm,
+    current_Tangent2World,
     linked = true,
 
     lobeRdr,
@@ -50,6 +51,12 @@ export default function BRDFViewport(spec) {
       return init_V;
     },
     initial_V = get_initial_V(),
+
+    initialTangent2World = mat4.fromValues(0, 0, 1, 0,
+                                          1, 0, 0, 0,
+                                          0, 1, 0, 0,
+                                          0, 0, 0, 1),
+
     Tangent2World = mat4.fromValues(0, 0, 1, 0,
                                     1, 0, 0, 0,
                                     0, 1, 0, 0,
@@ -73,21 +80,26 @@ export default function BRDFViewport(spec) {
     /////////////////////
 
     updateLinkedTangent2World = function(Tangent2World){
-      lobeRdr.setTangent2World(Tangent2World);
+      current_Tangent2World = mat4.clone(Tangent2World);
+      if (linked) {
+        lobeRdr.setTangent2World(Tangent2World);
+      }
     },
-
     /////////////////////
     // SET UP UI CALLBACKS
     /////////////////////
 
     resetView = function() {
       V = mat4.clone(initial_V);
+      lobeRdr.setV(V);
+      updateLinkedTangent2World(initialTangent2World);
       linked = false;
     },
 
     recoverView = function() {
       linked = true;
       this.updateLinkedCamRot(current_lvm);
+      updateLinkedTangent2World(current_Tangent2World);
     },
 
     updateLinkedCamRot = function(lvm){

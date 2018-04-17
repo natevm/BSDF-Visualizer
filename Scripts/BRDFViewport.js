@@ -160,7 +160,7 @@ export default function BRDFViewport(spec) {
                         //0, 0, 1, 0,
                         //0, 0, 0, 1);
 
-    let fov = 45 * Math.PI / 180;
+    let fov = 90 * Math.PI / 180;
     let aspectRatio = canvas.width/canvas.height;
     let nearClip = 0.5;
     let farClip  = 50;

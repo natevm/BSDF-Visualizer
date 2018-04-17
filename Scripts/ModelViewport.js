@@ -965,16 +965,6 @@ export default function ModelViewport(spec) {
 
         let evt = new Event('change');
 
-        //normalThetaElement.dispatchEvent(evt);
-        //normalPhiElement.dispatchEvent(evt);
-        if (linkedViewport !== undefined) {
-          let lvm = getLinkedCamRotMatrix(); //3x3
-          linkedViewport.updateTheta(normalTheta);
-          linkedViewport.updatePhi(normalPhi + 180);
-          linkedViewport.updateLinkedCamRot(lvm);
-        }
-        lobeRdr.updateTheta(normalTheta);
-        lobeRdr.updatePhi(normalPhi + 180);
 
         //1) Convert NDC back into world space.
         //See http://stack.gl/packages/#Jam3/camera-unproject
@@ -1013,6 +1003,20 @@ export default function ModelViewport(spec) {
         //3) Pass modified Tangent2World to lobeRdr
         lobeRdr.setTangent2World(Tangent2World);
         lobeRdrEnabled = true;
+
+        if (linkedViewport !== undefined) {
+          let lvm = getLinkedCamRotMatrix(); //3x3
+          linkedViewport.updateTheta(normalTheta);
+          linkedViewport.updatePhi(normalPhi + 180);
+          linkedViewport.updateLinkedCamRot(lvm);
+          let linkedT2W = Tangent2World;
+          linkedT2W[12] = 0;
+          linkedT2W[13] = 0;
+          linkedT2W[14] = 0;
+          linkedViewport.updateLinkedTangent2World(linkedT2W);
+        }
+        lobeRdr.updateTheta(normalTheta);
+        lobeRdr.updatePhi(normalPhi + 180);
     };
 
   //************* Start "constructor" **************

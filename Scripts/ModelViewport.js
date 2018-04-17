@@ -867,7 +867,6 @@ export default function ModelViewport(spec) {
         let pixels = new Float32Array(4);
         gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
         gl.readPixels(pos.x, pos.y, 1, 1, gl.RGBA, gl.FLOAT, pixels);
-        console.log(pixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         //console.log([pos.x, pos.y]);
         //console.log([pixels[0], pixels[2], -pixels[1], pixels[3]]);
@@ -986,17 +985,25 @@ export default function ModelViewport(spec) {
         let viewport = [0, 0, canvas.width, canvas.height];
         //2D point in screen space
         //z=0 means "near plane"
-        var point = [pos.x, canvas.height - pos.y, pixels[3]];
+        let point = [pos.x, canvas.height - pos.y, pixels[3]];
         //vec3 output
-        var output = [];
+        let output = [];
 
         unproject(output, point, viewport, invProjView);
 
         //2) Modify Tangent2World
-        Tangent2World[12] = output[0];
-        Tangent2World[13] = output[1];
-        Tangent2World[14] = output[2];
-        //console.log(output[0] + " " + output[1] + " " + output[2]);
+        //Tangent2World[12] = output[0];
+        //Tangent2World[13] = output[1];
+        //Tangent2World[14] = output[2];
+
+        let t = tangent;
+        let b = bitangent;
+        let n = normalDir;
+        Tangent2World = mat4.fromValues(t[0],      t[1],      t[2],      0,
+                                        b[0],      b[1],      b[2],      0,
+                                        n[0],      n[1],      n[2],      0,
+                                        output[0], output[1], output[2], 1);
+
         //3) Pass modified Tangent2World to lobeRdr
         lobeRdr.setTangent2World(Tangent2World);
         lobeRdrEnabled = true;

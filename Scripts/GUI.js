@@ -175,9 +175,7 @@ export default function GUI(inModel){
           if (this.status === 200) {
             // Note: .response instead of .responseText
             var blob = new Blob([this.response], {type: 'Blob'});
-            loadAnalytical(blob).then(resetIBL => {
-              model.resetIBL();
-            });
+            loadAnalytical(blob);
           }
         };
         xhr.send();
@@ -261,9 +259,11 @@ export default function GUI(inModel){
           addSwitch(checkboxContainer, name, "checkbox_" + name, curr_u.default);
           d3.select("#checkbox_" + name).on('change', () => {
             let checked = d3.select("#checkbox_" + name).property('checked');
+            console.log("checked:" + checked);
             uniform_update_funcs.get(name).forEach(f => {
               f(checked);
             });
+            model.resetIBL();
           });
         } else if (curr_u.type === "color") {
           console.warn(name + ": Color support not yet implemented");

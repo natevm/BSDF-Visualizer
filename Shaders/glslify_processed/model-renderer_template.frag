@@ -16,6 +16,9 @@ uniform vec3 uLightDirection;
 uniform vec3 uModelSpacePickPoint;
 uniform mat4 uNMatrix;
 
+uniform float uTheta;
+uniform float uPhi;
+
 uniform float uTotalFrames;
 uniform float uTime;
 uniform sampler2D EnvMap;
@@ -131,6 +134,19 @@ float gold_noise(in vec2 coordinate, in float seed){
     return (2.0 * fract(sin(dot(coordinate*(seed+phi), vec2(phi, pi)))*sq2)) - 1.0;
 }
 
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
 vec4 jet (float x_0) {
   const float e0 = 0.0;
   const vec4 v0 = vec4(0,0,0.5137254901960784,1);
@@ -171,7 +187,8 @@ void main(void) {
             float rand2 = gold_noise(gl_FragCoord.xy, uTime * float(i * 5));
             float rand3 = gold_noise(gl_FragCoord.xy, uTime * float(i * 7));
             vec3 L = normalize(randomCosineWeightedHemispherePoint(vec3(rand1, rand2, rand3), (vWorldNormal)));
-            vec3 color_inc = (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0)  * vec3(texture(EnvMap, toSpherical(L))) * 2.0) / 64.0;
+            vec3 color_inc = (uIntensity * max(BRDF(mat3(uVMatrix) * L, V, N, X, Y),0.0)  *
+              vec3(texture(EnvMap, toSpherical(mat3(rotationMatrix(vec3(0.0,1.0,0.0), uPhi))*L))) * 2.0) / 64.0;
             if(NdotL){
               color_inc *= clamp(dot(N, mat3(uVMatrix) * L),0.0,1.0);
             }

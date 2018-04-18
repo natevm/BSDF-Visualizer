@@ -7,7 +7,9 @@
     	<link rel="stylesheet" href="./Styles/fonts.css">
     	<link rel="stylesheet" href="./Styles/colors.css">
     	<link rel="stylesheet" href="./Styles/rangesliders.css">
-    	<link rel="stylesheet" href="./Styles/knobs.css">
+        <link rel="stylesheet" href="./Styles/knobs.css">
+        <link rel="stylesheet" href="./Styles/switch.css">
+    	<link rel="stylesheet" href="./Styles/button.css">
     	<meta name="viewport" content="width=device-width,initial-scale=1.0">
     	<meta charset="utf-8"/>
     </header>
@@ -39,17 +41,17 @@
     <body id="main-container">
         <div id="menu-column">
             <div id="brdf-presets">
-                <button type="button" id="btn1">Ashikhmin Shirley</button>
-                <button type="button" id="btn2">Phong</button>
-                <button type="button" id="btn3">Lambert</button>
-                <button type="button" id="btn4">Oren Nayar</button>
-                <button type="button" id="btn5">Ross-Li</button>
+                <button type="button" class="button" id="btn1">Ashikhmin Shirley</button>
+                <button type="button" class="button" id="btn2">Phong</button>
+                <button type="button" class="button" id="btn3">Lambert</button>
+                <button type="button" class="button" id="btn4">Oren Nayar</button>
+                <button type="button" class="button" id="btn5">Ross-Li</button>
             </div>
         </div>
         <div id="model-column">
             <div id="model-header">
-              <input id="heatmap-toggle" type="checkbox"> Heatmap
-              <input id="ibl-toggle" type="checkbox" checked> Image Based Lighting
+              <!-- <div id="heatmap-toggle">Heatmap</div> -->
+              <!-- <div id="ibl-toggle">Image Based Lighting</div> -->
                 <!-- <input class="niceSlider" id="slider_camRot" type='range'/> -->
             </div>
             <canvas id="model-canvas">Point light canvas</canvas>
@@ -74,6 +76,6 @@
     <script src='Scripts/webgl-obj-loader.js'></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="Scripts/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="Scripts/jquery.knob.js"></script>
     <script type="module" src="Scripts/main.js"></script>
-
 </html>

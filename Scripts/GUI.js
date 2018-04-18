@@ -263,7 +263,6 @@ export default function GUI(inModel){
             let checked = d3.select("#checkbox_" + name).property('checked');
             uniform_update_funcs.get(name).forEach(f => {
               f(checked);
-              model.resetIBL();
             });
           });
         } else if (curr_u.type === "color") {

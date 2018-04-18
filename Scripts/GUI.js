@@ -120,7 +120,7 @@ export default function GUI(inModel){
       /* Add incident theta slider */
       addKnob(ptLightSliderDiv, "θ", "slider_incidentTheta", 0, 360, starting_theta);
       addKnob(ptLightSliderDiv, "φ", "slider_incidentPhi", -180, 180, starting_phi);
-      addKnob(ptLightSliderDiv, "Intens.", "slider_intensity", 0, 100, 50, 270, -135);
+      addKnob(ptLightSliderDiv, "Intens.", "slider_intensity", 0, 100, 30, 270, -135);
       addKnob(ptLightSliderDiv, "Qual.", "slider_quality", 0, 100, 100, 270, -135);
 
       // let camRotSlider = document.getElementById("slider_camRot");

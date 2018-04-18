@@ -297,7 +297,7 @@ export function brdfShaderFromTemplate(spec){
 }
 
 export function init_gl_context(canvas){
-  const gl = canvas.getContext("webgl2", {antialias:true});
+  const gl = canvas.getContext("webgl2", {antialias:false});
     if (gl === null) {
         console.error("WebGL 2 not available");
         document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";

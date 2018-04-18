@@ -380,7 +380,7 @@ export default function ModelViewport(spec) {
 
         /* Setup render buffers */
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
         gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
@@ -705,6 +705,7 @@ export default function ModelViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
       drawFinalRender();
 
       if (queueRefresh1) {
@@ -721,6 +722,16 @@ export default function ModelViewport(spec) {
         queueRefresh2 = false;
         resetIBL();
       }
+
+      /* Blit depth info to the main frame buffer */
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+      gl.blitFramebuffer(
+                  0, 0, iblRenderBuffer.width, iblRenderBuffer.width,
+                  0, 0, iblColorBuffer.width, iblColorBuffer.width,
+                  gl.DEPTH_BUFFER_BIT, gl.NEAREST);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
     animate = function() {
@@ -769,7 +780,7 @@ export default function ModelViewport(spec) {
         if(lobeRdrEnabled){
           lobeRdr.setV(vMatrix);
           lobeRdr.setP(pMatrix);
-          gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+          // gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
           lobeRdr.render(time);
         }
       }

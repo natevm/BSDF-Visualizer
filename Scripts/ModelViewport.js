@@ -110,6 +110,7 @@ export default function ModelViewport(spec) {
     totalFrames = 1,
     cameraXRotation = 0,
     cameraYRotation = 0,
+    zoomin = 0,
     mouseDown = false,
     lastMouseX,
     lastMouseY,
@@ -667,6 +668,7 @@ export default function ModelViewport(spec) {
       // Next, handle rotation
       let tempMatrix = mat4.create();
       mat4.identity(tempMatrix);
+      mat4.translate(tempMatrix, tempMatrix, [0,0,zoomin]);
       mat4.rotate(tempMatrix, tempMatrix, cameraYRotation, [1, 0, 0]);
       mat4.rotate(tempMatrix, tempMatrix, cameraXRotation, [0, 1, 0]);
       mat4.multiply(worldToCamera, worldToCamera, tempMatrix);
@@ -679,7 +681,7 @@ export default function ModelViewport(spec) {
       //these values are hardcoded now for demo purpose, will change later
       //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 18.0, 50.0);
       //mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
-      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 50.0);
+      mat4.perspective(pMatrix, 45 * Math.PI / 180.0, gl.viewportWidth / gl.viewportHeight, 0.5, 100.0);
 
       /* Find normal matrix */
       let mvMatrix = mat4.create();
@@ -1208,12 +1210,19 @@ export default function ModelViewport(spec) {
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01*deltaX;
-            else cameraYRotation += 0.01*deltaY;
-            if (linkedViewport !== undefined) {
-              linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+            if (event.which === 1) {
+              if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
+              else cameraYRotation += 0.01 * deltaY;
+              if (linkedViewport !== undefined) {
+                linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
+              }
+            } else {
+              if (deltaY > 0) {
+                zoomin += 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+              } else {
+                zoomin -= 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+              }
             }
-
             lastMouseX = newX;
             lastMouseY = newY;
             resetIBL();

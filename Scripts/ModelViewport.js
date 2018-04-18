@@ -70,7 +70,7 @@ export default function ModelViewport(spec) {
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "glslify_processed/model-renderer.frag",
-    cubemapURL = "./cubemaps/Chiricahua_Plaza/GravelPlaza_8k.jpg",
+    cubemapURL = "./cubemaps/Barcelona_Rooftops/Barce_Rooftop_C_8k.jpg",
 
     models = {},
     skyboxVertexBuffer,

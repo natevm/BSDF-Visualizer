@@ -38,8 +38,10 @@ export default function ModelViewport(spec) {
       useIBL = input_bool;
       if (useIBL) {
         setEnvironmentTexture(cubemapURL);
+        maxConvergence = 1000000;
       }else {
         setEnvironmentColor(0,0,0,255);
+        maxConvergence = 3;
       }
       resetIBL();
     },
@@ -113,7 +115,7 @@ export default function ModelViewport(spec) {
     depthBuffer = null, colorBuffer = null,
     iblTexture1 = null, iblTexture2 = null,
     iblCurrentBuffer = 0,
-    maxConvergence = 10000,
+    maxConvergence = 100000,
 
     quality = 1.0,
     queueRefresh1 = false,
@@ -174,6 +176,9 @@ export default function ModelViewport(spec) {
       shaderProgram.uIBL = gl.getUniformLocation(shaderProgram, "uIBL");
       shaderProgram.uIntensity = gl.getUniformLocation(shaderProgram, "uIntensity");
 
+      shaderProgram.uTheta = gl.getUniformLocation(shaderProgram, "uTheta");
+      shaderProgram.uPhi = gl.getUniformLocation(shaderProgram, "uPhi");
+
       shaderProgram.mMatrixUniform = gl.getUniformLocation(shaderProgram, "uMMatrix");
       shaderProgram.vMatrixUniform = gl.getUniformLocation(shaderProgram, "uVMatrix");
       shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
@@ -216,6 +221,8 @@ export default function ModelViewport(spec) {
       /* Find and store attributes/uniforms */
       skyboxShaderProgram.aVertexPosition = gl.getAttribLocation(skyboxShaderProgram, "aVertexPosition");
       skyboxShaderProgram.uEnvMap = gl.getUniformLocation(skyboxShaderProgram, "EnvMap");
+      skyboxShaderProgram.uTheta = gl.getUniformLocation(skyboxShaderProgram, "uTheta");
+      skyboxShaderProgram.uPhi = gl.getUniformLocation(skyboxShaderProgram, "uPhi");
       skyboxShaderProgram.uIVMatrix = gl.getUniformLocation(skyboxShaderProgram, "uIVMatrix");
       skyboxShaderProgram.uIPMatrix = gl.getUniformLocation(skyboxShaderProgram, "uIPMatrix");
 
@@ -421,6 +428,9 @@ export default function ModelViewport(spec) {
       gl.uniform1f(shaderProgram.specularExponentUniform, 100.0);
       gl.uniform1f(shaderProgram.uIntensity, intensity);
 
+      gl.uniform1f(shaderProgram.uPhi, lightPhi);
+      gl.uniform1f(shaderProgram.uTheta, lightTheta);
+
       /* Matrix data  */
       gl.uniformMatrix4fv(shaderProgram.mMatrixUniform, false, mMatrix);
       gl.uniformMatrix4fv(shaderProgram.vMatrixUniform, false, vMatrix);
@@ -459,7 +469,9 @@ export default function ModelViewport(spec) {
       /* Environment map */
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, envMapTex);
-      gl.uniform1i(shaderProgram.envMapSamplerUniform, 0);
+      gl.uniform1i(shaderProgram.uEnvMap, 0);
+      gl.uniform1f(shaderProgram.uPhi, lightPhi);
+      gl.uniform1f(shaderProgram.uTheta, lightTheta);
 
       /* Matrix data */
       let iVMatrix = mat4.create();
@@ -536,13 +548,13 @@ export default function ModelViewport(spec) {
         // vs non power of 2 images so check if the image is a
         // power of 2 in both dimensions.
         if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-           // Yes, it's a power of 2. Generate mips.
            gl.generateMipmap(gl.TEXTURE_2D);
+           // Yes, it's a power of 2. Generate mips.
         } else {
            // No, it's not a power of 2. Turn of mips and set
            // wrapping to clamp to edge
-           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+           // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+           // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
       };
@@ -760,6 +772,7 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
+      resetIBL();
     },
 
     updatePhi = function(newPhiDeg){
@@ -768,6 +781,7 @@ export default function ModelViewport(spec) {
         linkedViewport.updateTheta(getNormalTheta());
         linkedViewport.updatePhi(getNormalPhi());
       }
+      resetIBL();
     },
 
     getNormalTheta = function(){

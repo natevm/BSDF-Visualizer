@@ -10,6 +10,9 @@ uniform mat4 uIVMatrix;
 uniform mat4 uIPMatrix;
 uniform sampler2D EnvMap;
 
+uniform float uTheta;
+uniform float uPhi;
+
 /* Varying */
 out vec3 vCamPos;
 out vec3 vUVW;

@@ -1,5 +1,6 @@
 # BSDF-Visualizer
 Project for scientific visualization
+Live Demo here: https://n8vm.github.io/BSDF-Visualizer/
 
 ## Using Glslify with shaders
 [Glslify](https://github.com/glslify/glslify) is quite handy and I am currently

@@ -380,7 +380,8 @@ export default function ModelViewport(spec) {
 
         /* Setup render buffers */
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        //gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
         gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
@@ -751,15 +752,22 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
-        vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
+      let templMap = new Map();
+      let modelShdrObj = {shaderDir: shdrDir,
+                          templatePath: "glslify_processed/model-renderer_template.frag",
+                          vertPath: model_vert_shader_name,
+                          fragPath: model_frag_shader_name,
+                          templateType: "frag"};
+      templMap.set("model_shader", modelShdrObj);
+      return templMap;
     },
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a BRDF)
     /////////////////////
-    addUniformsFunc = function(addUniformsHelper){
+    addUniformsFunc = function(addUniformsHelper, templId){
+      console.log(templId);
       defaultShaderProgram = addUniformsHelper(gl);
       //we need to set up our uniforms again because
       //the above function returned a new lobeProgram.
@@ -780,7 +788,7 @@ export default function ModelViewport(spec) {
         if(lobeRdrEnabled){
           lobeRdr.setV(vMatrix);
           lobeRdr.setP(pMatrix);
-          // gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+          //gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
           lobeRdr.render(time);
         }
       }

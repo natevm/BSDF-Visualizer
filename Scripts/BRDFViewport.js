@@ -127,15 +127,23 @@ export default function BRDFViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "lobe_template.vert",
-        vertPath: lobe_vert_shader_name, fragPath: lobe_frag_shader_name, templateType: "vert"};
+      let templMap = new Map();
+      let lobeShdrObj = {shaderDir: shdrDir,
+         templatePath: "lobe_template.vert",
+         vertPath: lobe_vert_shader_name,
+         fragPath: lobe_frag_shader_name,
+         templateType: "vert"
+        };
+      templMap.set("lobe_shader", lobeShdrObj);
+      return templMap;
     },
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a BRDF)
     /////////////////////
-    addUniformsFunc = function(addUniformsHelper){
+    addUniformsFunc = function(addUniformsHelper, templId){
+      console.log(templId);
       lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, V, P);
     },
 

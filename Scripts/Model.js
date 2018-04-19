@@ -95,6 +95,22 @@ export default function Model(){
       });
     },
 
+    setEnvironmentTexture = function(url) {
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setEnvironmentTexture" in v) {
+          v.setEnvironmentTexture(url);
+        }
+      });
+    },
+
+    setEnvironmentColor = function(r, g, b, a) {
+      viewers.forEach(function(v) {
+        if (v.getInputByModel() === true && "setEnvironmentColor" in v) {
+          v.setEnvironmentColor(r, g, b, a);
+        }
+      });
+    },
+
     loadAnalyticalBRDF = function(in_file){
       return loadAnalytical_getUniforms(in_file, viewers);
     };
@@ -131,6 +147,8 @@ export default function Model(){
     setIntensity,
     setMaxConvergence,
     setQuality,
+    setEnvironmentTexture,
+    setEnvironmentColor,
     loadAnalyticalBRDF,
   });
 }

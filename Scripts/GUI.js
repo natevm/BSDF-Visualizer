@@ -246,7 +246,6 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
       setupButtonCallback(d3.select("#btn6"), "./brdfs/blinn.yaml");
 
-
       $("#slider_incidentTheta").knob({
           'release' : function (v) { model.setTheta(v); },
           'change' : function (v) { model.setTheta(v); }
@@ -283,6 +282,12 @@ export default function GUI(inModel){
           //spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
             //brdfCheckboxDiv);
         //});
+      });
+
+      document.getElementById("link_button").addEventListener("click", function(){
+        //document.getElementById("link_button").toggleClass("unlink");
+          //in the below function, "this" appears to be bound to some object
+          //that addEventListener binds the function to.
       });
     },
 

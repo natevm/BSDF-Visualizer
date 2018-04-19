@@ -32,20 +32,39 @@ export default function BRDFViewport(spec) {
 
     lobe_vert_shader_name = "lobe.vert",
     lobe_frag_shader_name = "phong.frag",
+
+    current_lvm,
+    current_Tangent2World,
+    linked = true,
+
     lobeRdr,
 
     oldCamrotDeg = 0.0,
 
+    //camera control
+    cameraXRotation = 0,
+    cameraYRotation = 0,
+    zoomin = 1,
+    mouseDown = false,
+    lastMouseX,
+    lastMouseY,
+
     get_initial_V = function(){
-      var cam_z = 1.5; // z-position of camera in camera space
-      var cam_y = 0.5; // altitude of camera
-      var init_V = [1,      0,     0, 0,
-                    0,      1,     0, 0,
-                    0,      0,     1, 0,
-                    0, -cam_y,-cam_z, 1];
-      return init_V;
+    var cam_z = 1.5; // z-position of camera in camera space
+    var cam_y = 0.5; // altitude of camera
+    var init_V = [1,      0,     0, 0,
+                  0,      1,     0, 0,
+                  0,      0,     1, 0,
+                  0, -cam_y,-cam_z, 1];
+    return init_V;
     },
     initial_V = get_initial_V(),
+
+    initialTangent2World = mat4.fromValues(0, 0, 1, 0,
+                                          1, 0, 0, 0,
+                                          0, 1, 0, 0,
+                                          0, 0, 0, 1),
+
     Tangent2World = mat4.fromValues(0, 0, 1, 0,
                                     1, 0, 0, 0,
                                     0, 1, 0, 0,
@@ -68,12 +87,64 @@ export default function BRDFViewport(spec) {
     // SET UP PROGRAM
     /////////////////////
 
-    updateLinkedTangent2World = function(newTangent2World){
-      Tangent2World = newTangent2World;
-      lobeRdr.setTangent2World(Tangent2World);
+    updateLinkedTangent2World = function(Tangent2World){
+      current_Tangent2World = mat4.clone(Tangent2World);
+      if (linked) {
+        lobeRdr.setTangent2World(Tangent2World);
+      }
+    },
+    /////////////////////
+    // SET UP UI CALLBACKS
+    /////////////////////
+
+    resetView = function() {
+      cameraXRotation = 0;
+      cameraYRotation = 0;
+      zoomin = 1;
+      V = mat4.clone(initial_V);
+      lobeRdr.setV(V);
+      updateLinkedTangent2World(initialTangent2World);
+      linked = false;
+    },
+
+    recoverView = function() {
+      linked = true;
+      this.updateLinkedCamRot(current_lvm);
+      updateLinkedTangent2World(current_Tangent2World);
+    },
+
+
+    updateCamRotZoom = function(lvm){
+      //mat4.multiply(V, vm, initial_V);
+
+
+      let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
+      //TODO: The following is a HACK...
+      //there should be a better solution than zeroing these quantities and
+      //then restoring them back.
+      let orig_12 = initial_V[12];
+      let orig_13 = initial_V[13];
+      let orig_14 = initial_V[14];
+      initial_V[12] = 0.0;
+      initial_V[13] = 0.0;
+      initial_V[14] = 0.0;
+      let zoomMatrix = mat4.create();
+      mat4.identity(zoomMatrix);
+      mat4.scale(zoomMatrix, zoomMatrix, [zoomin,zoomin,zoomin]);
+      mat4.multiply(V,zoomMatrix, initial_V);
+      mat4.multiply(V,linkedViewMatrix4, V);
+      initial_V[12] = orig_12;
+      initial_V[13] = orig_13;
+      initial_V[14] = orig_14;
+
+
+
+      lobeRdr.setV(V);
     },
 
     updateLinkedCamRot = function(lvm){
+      current_lvm = mat4.clone(lvm);
+      if (linked) {
       let linkedViewMatrix4 = mat4.fromValues(lvm[0],lvm[1],lvm[2],0,lvm[3],lvm[4],lvm[5],0,lvm[6],lvm[7],lvm[8],0,0,-0.5,-1.5,1);
       //TODO: The following is a HACK...
       //there should be a better solution than zeroing these quantities and
@@ -89,17 +160,10 @@ export default function BRDFViewport(spec) {
       initial_V[13] = orig_13;
       initial_V[14] = orig_14;
 
-      let rot_angle_deg = oldCamrotDeg;
-      let rot_angle = deg2rad(rot_angle_deg);
-      let rot_axis = vec3.create();
-      let rot = mat4.create();
-
-      //initial_V[13] = -0.5;
-      //initial_V[14] = -1.5;
-
-      lobeRdr.setV(V);
        //let slider = document.getElementById("slider_camRot");
        //slider.value = 0;
+      }
+      lobeRdr.setV(V);
     },
 
     updateCamRot = function(newCamrotDeg){
@@ -174,7 +238,7 @@ export default function BRDFViewport(spec) {
 
     let fov = 90 * Math.PI / 180;
     let aspectRatio = canvas.width/canvas.height;
-    let nearClip = 0.5;
+    let nearClip = 0.01;
     let farClip  = 50;
     //P = perspectiveMatrix(fov, aspectRatio, nearClip, farClip);
     P = mat4.create();
@@ -183,12 +247,62 @@ export default function BRDFViewport(spec) {
     lobeRdr = LobeRenderer({gl: gl, starting_theta: 45, starting_phi: 180,
       lobe_vert_shader_name: lobe_vert_shader_name, lobe_frag_shader_name: lobe_frag_shader_name,
       shdrDir: shdrDir, initial_Tangent2World: Tangent2World, initial_V: initial_V, initial_P: P});
-  }
+
+
+    document.getElementById(canvasName).onmousedown = (event) => {
+      //console.log("detected!\n");
+      if (!linked) {
+        mouseDown = true;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+      }
+    };
+
+    document.getElementById(canvasName).onmouseup = (event) => {
+      if (!linked) {
+        mouseDown = false;
+      }
+    };
+
+    document.getElementById(canvasName).onmousemove = (event) => {
+      if (!linked && mouseDown) {
+        let newX = event.clientX;
+        let newY = event.clientY;
+        let deltaY = newY - lastMouseY;
+        let deltaX = newX - lastMouseX;
+
+        if (event.which === 1 && !event.altKey) {
+          if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
+          else cameraYRotation += 0.01 * deltaY;
+        } else {
+          if (deltaY > 0) {
+            zoomin += 0.01 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          } else {
+            zoomin -= 0.01 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          }
+          if (zoomin < 0.001) zoomin = 0.001;
+        }
+        let vm = mat4.create();
+        mat4.identity(vm);
+        mat4.translate(vm, vm, [0, 0, zoomin]);
+        mat4.rotate(vm, vm, cameraYRotation, [1, 0, 0]);
+        mat4.rotate(vm, vm, cameraXRotation, [0, 1, 0]);
+        let lvm = mat3.create();
+        mat3.fromMat4(lvm,vm);
+        updateCamRotZoom(lvm);
+        lastMouseX = newX;
+        lastMouseY = newY;
+      }
+    };
+
+    }
   //************* End "constructor" **************
 
   //Put any methods / properties that we want to make public inside this object.
   return Object.freeze({
     render,
+    resetView,
+    recoverView,
     updateTheta,
     updatePhi,
     updateCamRot,

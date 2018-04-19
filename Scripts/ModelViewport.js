@@ -1256,7 +1256,7 @@ export default function ModelViewport(spec) {
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if (event.which === 1) {
+            if (event.which === 1 && !event.altKey) {
               if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
               else cameraYRotation += 0.01 * deltaY;
               if (linkedViewport !== undefined) {

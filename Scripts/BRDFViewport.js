@@ -130,7 +130,6 @@ export default function BRDFViewport(spec) {
       initial_V[14] = 0.0;
       let zoomMatrix = mat4.create();
       mat4.identity(zoomMatrix);
-      console.log(initial_V);
       mat4.scale(zoomMatrix, zoomMatrix, [zoomin,zoomin,zoomin]);
       mat4.multiply(V,zoomMatrix, initial_V);
       mat4.multiply(V,linkedViewMatrix4, V);
@@ -272,7 +271,7 @@ export default function BRDFViewport(spec) {
         let deltaY = newY - lastMouseY;
         let deltaX = newX - lastMouseX;
 
-        if (event.which === 1) {
+        if (event.which === 1 && !event.altKey) {
           if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
           else cameraYRotation += 0.01 * deltaY;
         } else {
@@ -295,7 +294,6 @@ export default function BRDFViewport(spec) {
         lastMouseY = newY;
       }
     };
-
 
     }
   //************* End "constructor" **************

@@ -40,7 +40,9 @@ export function loadAnalytical_getUniforms(file, viewers){
   //update functions (because if we have multiple Viewports, then the same uniform
   //will have multiple update callbacks regsitered to it).
   //****************************************************
-  var generate_addUniformsHelper = function(loadPromise, currViewer){
+
+  //templ_id is a string that helps us identify which shader template we are using.
+  var generate_addUniformsHelper = function(loadPromise, currViewer, templId){
     return loadPromise.then(value => {
       //"value" is in some sense the "return value" of loadBRDFPromise.
       //In other words, the "return value" of the original promise is the first argument
@@ -134,7 +136,7 @@ export function loadAnalytical_getUniforms(file, viewers){
 
       //viewers.forEach( v => {
         //if( "addUniformsFunc" in currViewer ){
-          currViewer.addUniformsFunc(addUniformsHelper);
+          currViewer.addUniformsFunc(addUniformsHelper, templId);
         //}
       //});
     });
@@ -160,12 +162,15 @@ export function loadAnalytical_getUniforms(file, viewers){
     //WARNING: hasOwnProperty won't get inherited properties. That's intentional for now...
     viewers.forEach( v => {
       if (v.hasOwnProperty("getTemplateInfo") && v.hasOwnProperty("addUniformsFunc")){
-        let templInfo = v.getTemplateInfo();
-        let loadBRDFPromise = loadBRDF({brdfFileStr: reader.result,
-          shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
-          vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
-          templateType: templInfo.templateType});
-        promises.push(generate_addUniformsHelper(loadBRDFPromise, v));
+        //let templInfo = v.getTemplateInfo();
+        let templInfoMap = v.getTemplateInfo();
+        templInfoMap.forEach(function(templInfo, id) {
+          let loadBRDFPromise = loadBRDF({brdfFileStr: reader.result,
+            shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
+            vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
+            templateType: templInfo.templateType});
+          promises.push(generate_addUniformsHelper(loadBRDFPromise, v, id));
+        });
       }
     });
 
@@ -297,7 +302,7 @@ export function brdfShaderFromTemplate(spec){
 }
 
 export function init_gl_context(canvas){
-  const gl = canvas.getContext("webgl2", {antialias:true});
+  const gl = canvas.getContext("webgl2", {antialias:false});
     if (gl === null) {
         console.error("WebGL 2 not available");
         document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";

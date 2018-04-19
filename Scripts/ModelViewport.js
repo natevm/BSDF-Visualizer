@@ -77,7 +77,7 @@ export default function ModelViewport(spec) {
     //TODO: move to const...
     model_vert_shader_name = "model-renderer.vert",
     model_frag_shader_name = "glslify_processed/model-renderer.frag",
-    cubemapURL = "./cubemaps/Barcelona_Rooftops/Barce_Rooftop_C_8k.jpg",
+    cubemapURL = "./cubemaps/Old_Industrial_Hall/fin4_Bg.jpg",
 
     models = {},
     skyboxVertexBuffer,
@@ -387,11 +387,22 @@ export default function ModelViewport(spec) {
         if( colorBuffer === null) colorBuffer = gl.createRenderbuffer();
 
         /* Setup render buffers */
+
+        /* This is a dumb kludge, but getFramebufferAttachmentParameter is bugged for default frame buffer, so I have no choice. */
+        // Firefox 1.0+
+        var isFirefox = typeof InstallTrigger !== 'undefined';
+
+        // Chrome 1+
+        var isChrome = !!window.chrome && !!window.chrome.webstore;
+
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        if (isFirefox)
+          gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        else
+          gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         /* Setup frame buffers */
         gl.bindFramebuffer(gl.FRAMEBUFFER, iblRenderBuffer);
@@ -561,8 +572,8 @@ export default function ModelViewport(spec) {
         // vs non power of 2 images so check if the image is a
         // power of 2 in both dimensions.
         if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-           gl.generateMipmap(gl.TEXTURE_2D);
            // Yes, it's a power of 2. Generate mips.
+           gl.generateMipmap(gl.TEXTURE_2D);
         } else {
            // No, it's not a power of 2. Turn of mips and set
            // wrapping to clamp to edge
@@ -710,8 +721,8 @@ export default function ModelViewport(spec) {
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, iblColorBuffer);
       gl.blitFramebuffer(
-          0, 0, iblRenderBuffer.width, iblRenderBuffer.width,
-          0, 0, iblColorBuffer.width, iblColorBuffer.width,
+          0, 0, iblRenderBuffer.width, iblRenderBuffer.height,
+          0, 0, iblColorBuffer.width, iblColorBuffer.height,
           gl.COLOR_BUFFER_BIT, gl.LINEAR
       );
 
@@ -719,6 +730,7 @@ export default function ModelViewport(spec) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
       drawFinalRender();
 
       if (queueRefresh1) {
@@ -735,6 +747,16 @@ export default function ModelViewport(spec) {
         queueRefresh2 = false;
         resetIBL();
       }
+
+      /* Blit depth info to the main frame buffer */
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+      gl.blitFramebuffer(
+                  0, 0, iblRenderBuffer.width, iblRenderBuffer.height,
+                  0, 0, canvas.width, canvas.height,
+                  gl.DEPTH_BUFFER_BIT, gl.NEAREST);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     },
 
     animate = function() {
@@ -754,22 +776,43 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
-        vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
+      let templMap = new Map();
+      let modelShdrObj = {shaderDir: shdrDir,
+                          templatePath: "glslify_processed/model-renderer_template.frag",
+                          vertPath: model_vert_shader_name,
+                          fragPath: model_frag_shader_name,
+                          templateType: "frag"};
+
+      //TODO: Partial code duplication from BRDFViewport.js
+      //We should only have to define this object once.
+      let lobeShdrObj = {shaderDir: shdrDir,
+         templatePath: "lobe_template.vert",
+         vertPath: "lobe.vert",
+         fragPath: "phong.frag",
+         templateType: "vert"
+        };
+
+      templMap.set("model_shader", modelShdrObj);
+      templMap.set("lobe_shader", lobeShdrObj);
+      return templMap;
     },
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a BRDF)
     /////////////////////
-    addUniformsFunc = function(addUniformsHelper){
-      defaultShaderProgram = addUniformsHelper(gl);
-      //we need to set up our uniforms again because
-      //the above function returned a new lobeProgram.
-      initShaders(defaultShaderProgram);
-      initBuffers();
-
-      lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+    addUniformsFunc = function(addUniformsHelper, templId){
+      if (templId === "model_shader") {
+        defaultShaderProgram = addUniformsHelper(gl);
+        //we need to set up our uniforms again because
+        //the above function returned a new lobeProgram.
+        initShaders(defaultShaderProgram);
+        initBuffers();
+      } else if(templId === "lobe_shader") {
+        lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+      } else {
+        throw "Invalid templId: " + templId;
+      }
     },
 
     /////////////////////
@@ -783,7 +826,7 @@ export default function ModelViewport(spec) {
         if(lobeRdrEnabled){
           lobeRdr.setV(vMatrix);
           lobeRdr.setP(pMatrix);
-          gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+          // gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
           lobeRdr.render(time);
         }
       }
@@ -992,7 +1035,8 @@ export default function ModelViewport(spec) {
         let viewport = [0, 0, canvas.width, canvas.height];
         //2D point in screen space
         //z=0 means "near plane"
-        let point = [pos.x, canvas.height - pos.y, pixels[3]];
+        // Subtracting a little from z so the lobe doesn't clip through the model
+        let point = [pos.x, canvas.height - pos.y, pixels[3] - 0.0001];
         //vec3 output
         let output = [];
 
@@ -1025,7 +1069,8 @@ export default function ModelViewport(spec) {
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
           linkedViewport.updateLinkedCamRot(lvm);
-          let linkedT2W = Tangent2World;
+          let linkedT2W = mat4.create();
+          mat4.copy(linkedT2W, Tangent2World);
           linkedT2W[12] = 0;
           linkedT2W[13] = 0;
           linkedT2W[14] = 0;

@@ -4,8 +4,8 @@
   --LandscapeColumnHeight: 45vw;
   /* These three variables should add up to column height */
   --LandscapeRow1Height: 5vw;
-  --LandscapeRow2Height: 30vw;
-  --LandscapeRow3Height: 10vw;
+  --LandscapeRow2Height: 33vw;
+  --LandscapeRow3Height: 7vw;
   --LandscapeColumnRightPad: 2vw;
 
   --PortraitTotalHeight: 245vw;

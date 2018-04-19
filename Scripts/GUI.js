@@ -187,6 +187,7 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");
       setupButtonCallback(d3.select("#btn4"), "./brdfs/oren-nayar.yaml");
       setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
+      setupButtonCallback(d3.select("#btn6"), "./brdfs/blinn.yaml");
 
       $("#slider_incidentTheta").knob({
           'release' : function (v) { model.setTheta(v); },
@@ -259,8 +260,8 @@ export default function GUI(inModel){
             'release' : update ,
             'change' : update
           });
-
-        } else if (curr_u.type === "bool") {
+        }
+        else if (curr_u.type === "bool") {
           addSwitch(checkboxContainer, name, "checkbox_" + name, curr_u.default);
           d3.select("#checkbox_" + name).on('change', () => {
             let checked = d3.select("#checkbox_" + name).property('checked');

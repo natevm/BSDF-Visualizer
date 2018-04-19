@@ -1,0 +1,24 @@
+uniforms:
+  reflectance:
+    type: "float"
+    min: 0
+    max: 1
+    default: 1
+  n:
+    type: "float"
+    min: 1
+    max: 1000
+    default: 100
+  NdotL:
+    type: "bool"
+    default: false
+brdf: >
+  #define M_PI 3.1415926535897932384626433832795
+
+  vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
+    vec3 R = reflect(-L, N);
+    float normalization = (n + 1.0) / (2.0 * M_PI);
+    vec3 specular = vec3(normalization * pow(dot(R,V),n));
+    vec3 diffuse = vec3(reflectance/M_PI) * clamp(dot(N,L),0.0,1.0);
+    return max(specular, 0.0) + diffuse;
+  }

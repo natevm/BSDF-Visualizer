@@ -75,6 +75,8 @@ void computeTangentVectors( vec3 inVec, out vec3 uVec, out vec3 vVec )
   }
 
   bitangent = cross(tangent, normalDir);
+  tangent = normalize(tangent);
+  bitangent = normalize(bitangent);
 
   uVec = tangent;
   vVec = bitangent;

@@ -1,6 +1,6 @@
 "use strict";
 
-import {deg2rad, rotY, rotZ} from './math-utils.js';
+import {deg2rad, rotY, rotZ, get_reflected} from './math-utils.js';
 import {map_insert_chain} from './collections-wranglers.js';
 
 //TODO: we want to pass the templatePath / vertPath / fragPath / templateType in as parameters.
@@ -40,7 +40,9 @@ export function loadAnalytical_getUniforms(file, viewers){
   //update functions (because if we have multiple Viewports, then the same uniform
   //will have multiple update callbacks regsitered to it).
   //****************************************************
-  var generate_addUniformsHelper = function(loadPromise, currViewer){
+
+  //templ_id is a string that helps us identify which shader template we are using.
+  var generate_addUniformsHelper = function(loadPromise, currViewer, templId){
     return loadPromise.then(value => {
       //"value" is in some sense the "return value" of loadBRDFPromise.
       //In other words, the "return value" of the original promise is the first argument
@@ -134,7 +136,7 @@ export function loadAnalytical_getUniforms(file, viewers){
 
       //viewers.forEach( v => {
         //if( "addUniformsFunc" in currViewer ){
-          currViewer.addUniformsFunc(addUniformsHelper);
+          currViewer.addUniformsFunc(addUniformsHelper, templId);
         //}
       //});
     });
@@ -160,12 +162,15 @@ export function loadAnalytical_getUniforms(file, viewers){
     //WARNING: hasOwnProperty won't get inherited properties. That's intentional for now...
     viewers.forEach( v => {
       if (v.hasOwnProperty("getTemplateInfo") && v.hasOwnProperty("addUniformsFunc")){
-        let templInfo = v.getTemplateInfo();
-        let loadBRDFPromise = loadBRDF({brdfFileStr: reader.result,
-          shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
-          vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
-          templateType: templInfo.templateType});
-        promises.push(generate_addUniformsHelper(loadBRDFPromise, v));
+        //let templInfo = v.getTemplateInfo();
+        let templInfoMap = v.getTemplateInfo();
+        templInfoMap.forEach(function(templInfo, id) {
+          let loadBRDFPromise = loadBRDF({brdfFileStr: reader.result,
+            shdrDir: templInfo.shaderDir, templatePath: templInfo.templatePath,
+            vertPath: templInfo.vertPath, fragPath: templInfo.fragPath,
+            templateType: templInfo.templateType});
+          promises.push(generate_addUniformsHelper(loadBRDFPromise, v, id));
+        });
       }
     });
 
@@ -249,7 +254,6 @@ function uniformsInfo_toString(uniformsInfo){
 //   b) <INLINE_BRDF_HERE> where the BRDF function gets inlined.
 function brdfTemplSubst(templShdrSrc, brdfYaml){
   let brdf_t = jsyaml.load(brdfYaml);
-  //console.log(brdf_t);
   let uniformsInfo = brdf_t.uniforms;
   if( !uniformsInfo.hasOwnProperty('NdotL') ){
     uniformsInfo.NdotL = {type: "bool", default: true};
@@ -266,7 +270,7 @@ function brdfTemplSubst(templShdrSrc, brdfYaml){
     let substitutedSrc = templShdrSrc.replace(uniformHook, uniformsSrc)
                                      .replace(brdfFuncHook, brdfFuncStr);
 
-    console.log(substitutedSrc);
+    //console.log(substitutedSrc);
     return {uInfo: uniformsInfo, substSrc: substitutedSrc};
   }
 }
@@ -298,7 +302,7 @@ export function brdfShaderFromTemplate(spec){
 }
 
 export function init_gl_context(canvas){
-  const gl = canvas.getContext("webgl2", {antialias:true});
+  const gl = canvas.getContext("webgl2", {antialias:false});
     if (gl === null) {
         console.error("WebGL 2 not available");
         document.body.innerHTML = "This application requires WebGL 2 which is unavailable on this system.";
@@ -306,19 +310,6 @@ export function init_gl_context(canvas){
   return gl;
 }
 
-// Code for perspective matrix from https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection
-export function perspectiveMatrix(fieldOfViewInRadians, aspectRatio, near, far) {
-
-  var f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
-  var rangeInv = 1 / (near - far);
-
-  return [
-    f / aspectRatio, 0,                          0,   0,
-    0,               f,                          0,   0,
-    0,               0,    (near + far) * rangeInv,  -1,
-    0,               0,  near * far * rangeInv * 2,   0
-  ];
-}
 
 //TODO: move this into BRDFViewport.js, since it's specific to that viewer.
 //export function get_initial_V(){
@@ -379,19 +370,6 @@ export function compile_and_link_shdr(gl, vsSource, fsSource){
 
   return program;
 }
-
-//output is unit reflected vector
-//var get_reflected = function(L_hat,N_hat){
-export function get_reflected(L_hat,N_hat){
-  var L_plus_R = vec3.create();
-  vec3.scale(L_plus_R, N_hat, 2*vec3.dot(L_hat,N_hat));
-  var R_hat = vec3.create();
-  vec3.sub(R_hat, L_plus_R, L_hat);
-  vec3.normalize(R_hat,R_hat); //I don't think this is needed?
-  return R_hat;
-}
-
-//incident angle is the angle between the incident light vector and the normal
 
 export function compute_L_hat(in_theta_deg, in_phi_deg){
   var in_theta = deg2rad(in_theta_deg);

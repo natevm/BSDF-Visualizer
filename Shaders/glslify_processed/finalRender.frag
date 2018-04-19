@@ -121,33 +121,33 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
 //This is best suited for mobile devices, like iOS.
 
 void texcoords(vec2 fragCoord, vec2 resolution,
-    		out vec2 v_rgbNW, out vec2 v_rgbNE,
-    		out vec2 v_rgbSW, out vec2 v_rgbSE,
-    		out vec2 v_rgbM) {
-    vec2 inverseVP = 1.0 / resolution.xy;
-    v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
-    v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
-    v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
-    v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
-    v_rgbM = vec2(fragCoord * inverseVP);
+			out vec2 v_rgbNW, out vec2 v_rgbNE,
+			out vec2 v_rgbSW, out vec2 v_rgbSE,
+			out vec2 v_rgbM) {
+	vec2 inverseVP = 1.0 / resolution.xy;
+	v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
+	v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
+	v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
+	v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
+	v_rgbM = vec2(fragCoord * inverseVP);
 }
 
 vec4 apply(sampler2D tex, vec2 fragCoord, vec2 resolution) {
-    mediump vec2 v_rgbNW;
-    mediump vec2 v_rgbNE;
-    mediump vec2 v_rgbSW;
-    mediump vec2 v_rgbSE;
-    mediump vec2 v_rgbM;
+	mediump vec2 v_rgbNW;
+	mediump vec2 v_rgbNE;
+	mediump vec2 v_rgbSW;
+	mediump vec2 v_rgbSE;
+	mediump vec2 v_rgbM;
 
-    //compute the texture coords
-    texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+	//compute the texture coords
+	texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 
-    //compute FXAA
-    return fxaa(tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+	//compute FXAA
+	return fxaa(tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 }
 
 out vec4 vColor;
 void main() {
-    vec2 fragCoord = vUV * resolution;
-    vColor = apply(Tex, fragCoord, resolution);
+	vec2 fragCoord = vUV * resolution;
+	vColor = apply(Tex, fragCoord, resolution);
 }

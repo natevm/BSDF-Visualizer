@@ -13,8 +13,7 @@ import {addEnvelopeControl} from "./ui-wranglers.js";
 
 //Constructor with one argument - the Model that we hook this controller to.
 export default function GUI(inModel){
-  //Declare our object's properties and methods below.
-  //They are private by default, unless we put them
+  //Declare our object's properties and methods below.  They are private by default, unless we put them
   //in the "frozen" object that gets returned at the end.
   let
     incidentThetaEnvelope,
@@ -148,7 +147,7 @@ export default function GUI(inModel){
     },
 
     loadAnalytical = function(file){
-      model.loadAnalyticalBRDF(file).then(returnResult => {
+      return model.loadAnalyticalBRDF(file).then(returnResult => {
         //console.log(returnResult);
         const {uniforms, uniform_update_funcs} = returnResult;
         spawnUniformSliders(uniforms, uniform_update_funcs, brdfSliderDiv,
@@ -188,6 +187,8 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");
       setupButtonCallback(d3.select("#btn4"), "./brdfs/oren-nayar.yaml");
       setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
+      setupButtonCallback(d3.select("#btn6"), "./brdfs/blinn.yaml");
+
 
       $("#slider_incidentTheta").knob({
           'release' : function (v) { model.setTheta(v); },
@@ -254,8 +255,8 @@ export default function GUI(inModel){
             'release' : update ,
             'change' : update
           });
-
-        } else if (curr_u.type === "bool") {
+        }
+        else if (curr_u.type === "bool") {
           addSwitch(checkboxContainer, name, "checkbox_" + name, curr_u.default);
           d3.select("#checkbox_" + name).on('change', () => {
             let checked = d3.select("#checkbox_" + name).property('checked');

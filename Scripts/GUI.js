@@ -196,12 +196,8 @@ export default function GUI(inModel){
         else if (value == 10) {
           model.setEnvironmentColor(200, 200, 200, 200);
         }
-
         console.log();
       });
-
-      let modelViewerCanvas = document.getElementById("model-canvas");
-      modelViewerCanvas.style.cursor = "crosshair";
     },
 
     loadAnalytical = function(file){
@@ -239,7 +235,36 @@ export default function GUI(inModel){
       });
     },
 
+    setupCursorCallbacks = function(){
+      //FIXME: HACK below required, otherwise the user has to click in order for us
+      //to intercept keypresses.
+
+      let modelViewerCanvas = document.getElementById("model-canvas");
+      modelViewerCanvas.focus();
+      modelViewerCanvas.style.cursor = "crosshair";
+
+      document.addEventListener('keydown', (event) => {
+        const keyName = event.key;
+
+        console.log(keyName);
+
+        if (keyName === 'Control') {
+          // do not alert when only Control key is pressed.
+          return;
+        }
+
+        if (event.ctrlKey) {
+          // Even though event.key is not 'Control' (i.e. 'a' is pressed),
+          // event.ctrlKey may be true if Ctrl key is pressed at the time.
+          alert(`Combination of ctrlKey + ${keyName}`);
+        } else {
+          alert(`Key pressed ${keyName}`);
+        }
+      }, false);
+    },
+
     setupUICallbacks = function(){
+      setupCursorCallbacks();
       setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhmin-shirley.yaml");
       setupButtonCallback(d3.select("#btn2"), "./brdfs/normalized_phong.yaml");
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");

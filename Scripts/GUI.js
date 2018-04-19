@@ -310,8 +310,8 @@ export default function GUI(inModel){
             uniform_update_funcs.get(name).forEach(f => {
               f(v);
             });
-            model.resetIBL()
-          }
+            model.resetIBL();
+          };
 
           $("#" + "slider_" + name).knob({
             'release' : update ,

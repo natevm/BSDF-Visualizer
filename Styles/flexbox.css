@@ -6,7 +6,11 @@
   --LandscapeRow1Height: 5vw;
   --LandscapeRow2Height: 33vw;
   --LandscapeRow3Height: 7vw;
+  --LandscapeRow2And3Height: 40vw;
   --LandscapeColumnRightPad: 2vw;
+
+  --LandscapeBRDFPresetsHeight: 30vw;
+  --LandscapeInstructionsHeight: 15vw;
 
   --PortraitTotalHeight: 245vw;
   --PortraitColumnHeight: 245vw;
@@ -20,6 +24,25 @@
 html, body {
     width: 100%;
     height: var(--LandscapeTotalHeight);
+    display: flex;
+}
+
+#brdf-presets, #brdf-instructions,
+#brdf-menu, #brdf-canvas, #brdf-header,
+#model-menu, #model-canvas, #model-header,
+#menu-column, #model-column, #brdf-column
+{
+  display: flex;
+  z-index: -1;
+  flex-direction: column;
+  /*box-shadow: 0 0 0.25em 0 rgba(0, 0, 0, 0.25);*/
+}
+
+#brdf-presets, #brdf-instructions,
+#brdf-menu, #brdf-canvas, #brdf-header,
+#model-menu, #model-canvas, #model-header {
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+
 }
 
 /* -------- Main Flexbox Containter -------- */
@@ -36,11 +59,23 @@ html, body {
     width: 10vw;
     height: var(--LandscapeColumnHeight);
     padding-right: var(--LandscapeColumnRightPad);
+    z-index: 1;
+}
+
+#brdf-instructions {
+    width: 10vw;
+    height: var(--LandscapeRow1Height);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    z-index: 2;
+    box-shadow: 0 0 0.25em 0 rgba(0, 0, 0, 0.0);
 }
 
 #brdf-presets {
     width: 10vw;
-    height: var(--LandscapeColumnHeight);
+    height: var(--LandscapeRow2And3Height);
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
@@ -66,6 +101,8 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: row;
+
 }
 
 #model-canvas {

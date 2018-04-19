@@ -51,7 +51,7 @@ export default function GUI(inModel){
         .attr("data-angleArc", angleArc)
         .attr("data-angleOffset", angleOffset)
         .attr("value", value)
-        .attr("data-step", .1)
+        .attr("data-step", 0.1)
         .attr("data-min", min)
         .attr("data-max", max)
         .attr("data-height", "50%")
@@ -140,8 +140,6 @@ export default function GUI(inModel){
         model.setIBL(iblEnabled);
       });
 
-
-
 // <select>
 //   <option value="volvo">Volvo</option>
 //   <option value="saab">Saab</option>
@@ -198,7 +196,6 @@ export default function GUI(inModel){
         else if (value == 10) {
           model.setEnvironmentColor(200, 200, 200, 200);
         }
-
         console.log();
       });
     },
@@ -238,7 +235,43 @@ export default function GUI(inModel){
       });
     },
 
+/*
+ *    setupCursorCallbacks = function(){
+ *      //FIXME: HACK below required, otherwise the user has to click in order for us
+ *      //to intercept keypresses.
+ *
+ *      let modelViewerCanvas = document.getElementById("model-canvas");
+ *      modelViewerCanvas.focus();
+ *      modelViewerCanvas.style.cursor = "crosshair";
+ *
+ *      document.addEventListener('keydown', (event) => {
+ *        const keyName = event.key;
+ *
+ *        if (keyName === 'Alt') {
+ *          modelViewerCanvas.style.cursor = "move";
+ *        }
+ *
+ *        //if (event.ctrlKey) {
+ *          //// Even though event.key is not 'Control' (i.e. 'a' is pressed),
+ *          //// event.ctrlKey may be true if Ctrl key is pressed at the time.
+ *          //alert(`Combination of ctrlKey + ${keyName}`);
+ *        //} else {
+ *          //alert(`Key pressed ${keyName}`);
+ *        //}
+ *      }, false);
+ *
+ *
+ *      document.addEventListener('keyup', (event) => {
+ *        modelViewerCanvas.style.cursor = "crosshair";
+ *      }, false);
+ *    },
+ */
+
     setupUICallbacks = function(){
+      let modelViewerCanvas = document.getElementById("model-canvas");
+      modelViewerCanvas.style.cursor = "crosshair";
+
+      //setupCursorCallbacks();
       setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhmin-shirley.yaml");
       setupButtonCallback(d3.select("#btn2"), "./brdfs/normalized_phong.yaml");
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");
@@ -310,8 +343,8 @@ export default function GUI(inModel){
             uniform_update_funcs.get(name).forEach(f => {
               f(v);
             });
-            model.resetIBL()
-          }
+            model.resetIBL();
+          };
 
           $("#" + "slider_" + name).knob({
             'release' : update ,

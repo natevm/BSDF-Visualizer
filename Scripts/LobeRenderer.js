@@ -57,6 +57,7 @@ export default function LobeRenderer(spec) {
       setupUniformsLobe();
       setupGeometry();
       //setMVP(M, V, P);
+      console.log("LobeRenderer: " + Tangent2World[13]);
       setTangent2World(Tangent2World);
       setV(V);
       setP(P);

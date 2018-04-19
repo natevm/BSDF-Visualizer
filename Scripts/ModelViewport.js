@@ -785,6 +785,7 @@ export default function ModelViewport(spec) {
         initShaders(defaultShaderProgram);
         initBuffers();
       } else if(templId === "lobe_shader") {
+        console.log("ModelViewport, addUniformsFunc: " + Tangent2World[13]);
         lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
       } else {
         throw "Invalid templId: " + templId;
@@ -1010,9 +1011,10 @@ export default function ModelViewport(spec) {
         //2D point in screen space
         //z=0 means "near plane"
         // Subtracting a little from z so the lobe doesn't clip through the model
-        let point = [pos.x, canvas.height - pos.y, pixels[3] - .0001];
+        let point = [pos.x, canvas.height - pos.y, pixels[3] - 0.0001];
         //vec3 output
-        let output = [];
+        //let output = [];
+        let output = vec3.create();
 
         unproject(output, point, viewport, invProjView);
 
@@ -1028,6 +1030,7 @@ export default function ModelViewport(spec) {
                                         t[0],      t[1],      t[2],      0,
                                         n[0],      n[1],      n[2],      0,
                                         output[0], output[1], output[2], 1);
+        console.log("Pick callback: " + Tangent2World[13]);
         //let nr = normalRotMatrix;
         //Tangent2World = mat4.fromValues(nr[0],     nr[1],      nr[2],      0,
                                         //nr[0],     nr[1],      nr[2],      0,
@@ -1043,7 +1046,8 @@ export default function ModelViewport(spec) {
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
           linkedViewport.updateLinkedCamRot(lvm);
-          let linkedT2W = Tangent2World;
+          let linkedT2W = mat4.create();
+          mat4.copy(linkedT2W, Tangent2World);
           linkedT2W[12] = 0;
           linkedT2W[13] = 0;
           linkedT2W[14] = 0;

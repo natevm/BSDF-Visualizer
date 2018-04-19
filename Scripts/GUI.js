@@ -51,7 +51,7 @@ export default function GUI(inModel){
         .attr("data-angleArc", angleArc)
         .attr("data-angleOffset", angleOffset)
         .attr("value", value)
-        .attr("data-step", .1)
+        .attr("data-step", 0.1)
         .attr("data-min", min)
         .attr("data-max", max)
         .attr("data-height", "50%")
@@ -140,8 +140,6 @@ export default function GUI(inModel){
         model.setIBL(iblEnabled);
       });
 
-
-
 // <select>
 //   <option value="volvo">Volvo</option>
 //   <option value="saab">Saab</option>
@@ -201,6 +199,9 @@ export default function GUI(inModel){
 
         console.log();
       });
+
+      let modelViewerCanvas = document.getElementById("model-canvas");
+      modelViewerCanvas.style.cursor = "crosshair";
     },
 
     loadAnalytical = function(file){

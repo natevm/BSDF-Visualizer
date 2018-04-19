@@ -1231,10 +1231,10 @@ export default function ModelViewport(spec) {
     document.getElementById(canvasName).onmousedown = (event) => {
       mouseDown = true;
 
-      if (event.which === 1 && !event.altKey){
+      if (event.which === 1 && !event.altKey && !event.shiftKey){
         selectPointEventFunction(event);
       } else {
-        if (event.which === 3 ){ //zoom
+        if ( event.shiftKey ){ //zoom
           document.getElementById(canvasName).style.cursor = "ns-resize";
         } else if ( event.altKey ) { //rotate
           document.getElementById(canvasName).style.cursor = "grabbing";
@@ -1252,8 +1252,7 @@ export default function ModelViewport(spec) {
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-        //if( event.which === 2 || event.ctrlKey ) {
-        if (event.which === 1 && !event.altKey){
+        if (event.which === 1 && !event.altKey && !event.shiftKey){
             selectPointEventFunction(event);
         } else {
             let newX = event.clientX;
@@ -1261,17 +1260,17 @@ export default function ModelViewport(spec) {
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if (event.altKey) { //rotate
-              if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
-              else cameraYRotation += 0.01 * deltaY;
-              if (linkedViewport !== undefined) {
-                linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
-              }
-            } else if (event.which === 3){ //zoom
+            if ( event.shiftKey ){
               if (deltaY > 0) {
                 zoomin += 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               } else {
                 zoomin -= 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+              }
+            } else if (event.altKey) { //rotate
+              if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
+              else cameraYRotation += 0.01 * deltaY;
+              if (linkedViewport !== undefined) {
+                linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
               }
             }
             lastMouseX = newX;

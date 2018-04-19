@@ -24,7 +24,7 @@ export default function GUI(inModel){
     brdfSliderDiv,
     brdfCheckboxDiv,
     heatCheckboxDiv,
-    	heatmapEnabled = false,
+    heatmapEnabled = false,
     iblCheckboxDiv,
     iblEnabled = true;
 
@@ -122,11 +122,6 @@ export default function GUI(inModel){
       addKnob(ptLightSliderDiv, "Intens.", "slider_intensity", 0, 100, 30, 270, -135);
       addKnob(ptLightSliderDiv, "Qual.", "slider_quality", 0, 100, 100, 270, -135);
 
-      // let camRotSlider = document.getElementById("slider_camRot");
-      // camRotSlider.setAttribute("min", -180);
-      // camRotSlider.setAttribute("max", 180);
-      // camRotSlider.setAttribute("step", 1);
-      // camRotSlider.setAttribute("value", 0);
       let modelHeader = d3.select("#model-header");
       modelHeader.style("display", "flex")
       .style("width", "100%")
@@ -143,6 +138,68 @@ export default function GUI(inModel){
       d3.select("#ibl-toggle").on('change', () => {
         iblEnabled = d3.select("#ibl-toggle").property('checked');
         model.setIBL(iblEnabled);
+      });
+
+
+
+// <select>
+//   <option value="volvo">Volvo</option>
+//   <option value="saab">Saab</option>
+//   <option value="mercedes">Mercedes</option>
+//   <option value="audi">Audi</option>
+// </select>
+
+      let cubemapSelectDiv = modelHeader.append("div");
+      let cubemapSelect = cubemapSelectDiv.append("select");
+      cubemapSelect.append("option").attr("value", 0).text("Industrial");
+      cubemapSelect.append("option").attr("value", 1).text("Arches");
+      cubemapSelect.append("option").attr("value", 2).text("City");
+      cubemapSelect.append("option").attr("value", 3).text("Ruins");
+      cubemapSelect.append("option").attr("value", 4).text("Barcelona");
+      cubemapSelect.append("option").attr("value", 5).text("Narrow Path");
+      cubemapSelect.append("option").attr("value", 6).text("Gravel Plaza");
+      cubemapSelect.append("option").attr("value", 7).text("Empty Room");
+      cubemapSelect.append("option").attr("value", 8).text("Factory");
+      cubemapSelect.append("option").attr("value", 9).text("Ice Lake");
+      cubemapSelect.append("option").attr("value", 10).text("White");
+
+      cubemapSelect.on('change', () => {
+        let value = cubemapSelect.property('value');
+        if (value == 0) {
+          model.setEnvironmentTexture("./cubemaps/Old_Industrial_Hall/fin4_Bg.jpg");
+        }
+        if (value == 1) {
+          model.setEnvironmentTexture("./cubemaps/Arches_E_PineTree/Arches_E_PineTree_8k.jpg");
+        }
+        else if (value == 2) {
+          model.setEnvironmentTexture("./cubemaps/Shiodome_Stairs/10-Shiodome_Stairs_8k.jpg");
+        }
+        else if (value == 3) {
+          model.setEnvironmentTexture("./cubemaps/PaperMill_Ruins_E/PaperMill_E_8k.jpg");
+        }
+        else if (value == 4) {
+          model.setEnvironmentTexture("./cubemaps/Barcelona_Rooftops/Barce_Rooftop_C_8k.jpg");
+        }
+        else if (value == 5) {
+          model.setEnvironmentTexture("./cubemaps/Chiricahua_NarrowPath/NarrowPath_8k.jpg");
+        }
+        else if (value == 6) {
+          model.setEnvironmentTexture("./cubemaps/Chiricahua_Plaza/GravelPlaza_8k.jpg");
+        }
+        else if (value == 7) {
+          model.setEnvironmentTexture("./cubemaps/empty_room/Hires_pano.jpg");
+        }
+        else if (value == 8) {
+          model.setEnvironmentTexture("./cubemaps/Factory_Catwalk/Factory_Catwalk_Bg.jpg");
+        }
+        else if (value == 9) {
+          model.setEnvironmentTexture("./cubemaps/Ice_Lake/Ice_Lake_HiRes_TMap.jpg");
+        }
+        else if (value == 10) {
+          model.setEnvironmentColor(200, 200, 200, 200);
+        }
+
+        console.log();
       });
     },
 

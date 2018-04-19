@@ -1229,12 +1229,16 @@ export default function ModelViewport(spec) {
     };
 
     document.getElementById(canvasName).onmousedown = (event) => {
-      //console.log("detected!\n");
       mouseDown = true;
-      if( event.which === 2 || event.ctrlKey ) {
-          selectPointEventFunction(event);
-      }
-      else {
+
+      if (event.which === 1 && !event.altKey){
+        selectPointEventFunction(event);
+      } else {
+        if (event.which === 3 ){ //zoom
+          document.getElementById(canvasName).style.cursor = "ns-resize";
+        } else if ( event.altKey ) { //rotate
+          document.getElementById(canvasName).style.cursor = "grabbing";
+        }
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
         resetIBL();
@@ -1242,27 +1246,28 @@ export default function ModelViewport(spec) {
     };
 
     document.getElementById(canvasName).onmouseup = (event) => {
+      document.getElementById(canvasName).style.cursor = "crosshair";
       mouseDown = false;
     };
 
     document.getElementById(canvasName).onmousemove = (event) => {
       if (mouseDown) {
-        if( event.which === 2 || event.ctrlKey ) {
+        //if( event.which === 2 || event.ctrlKey ) {
+        if (event.which === 1 && !event.altKey){
             selectPointEventFunction(event);
-        }
-        else {
+        } else {
             let newX = event.clientX;
             let newY = event.clientY;
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if (event.which === 1 && !event.altKey) {
+            if (event.altKey) { //rotate
               if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
               else cameraYRotation += 0.01 * deltaY;
               if (linkedViewport !== undefined) {
                 linkedViewport.updateLinkedCamRot(getLinkedCamRotMatrix());
               }
-            } else {
+            } else if (event.which === 3){ //zoom
               if (deltaY > 0) {
                 zoomin += 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               } else {

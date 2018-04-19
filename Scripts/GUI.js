@@ -235,36 +235,43 @@ export default function GUI(inModel){
       });
     },
 
-    setupCursorCallbacks = function(){
-      //FIXME: HACK below required, otherwise the user has to click in order for us
-      //to intercept keypresses.
-
-      let modelViewerCanvas = document.getElementById("model-canvas");
-      modelViewerCanvas.focus();
-      modelViewerCanvas.style.cursor = "crosshair";
-
-      document.addEventListener('keydown', (event) => {
-        const keyName = event.key;
-
-        console.log(keyName);
-
-        if (keyName === 'Control') {
-          // do not alert when only Control key is pressed.
-          return;
-        }
-
-        if (event.ctrlKey) {
-          // Even though event.key is not 'Control' (i.e. 'a' is pressed),
-          // event.ctrlKey may be true if Ctrl key is pressed at the time.
-          alert(`Combination of ctrlKey + ${keyName}`);
-        } else {
-          alert(`Key pressed ${keyName}`);
-        }
-      }, false);
-    },
+/*
+ *    setupCursorCallbacks = function(){
+ *      //FIXME: HACK below required, otherwise the user has to click in order for us
+ *      //to intercept keypresses.
+ *
+ *      let modelViewerCanvas = document.getElementById("model-canvas");
+ *      modelViewerCanvas.focus();
+ *      modelViewerCanvas.style.cursor = "crosshair";
+ *
+ *      document.addEventListener('keydown', (event) => {
+ *        const keyName = event.key;
+ *
+ *        if (keyName === 'Alt') {
+ *          modelViewerCanvas.style.cursor = "move";
+ *        }
+ *
+ *        //if (event.ctrlKey) {
+ *          //// Even though event.key is not 'Control' (i.e. 'a' is pressed),
+ *          //// event.ctrlKey may be true if Ctrl key is pressed at the time.
+ *          //alert(`Combination of ctrlKey + ${keyName}`);
+ *        //} else {
+ *          //alert(`Key pressed ${keyName}`);
+ *        //}
+ *      }, false);
+ *
+ *
+ *      document.addEventListener('keyup', (event) => {
+ *        modelViewerCanvas.style.cursor = "crosshair";
+ *      }, false);
+ *    },
+ */
 
     setupUICallbacks = function(){
-      setupCursorCallbacks();
+      let modelViewerCanvas = document.getElementById("model-canvas");
+      modelViewerCanvas.style.cursor = "crosshair";
+
+      //setupCursorCallbacks();
       setupButtonCallback(d3.select("#btn1"), "./brdfs/ashikhmin-shirley.yaml");
       setupButtonCallback(d3.select("#btn2"), "./brdfs/normalized_phong.yaml");
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");

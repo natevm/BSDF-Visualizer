@@ -758,7 +758,18 @@ export default function ModelViewport(spec) {
                           vertPath: model_vert_shader_name,
                           fragPath: model_frag_shader_name,
                           templateType: "frag"};
+
+      //TODO: Partial code duplication from BRDFViewport.js
+      //We should only have to define this object once.
+      let lobeShdrObj = {shaderDir: shdrDir,
+         templatePath: "lobe_template.vert",
+         vertPath: "lobe.vert",
+         fragPath: "phong.frag",
+         templateType: "vert"
+        };
+
       templMap.set("model_shader", modelShdrObj);
+      templMap.set("lobe_shader", lobeShdrObj);
       return templMap;
     },
 
@@ -767,14 +778,17 @@ export default function ModelViewport(spec) {
     // (called when we load a BRDF)
     /////////////////////
     addUniformsFunc = function(addUniformsHelper, templId){
-      console.log(templId);
-      defaultShaderProgram = addUniformsHelper(gl);
-      //we need to set up our uniforms again because
-      //the above function returned a new lobeProgram.
-      initShaders(defaultShaderProgram);
-      initBuffers();
-
-      lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+      if (templId === "model_shader") {
+        defaultShaderProgram = addUniformsHelper(gl);
+        //we need to set up our uniforms again because
+        //the above function returned a new lobeProgram.
+        initShaders(defaultShaderProgram);
+        initBuffers();
+      } else if(templId === "lobe_shader") {
+        lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+      } else {
+        throw "Invalid templId: " + templId;
+      }
     },
 
     /////////////////////

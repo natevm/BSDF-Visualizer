@@ -546,12 +546,13 @@ export default function ModelViewport(spec) {
       const border = 0;
       const srcFormat = gl.RGBA;
       const srcType = gl.UNSIGNED_BYTE;
-      const pixel = new Uint8Array([0,0,0,255]); // Single opaque blue pixel until image is loaded.
+      const pixel = new Uint8Array([red,blue,green,alpha]); // Single opaque blue pixel until image is loaded.
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
         width, height, border, srcFormat, srcType, pixel);
     },
 
     setEnvironmentTexture = function(url) {
+      cubemapURL = url;
      const image = new Image();
       image.onload = function() {
         resetIBL();
@@ -1295,6 +1296,8 @@ export default function ModelViewport(spec) {
     setHeatmap,
     setIntensity,
     setMaxConvergence,
-    setQuality
+    setQuality,
+    setEnvironmentTexture,
+    setEnvironmentColor
   });
 }

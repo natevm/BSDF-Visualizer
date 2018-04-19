@@ -68,7 +68,8 @@ export default function BRDFViewport(spec) {
     // SET UP PROGRAM
     /////////////////////
 
-    updateLinkedTangent2World = function(Tangent2World){
+    updateLinkedTangent2World = function(newTangent2World){
+      Tangent2World = newTangent2World;
       lobeRdr.setTangent2World(Tangent2World);
     },
 

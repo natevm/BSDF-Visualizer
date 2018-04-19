@@ -785,7 +785,6 @@ export default function ModelViewport(spec) {
         initShaders(defaultShaderProgram);
         initBuffers();
       } else if(templId === "lobe_shader") {
-        console.log("ModelViewport, addUniformsFunc: " + Tangent2World[13]);
         lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
       } else {
         throw "Invalid templId: " + templId;
@@ -1030,7 +1029,6 @@ export default function ModelViewport(spec) {
                                         t[0],      t[1],      t[2],      0,
                                         n[0],      n[1],      n[2],      0,
                                         output[0], output[1], output[2], 1);
-        console.log("Pick callback: " + Tangent2World[13]);
         //let nr = normalRotMatrix;
         //Tangent2World = mat4.fromValues(nr[0],     nr[1],      nr[2],      0,
                                         //nr[0],     nr[1],      nr[2],      0,

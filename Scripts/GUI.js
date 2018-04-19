@@ -187,6 +187,7 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn3"), "./brdfs/lambert.yaml");
       setupButtonCallback(d3.select("#btn4"), "./brdfs/oren-nayar.yaml");
       setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
+      setupButtonCallback(d3.select("#btn6"), "./brdfs/blinn.yaml");
 
 
       $("#slider_incidentTheta").knob({

@@ -396,12 +396,12 @@ export default function ModelViewport(spec) {
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
         if (isFirefox)
-          gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+          gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
         else
-          gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+          gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         gl.bindRenderbuffer(gl.RENDERBUFFER, colorBuffer);
-        gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 1, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA32F, iblRenderBuffer.width * 2, iblRenderBuffer.height * 2);
 
         /* Setup frame buffers */
         gl.bindFramebuffer(gl.FRAMEBUFFER, iblRenderBuffer);
@@ -719,8 +719,8 @@ export default function ModelViewport(spec) {
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, iblColorBuffer);
       gl.blitFramebuffer(
-          0, 0, iblRenderBuffer.width, iblRenderBuffer.width,
-          0, 0, iblColorBuffer.width, iblColorBuffer.width,
+          0, 0, iblRenderBuffer.width, iblRenderBuffer.height,
+          0, 0, iblColorBuffer.width, iblColorBuffer.height,
           gl.COLOR_BUFFER_BIT, gl.LINEAR
       );
 
@@ -750,8 +750,8 @@ export default function ModelViewport(spec) {
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, iblRenderBuffer);
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
       gl.blitFramebuffer(
-                  0, 0, iblRenderBuffer.width, iblRenderBuffer.width,
-                  0, 0, iblColorBuffer.width, iblColorBuffer.width,
+                  0, 0, iblRenderBuffer.width, iblRenderBuffer.height,
+                  0, 0, canvas.width, canvas.height,
                   gl.DEPTH_BUFFER_BIT, gl.NEAREST);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);

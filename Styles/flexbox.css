@@ -1,10 +1,10 @@
 /* Global CSS Variables */
 :root {
   --LandscapeTotalHeight: 100%;
-  --LandscapeColumnHeight: 50vw;
+  --LandscapeColumnHeight: 45vw;
   /* These three variables should add up to column height */
   --LandscapeRow1Height: 5vw;
-  --LandscapeRow2Height: 35vw;
+  --LandscapeRow2Height: 30vw;
   --LandscapeRow3Height: 10vw;
   --LandscapeColumnRightPad: 2vw;
 

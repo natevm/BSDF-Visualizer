@@ -1220,12 +1220,8 @@ export default function ModelViewport(spec) {
     //mouse events
     //TODO: these mouse handlers should really go into GUI.js
     document.getElementById(canvasName).ondblclick = (event) => {
-        if (pickPointNDC[0] < 500){
-            pickPointNDCStored = vec3.clone(pickPointNDC);
-            pickPointNDC = vec3.fromValues(999,999,999);
-        } else {
-            pickPointNDC = pickPointNDCStored;
-        }
+//        selectPointEventFunction(event);
+        /* In the future, we might be able to use double click for something */
     };
 
     document.getElementById(canvasName).onmousedown = (event) => {
@@ -1234,9 +1230,9 @@ export default function ModelViewport(spec) {
       if (event.which === 1 && !event.altKey && !event.shiftKey){
         selectPointEventFunction(event);
       } else {
-        if ( event.shiftKey ){ //zoom
+        if ( event.shiftKey  || event.which === 3){ //zoom
           document.getElementById(canvasName).style.cursor = "ns-resize";
-        } else if ( event.altKey ) { //rotate
+        } else if ( event.altKey || event.which === 2) { //rotate
           document.getElementById(canvasName).style.cursor = "grabbing";
         }
         lastMouseX = event.clientX;
@@ -1260,13 +1256,13 @@ export default function ModelViewport(spec) {
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if ( event.shiftKey ){
+            if ( event.shiftKey || event.which === 3){
               if (deltaY > 0) {
                 zoomin += 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               } else {
                 zoomin -= 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               }
-            } else if (event.altKey) { //rotate
+            } else if (event.altKey || event.which === 2) { //rotate
               if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
               else cameraYRotation += 0.01 * deltaY;
               if (linkedViewport !== undefined) {

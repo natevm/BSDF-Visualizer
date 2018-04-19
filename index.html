@@ -10,7 +10,8 @@
         <link rel="stylesheet" href="./Styles/knobs.css">
         <link rel="stylesheet" href="./Styles/switch.css">
         <link rel="stylesheet" href="./Styles/button.css">
-    	<link rel="stylesheet" href="./Styles/select.css">
+        <link rel="stylesheet" href="./Styles/select.css">
+    	<link rel="stylesheet" href="./Styles/dropdown.css">
     	<meta name="viewport" content="width=device-width,initial-scale=1.0">
     	<meta charset="utf-8"/>
     </header>
@@ -41,6 +42,17 @@
 
     <body id="main-container">
         <div id="menu-column">
+            <div id="brdf-instructions">
+                <div class="dropdown">
+                <button class="dropbtn">Instructions</button>
+                    <div class="dropdown-content">
+                        <p>Right Click - Place BRDF on Model</p>
+                        <p>Left Click / Alt + Click - Rotate</p>
+                        <p>Middle Click / Shift + Click - Zoom in or out</p>
+                        <p>Click the middle link to connect or disconnect views</p>
+                    </div>
+                </div>
+            </div>
             <div id="brdf-presets">
                 <button type="button" class="button" id="btn1">Ashikhmin Shirley</button>
                 <button type="button" class="button" id="btn2">Phong</button>

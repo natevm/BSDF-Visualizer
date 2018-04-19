@@ -19,6 +19,6 @@ brdf: >
     vec3 R = reflect(-L, N);
     float normalization = (n + 1.0) / (2.0 * M_PI);
     vec3 specular = vec3(normalization * pow(dot(R,V),n));
-    vec3 diffuse = vec3(reflectance/M_PI);
+    vec3 diffuse = vec3(reflectance/M_PI) * clamp(dot(N,L),0.0,1.0);
     return max(specular, 0.0) + diffuse;
   }

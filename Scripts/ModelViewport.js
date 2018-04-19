@@ -572,8 +572,8 @@ export default function ModelViewport(spec) {
         // vs non power of 2 images so check if the image is a
         // power of 2 in both dimensions.
         if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-           gl.generateMipmap(gl.TEXTURE_2D);
            // Yes, it's a power of 2. Generate mips.
+           gl.generateMipmap(gl.TEXTURE_2D);
         } else {
            // No, it's not a power of 2. Turn of mips and set
            // wrapping to clamp to edge
@@ -775,22 +775,43 @@ export default function ModelViewport(spec) {
     //templateType: eitehr "vert" or "frag", specifies which shader is the
     //template for this particular Viewport.
     getTemplateInfo = function(){
-      return {shaderDir: shdrDir, templatePath: "glslify_processed/model-renderer_template.frag",
-        vertPath: model_vert_shader_name, fragPath: model_frag_shader_name, templateType: "frag"};
+      let templMap = new Map();
+      let modelShdrObj = {shaderDir: shdrDir,
+                          templatePath: "glslify_processed/model-renderer_template.frag",
+                          vertPath: model_vert_shader_name,
+                          fragPath: model_frag_shader_name,
+                          templateType: "frag"};
+
+      //TODO: Partial code duplication from BRDFViewport.js
+      //We should only have to define this object once.
+      let lobeShdrObj = {shaderDir: shdrDir,
+         templatePath: "lobe_template.vert",
+         vertPath: "lobe.vert",
+         fragPath: "phong.frag",
+         templateType: "vert"
+        };
+
+      templMap.set("model_shader", modelShdrObj);
+      templMap.set("lobe_shader", lobeShdrObj);
+      return templMap;
     },
 
     /////////////////////
     // ADD UNIFORMS AT RUNTIME
     // (called when we load a BRDF)
     /////////////////////
-    addUniformsFunc = function(addUniformsHelper){
-      defaultShaderProgram = addUniformsHelper(gl);
-      //we need to set up our uniforms again because
-      //the above function returned a new lobeProgram.
-      initShaders(defaultShaderProgram);
-      initBuffers();
-
-      lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+    addUniformsFunc = function(addUniformsHelper, templId){
+      if (templId === "model_shader") {
+        defaultShaderProgram = addUniformsHelper(gl);
+        //we need to set up our uniforms again because
+        //the above function returned a new lobeProgram.
+        initShaders(defaultShaderProgram);
+        initBuffers();
+      } else if(templId === "lobe_shader") {
+        lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, vMatrix, pMatrix);
+      } else {
+        throw "Invalid templId: " + templId;
+      }
     },
 
     /////////////////////
@@ -804,7 +825,7 @@ export default function ModelViewport(spec) {
         if(lobeRdrEnabled){
           lobeRdr.setV(vMatrix);
           lobeRdr.setP(pMatrix);
-          //gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
+          // gl.clear(gl.DEPTH_BUFFER_BIT); //draw over everything else
           lobeRdr.render(time);
         }
       }
@@ -1014,7 +1035,7 @@ export default function ModelViewport(spec) {
         //2D point in screen space
         //z=0 means "near plane"
         // Subtracting a little from z so the lobe doesn't clip through the model
-        let point = [pos.x, canvas.height - pos.y, pixels[3] - .0001];
+        let point = [pos.x, canvas.height - pos.y, pixels[3] - 0.0001];
         //vec3 output
         let output = [];
 
@@ -1047,7 +1068,8 @@ export default function ModelViewport(spec) {
           linkedViewport.updateTheta(normalTheta);
           linkedViewport.updatePhi(normalPhi + 180);
           linkedViewport.updateLinkedCamRot(lvm);
-          let linkedT2W = Tangent2World;
+          let linkedT2W = mat4.create();
+          mat4.copy(linkedT2W, Tangent2World);
           linkedT2W[12] = 0;
           linkedT2W[13] = 0;
           linkedT2W[14] = 0;

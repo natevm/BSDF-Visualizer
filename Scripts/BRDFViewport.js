@@ -144,7 +144,6 @@ export default function BRDFViewport(spec) {
     // (called when we load a BRDF)
     /////////////////////
     addUniformsFunc = function(addUniformsHelper, templId){
-      console.log(templId);
       lobeRdr.addUniformsFunc(addUniformsHelper, Tangent2World, V, P);
     },
 

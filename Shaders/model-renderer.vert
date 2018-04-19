@@ -25,6 +25,9 @@ uniform float uTime;
 uniform sampler2D EnvMap;
 uniform sampler2D PrevFrame;
 
+uniform float uTheta;
+uniform float uPhi;
+
 /* Varying */
 out vec2 vTextureCoord;
 out vec4 vPosition;

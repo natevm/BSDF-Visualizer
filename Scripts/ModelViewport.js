@@ -1230,9 +1230,9 @@ export default function ModelViewport(spec) {
       if (event.which === 1 && !event.altKey && !event.shiftKey){
         selectPointEventFunction(event);
       } else {
-        if ( event.shiftKey  || event.which === 3){ //zoom
+        if ( event.shiftKey  || event.which === 2){ //zoom
           document.getElementById(canvasName).style.cursor = "ns-resize";
-        } else if ( event.altKey || event.which === 2) { //rotate
+        } else if ( event.altKey || event.which === 3) { //rotate
           document.getElementById(canvasName).style.cursor = "grabbing";
         }
         lastMouseX = event.clientX;
@@ -1256,13 +1256,13 @@ export default function ModelViewport(spec) {
             let deltaY = newY - lastMouseY;
             let deltaX = newX - lastMouseX;
 
-            if ( event.shiftKey || event.which === 3){
+            if ( event.shiftKey || event.which === 2){
               if (deltaY > 0) {
                 zoomin += 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               } else {
                 zoomin -= 0.1 * Math.sqrt(deltaX * deltaX + deltaY * deltaY);
               }
-            } else if (event.altKey || event.which === 2) { //rotate
+            } else if (event.altKey || event.which === 3) { //rotate
               if (Math.abs(deltaX) > Math.abs(deltaY)) cameraXRotation += 0.01 * deltaX;
               else cameraYRotation += 0.01 * deltaY;
               if (linkedViewport !== undefined) {

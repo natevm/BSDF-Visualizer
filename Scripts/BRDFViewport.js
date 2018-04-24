@@ -26,7 +26,7 @@ export default function BRDFViewport(spec) {
       return inputByModel;
     };
   let
-    { canvasName, width, height, shdrDir, inputByModel } = spec,
+    { canvasName, width, height, shdrDir, inputByModel, bgAlpha} = spec,
     canvas = document.getElementById(canvasName), //Store canvas to viewport instance
     gl, //GL context is initialized in "setupWebGL2"
 
@@ -79,7 +79,7 @@ export default function BRDFViewport(spec) {
     /////////////////////
     setupWebGL2 = function() {
       gl = init_gl_context(canvas);
-      gl.clearColor(0, 0, 0, 1);
+      gl.clearColor(0, 0, 0, bgAlpha);
       gl.enable(gl.DEPTH_TEST);
     },
 

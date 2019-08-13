@@ -278,6 +278,12 @@ export default function GUI(inModel){
       setupButtonCallback(d3.select("#btn4"), "./brdfs/oren-nayar.yaml");
       setupButtonCallback(d3.select("#btn5"), "./brdfs/ross-li.yaml");
       setupButtonCallback(d3.select("#btn6"), "./brdfs/blinn.yaml");
+      setupButtonCallback(d3.select("#btn7"), "./brdfs/disney_microfacet_anisotropic.yaml");
+      setupButtonCallback(d3.select("#btn8"), "./brdfs/disney_microfacet_isotropic.yaml");
+      setupButtonCallback(d3.select("#btn9"), "./brdfs/disney_diffuse.yaml");
+      setupButtonCallback(d3.select("#btn10"), "./brdfs/disney_clear_coat.yaml");
+      setupButtonCallback(d3.select("#btn11"), "./brdfs/disney_sheen.yaml");
+      setupButtonCallback(d3.select("#btn12"), "./brdfs/disney_together.yaml");
 
       $("#slider_incidentTheta").knob({
           'release' : function (v) { model.setTheta(v); },

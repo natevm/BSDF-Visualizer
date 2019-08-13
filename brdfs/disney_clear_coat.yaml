@@ -1,0 +1,74 @@
+# Uniforms go here.
+#   Uniforms can be of type "float" or "bool" for true or false values.
+#   These uniforms can then be controlled in the GUI as knobs and switches
+uniforms:
+  clearcoat_gloss:
+    type: "float"
+    min: 0
+    max: 1
+    default: .5
+  clearcoat:
+    type: "float"
+    min: 0
+    max: 1
+    default: .5
+# GLSL code is defined below. The BRDF function is called by a shader to compute
+#   image based illumiation and direct illumination, and is also used to generate
+#   the brdf lobe.
+brdf: >
+    #define M_PI 3.1415926535897932384626433832795
+
+    #define M_1_PI 0.318309886183790671538
+
+    #define EPSILON 0.0001
+
+    float pow2(float x) {
+        return x * x;
+    }
+
+    float luminance(vec3 c) {
+        return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+    }
+
+    float schlick_weight(float cos_theta) {
+        return pow(clamp(1.f - cos_theta, 0.0f, 1.0f), 5.f);
+    }
+
+    // D_GTR1: Generalized Trowbridge-Reitz with gamma=1
+    // Burley notes eq.
+
+    float gtr_1(float cos_theta_h, float alpha) {
+        if (alpha >= 1.f) {
+            return M_1_PI;
+        }
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * (alpha_sqr - 1.f) / (log(alpha_sqr) * (1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h));
+    }
+
+    // D_GTR2: Generalized Trowbridge-Reitz with gamma=2
+    // Burley notes eq. 8
+
+    float gtr_2(float cos_theta_h, float alpha) {
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * alpha_sqr / pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h);
+    }
+
+    float smith_shadowing_ggx(float n_dot_o, float alpha_g) {
+      float a = alpha_g * alpha_g;
+      float b = n_dot_o * n_dot_o;
+      return 1.f / (n_dot_o + sqrt(a + b - a * b));
+    }
+
+    float disney_clear_coat(vec3 n, vec3 w_o, vec3 w_i)
+    {
+      vec3 w_h = normalize(w_i + w_o);
+      float alpha = mix(0.1f, 0.001f, clearcoat_gloss);
+      float d = gtr_1(dot(n, w_h), alpha);
+      float f = mix(0.04f, 1.f, schlick_weight(dot(w_i, n)));
+      float g = smith_shadowing_ggx(dot(n, w_i), 0.25f) * smith_shadowing_ggx(dot(n, w_o), 0.25f);
+      return 0.25 * clearcoat * d * f * g;
+    }
+
+    vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+        return vec3(disney_clear_coat(N,L,V));
+    }

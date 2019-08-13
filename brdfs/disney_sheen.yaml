@@ -1,0 +1,75 @@
+# Uniforms go here.
+#   Uniforms can be of type "float" or "bool" for true or false values.
+#   These uniforms can then be controlled in the GUI as knobs and switches
+uniforms:
+  sheen:
+    type: "float"
+    min: 0
+    max: 1
+    default: .5
+  sheen_tint:
+    type: "float"
+    min: 0
+    max: 1
+    default: 1
+# GLSL code is defined below. The BRDF function is called by a shader to compute
+#   image based illumiation and direct illumination, and is also used to generate
+#   the brdf lobe.
+brdf: >
+    #define M_PI 3.1415926535897932384626433832795
+
+    #define M_1_PI 0.318309886183790671538
+
+    #define EPSILON 0.0001
+
+    float pow2(float x) {
+        return x * x;
+    }
+
+    float luminance(vec3 c) {
+        return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+    }
+
+    float schlick_weight(float cos_theta) {
+        return pow(clamp(1.f - cos_theta, 0.0f, 1.0f), 5.f);
+    }
+
+    // D_GTR1: Generalized Trowbridge-Reitz with gamma=1
+    // Burley notes eq.
+
+    float gtr_1(float cos_theta_h, float alpha) {
+        if (alpha >= 1.f) {
+            return M_1_PI;
+        }
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * (alpha_sqr - 1.f) / (log(alpha_sqr) * (1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h));
+    }
+
+    // D_GTR2: Generalized Trowbridge-Reitz with gamma=2
+    // Burley notes eq. 8
+
+    float gtr_2(float cos_theta_h, float alpha) {
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * alpha_sqr / pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h);
+    }
+
+    float smith_shadowing_ggx(float n_dot_o, float alpha_g) {
+      float a = alpha_g * alpha_g;
+      float b = n_dot_o * n_dot_o;
+      return 1.f / (n_dot_o + sqrt(a + b - a * b));
+    }
+
+    vec3 disney_sheen(vec3 n, vec3 w_o, vec3 w_i)
+    {
+      vec3 base_color = vec3(1.0, 1.0, 1.0);
+      vec3 w_h = normalize(w_i + w_o);
+      float lum = luminance(base_color);
+      vec3 tint = lum > 0.f ? base_color / lum : vec3(1, 1, 1);
+      vec3 sheen_color = mix(vec3(1, 1, 1), tint, sheen_tint);
+      float f = schlick_weight(dot(w_i, n));
+      return f * sheen * sheen_color;
+    }
+
+    vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+        return disney_sheen(N,L,V);
+    }

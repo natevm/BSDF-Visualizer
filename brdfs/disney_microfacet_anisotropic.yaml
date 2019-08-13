@@ -1,0 +1,94 @@
+# Uniforms go here.
+#   Uniforms can be of type "float" or "bool" for true or false values.
+#   These uniforms can then be controlled in the GUI as knobs and switches
+uniforms:
+  roughness:
+    type: "float"
+    min: 0
+    max: 1
+    default: .5
+  anisotropy:
+    type: "float"
+    min: 0
+    max: 1
+    default: 1
+  metallic:
+    type: "float"
+    min: 0
+    max: 1
+    default: 1
+# GLSL code is defined below. The BRDF function is called by a shader to compute
+#   image based illumiation and direct illumination, and is also used to generate
+#   the brdf lobe.
+brdf: >
+    #define M_PI 3.1415926535897932384626433832795
+
+    #define M_1_PI 0.318309886183790671538
+
+    #define EPSILON 0.0001
+
+    float pow2(float x) {
+        return x * x;
+    }
+
+    float luminance(vec3 c) {
+        return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+    }
+
+    float schlick_weight(float cos_theta) {
+        return pow(clamp(1.f - cos_theta, 0.0f, 1.0f), 5.f);
+    }
+
+    // D_GTR1: Generalized Trowbridge-Reitz with gamma=1
+    // Burley notes eq.
+
+    float gtr_1(float cos_theta_h, float alpha) {
+        if (alpha >= 1.f) {
+            return M_1_PI;
+        }
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * (alpha_sqr - 1.f) / (log(alpha_sqr) * (1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h));
+    }
+
+    // D_GTR2: Generalized Trowbridge-Reitz with gamma=2
+    // Burley notes eq. 8
+
+    float gtr_2(float cos_theta_h, float alpha) {
+        float alpha_sqr = alpha * alpha;
+        return M_1_PI * alpha_sqr / pow2(1.f + (alpha_sqr - 1.f) * cos_theta_h * cos_theta_h);
+    }
+
+    // D_GTR2 Anisotropic: Anisotropic generalized Trowbridge-Reitz with gamma=2
+    // Burley notes eq. 13
+
+    float gtr_2_aniso(float h_dot_n, float h_dot_x, float h_dot_y, vec2 alpha) {
+        return M_1_PI / (alpha.x * alpha.y
+                * pow2(pow2(h_dot_x / alpha.x) + pow2(h_dot_y / alpha.y) + h_dot_n * h_dot_n));
+    }
+
+    float smith_shadowing_ggx_aniso(float n_dot_o, float o_dot_x, float o_dot_y, vec2 alpha) {
+        return 1.f / (n_dot_o + sqrt(pow2(o_dot_x * alpha.x) + pow2(o_dot_y * alpha.y) + pow2(n_dot_o)));
+    }
+
+    vec3 disney_microfacet_anisotropic(vec3 n, vec3 w_o, vec3 w_i, vec3 v_x, vec3 v_y)
+    {
+        float specular_tint = 0.0f;
+        vec3 base_color = vec3(1.0f, 1.0f, 1.0f);
+        vec3 w_h = normalize(w_i + w_o);
+        float lum = luminance(base_color);
+        vec3 tint = lum > 0.f ? base_color / lum : vec3(1, 1, 1);
+        vec3 spec = mix(base_color * 0.08 * mix(vec3(1, 1, 1), tint, specular_tint), base_color, metallic);
+
+        float aspect = sqrt(1.f - anisotropy * 0.9f);
+        float a = roughness * roughness;
+        vec2 alpha = vec2(max(0.001, a / aspect), max(0.001, a * aspect));
+        float d = gtr_2_aniso(dot(n, w_h), abs(dot(w_h, v_x)), abs(dot(w_h, v_y)), alpha);
+        vec3 f = mix(spec, vec3(1, 1, 1), schlick_weight(dot(w_i, w_h)));
+        float g = smith_shadowing_ggx_aniso(dot(n, w_i), abs(dot(w_i, v_x)), abs(dot(w_i, v_y)), alpha)
+            * smith_shadowing_ggx_aniso(dot(n, w_o), abs(dot(w_o, v_x)), abs(dot(w_o, v_y)), alpha);
+        return d * f * g;
+    }
+
+    vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y){
+        return disney_microfacet_anisotropic(N,L,V,X,Y);
+    }

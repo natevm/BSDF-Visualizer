@@ -724,7 +724,7 @@ export default function ModelViewport(spec) {
       gl.blitFramebuffer(
           0, 0, iblRenderBuffer.width, iblRenderBuffer.height,
           0, 0, iblColorBuffer.width, iblColorBuffer.height,
-          gl.COLOR_BUFFER_BIT, gl.LINEAR
+          gl.COLOR_BUFFER_BIT, gl.NEAREST
       );
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);

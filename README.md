@@ -7,10 +7,10 @@
 * For Firefox: `about:config` > set `dom.moduleScripts.enabled` to `true`
 
 ## Demo
-* Available LIVE here: https://n8vm.github.io/BSDF-Visualizer/
+* Available LIVE here: https://natevm.github.io/BSDF-Visualizer/
 
 ## Hacking
-See [our documentation wiki](https://github.com/n8vm/BSDF-Visualizer/wiki).
+See [our documentation wiki](https://github.com/natevm/BSDF-Visualizer/wiki).
 
 ### Using Glslify with shaders
 [Glslify](https://github.com/glslify/glslify) is quite handy and I am currently
